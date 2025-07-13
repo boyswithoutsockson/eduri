@@ -22,6 +22,10 @@ export interface Ballots {
   title: string | null;
 }
 
+export interface Committees {
+  name: string;
+}
+
 export interface Interests {
   category: string | null;
   id: Generated<number>;
@@ -45,6 +49,14 @@ export interface MembersOfParliament {
   year_of_birth: number | null;
 }
 
+export interface MpCommitteeMemberships {
+  committee_name: string;
+  end_date: Timestamp | null;
+  mp_id: number;
+  role: string;
+  start_date: Timestamp;
+}
+
 export interface MpPartyMemberships {
   end_date: Timestamp | null;
   mp_id: number;
@@ -65,8 +77,10 @@ export interface Votes {
 
 export interface DB {
   ballots: Ballots;
+  committees: Committees;
   interests: Interests;
   members_of_parliament: MembersOfParliament;
+  mp_committee_memberships: MpCommitteeMemberships;
   mp_party_memberships: MpPartyMemberships;
   parties: Parties;
   votes: Votes;

@@ -1,7 +1,7 @@
 ---
 import { db } from "../../database";
 import Layout from "../../layouts/Layout.astro";
-import { decode, encode } from "../../utils";
+import { decode, encode, groupBy } from "../../utils";
 
 /** List all items of data that need a page generated for them */
 export async function getStaticPaths() {
@@ -18,16 +18,50 @@ const { memberOfParliament } = Astro.params;
 const mp = await db
     .selectFrom("members_of_parliament")
     .where("full_name", "=", decode(memberOfParliament))
+    .leftJoin(
+        "mp_party_memberships",
+        "members_of_parliament.id",
+        "mp_party_memberships.mp_id"
+    )
+    .select([
+        "full_name",
+        "email",
+        "occupation",
+        "place_of_residence",
+        "mp_party_memberships.party_id",
+    ])
     .selectAll()
     .executeTakeFirst();
+
+const interests = mp
+    ? await db
+          .selectFrom("interests")
+          .where("interests.mp_id", "=", mp.id)
+          .select(["interests.category", "interests.interest"])
+          .execute()
+    : [];
+
+const groupedInterests = groupBy(interests, (i) => i.category ?? "");
 ---
 
 <Layout>
     <main>
         <h1>{mp?.full_name}</h1>
         <p>{mp?.email}</p>
-        <p>{mp?.party}</p>
+        <p>{mp?.party_id}</p>
         <p>{mp?.occupation}</p>
         <p>{mp?.place_of_residence}</p>
+        {
+            Object.entries(groupedInterests).map(([group, interests]) => (
+                <section>
+                    <strong>{group}</strong>
+                    <ul>
+                        {interests.map((int) => (
+                            <li>{int.interest}</li>
+                        ))}
+                    </ul>
+                </section>
+            ))
+        }
     </main>
 </Layout>
