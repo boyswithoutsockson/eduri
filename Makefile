@@ -123,6 +123,11 @@ database: $(DATABASE) ## runs all data pipelines into the database
 # Frontend management scripts #
 ###############################
 
+.PHONY: install
+install:
+	cd frontend
+	npm install
+
 .PHONY: frontend
 frontend:
 	cd frontend
