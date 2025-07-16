@@ -41,7 +41,7 @@ def preprocess_data():
             "place_of_birth": tree[11].text,
             "place_of_residence": tree[15].text,
             "constituency": tree[26][0][0].text,
-            "photo": photo_filename_dict[id] if id in photo_filename_dict else None
+            "photo": photo_filename_dict[str(id)] if str(id) in photo_filename_dict else None
         }
 
         rows.append(row)
