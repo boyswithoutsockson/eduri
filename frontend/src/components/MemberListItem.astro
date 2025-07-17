@@ -1,7 +1,6 @@
 ---
 import { Image } from "astro:assets";
 import type { ImageMetadata } from "astro";
-import { encode } from "../utils";
 import Profile from "../icons/profile.svg";
 
 interface Props {
@@ -36,7 +35,7 @@ const images = import.meta.glob<{ default: ImageMetadata }>(
         <strong>{mp.full_name}</strong>
         {mp.party_id}
         <br />
-        <a href={`/edustaja/${encode(mp.full_name || "")}`}>open mp page</a>
+        <a href={`/edustaja/${mp.full_name || ""}`}>open mp page</a>
     </p>
 </article>
 

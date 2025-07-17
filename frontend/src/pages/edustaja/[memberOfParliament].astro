@@ -2,13 +2,7 @@
 import type { NotNull } from "kysely";
 import { db } from "../../database";
 import Layout from "../../layouts/Layout.astro";
-import {
-    decode,
-    encode,
-    groupBy,
-    PARLIAMENT_BASE_URL,
-    VOTE_MAP,
-} from "../../utils";
+import { groupBy, PARLIAMENT_BASE_URL, VOTE_MAP } from "../../utils";
 
 /** List all items of data that need a page generated for them */
 export async function getStaticPaths() {
@@ -17,14 +11,15 @@ export async function getStaticPaths() {
         .selectAll()
         .execute();
     return data.map((mp) => ({
-        params: { memberOfParliament: encode(mp.full_name || "") },
+        params: { memberOfParliament: mp.full_name || "" },
     }));
 }
 
 const { memberOfParliament } = Astro.params;
+
 const mp = await db
     .selectFrom("members_of_parliament")
-    .where("full_name", "=", decode(memberOfParliament))
+    .where("full_name", "=", memberOfParliament)
     .leftJoin(
         "mp_party_memberships",
         "members_of_parliament.id",
