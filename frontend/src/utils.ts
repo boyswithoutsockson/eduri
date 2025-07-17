@@ -1,3 +1,12 @@
+export const PARLIAMENT_BASE_URL = "https://eduskunta.fi";
+
+export const VOTE_MAP = {
+    yes: "Jaa",
+    no: "Ei",
+    abstain: "Tyhjä",
+    absent: "Poissa",
+};
+
 export function encode(str: string): string {
     return encodeURIComponent(str).replace(/%20/g, "+");
 }

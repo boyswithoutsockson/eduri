@@ -1,7 +1,14 @@
 ---
+import type { NotNull } from "kysely";
 import { db } from "../../database";
 import Layout from "../../layouts/Layout.astro";
-import { decode, encode, groupBy } from "../../utils";
+import {
+    decode,
+    encode,
+    groupBy,
+    PARLIAMENT_BASE_URL,
+    VOTE_MAP,
+} from "../../utils";
 
 /** List all items of data that need a page generated for them */
 export async function getStaticPaths() {
@@ -41,27 +48,74 @@ const interests = mp
           .execute()
     : [];
 
+const ballotVotes = mp
+    ? await db
+          .selectFrom("votes")
+          .where("votes.mp_id", "=", mp.id)
+          .where("votes.vote", "is not", null)
+          .leftJoin("ballots", "votes.ballot_id", "ballots.id")
+          .select([
+              "ballots.id",
+              "ballots.title",
+              "ballots.session_item_title",
+              "votes.vote",
+              "ballots.minutes_url",
+              "ballots.results_url",
+          ])
+          .orderBy("ballots.start_time", "desc")
+          .$narrowType<{ vote: NotNull }>()
+          .execute()
+    : [];
+
 const groupedInterests = groupBy(interests, (i) => i.category ?? "");
 ---
 
 <Layout>
     <main>
-        <h1>{mp?.full_name}</h1>
-        <p>{mp?.email}</p>
-        <p>{mp?.party_id}</p>
-        <p>{mp?.occupation}</p>
-        <p>{mp?.place_of_residence}</p>
-        {
-            Object.entries(groupedInterests).map(([group, interests]) => (
-                <section>
-                    <strong>{group}</strong>
-                    <ul>
-                        {interests.map((int) => (
-                            <li>{int.interest}</li>
-                        ))}
-                    </ul>
-                </section>
-            ))
-        }
+        <section>
+            <h1>{mp?.full_name}</h1>
+            <p>{mp?.email}</p>
+            <p>{mp?.party_id}</p>
+            <p>{mp?.occupation}</p>
+            <p>{mp?.place_of_residence}</p>
+        </section>
+
+        <section>
+            <h2>Sidonnaisuudet</h2>
+            {
+                Object.entries(groupedInterests).map(([group, interests]) => (
+                    <section>
+                        <strong>{group}</strong>
+                        <ul>
+                            {interests.map((int) => (
+                                <li>{int.interest}</li>
+                            ))}
+                        </ul>
+                    </section>
+                ))
+            }
+        </section>
+
+        <section>
+            <h2>Äänestykset</h2>
+            {
+                ballotVotes.map((bv) => (
+                    <p>
+                        <strong>{bv.title}</strong> |
+                        <a href={`${PARLIAMENT_BASE_URL}${bv.minutes_url}`}>
+                            Pöytäkirja
+                        </a>{" "}
+                        |
+                        <a href={`${PARLIAMENT_BASE_URL}${bv.results_url}`}>
+                            Äänestystulos
+                        </a>
+                        <br />
+                        {bv.session_item_title}
+                        <br />
+                        Ääni: <strong>{VOTE_MAP[bv.vote]}</strong>
+                    </p>
+                ))
+            }
+        </section>
     </main>
 </Layout>
