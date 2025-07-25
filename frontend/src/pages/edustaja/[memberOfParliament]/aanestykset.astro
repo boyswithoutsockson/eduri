@@ -1,8 +1,8 @@
 ---
 import type { NotNull } from "kysely";
-import { db } from "../../../database";
-import Layout from "../../../layouts/Layout.astro";
-import { groupBy, PARLIAMENT_BASE_URL, VOTE_MAP } from "../../../utils";
+import { db } from "~src/database";
+import Layout from "~src/layouts/Layout.astro";
+import { PARLIAMENT_BASE_URL, VOTE_MAP } from "~src/utils";
 
 /** List all items of data that need a page generated for them */
 export async function getStaticPaths() {
