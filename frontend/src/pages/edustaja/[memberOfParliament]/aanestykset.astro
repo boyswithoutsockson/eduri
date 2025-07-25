@@ -2,38 +2,19 @@
 import type { NotNull } from "kysely";
 import { db } from "~src/database";
 import Layout from "~src/layouts/Layout.astro";
+import { getAllMps } from "~src/pages/edustaja/[memberOfParliament]/_utils";
 import { PARLIAMENT_BASE_URL, VOTE_MAP } from "~src/utils";
 
 /** List all items of data that need a page generated for them */
 export async function getStaticPaths() {
-    const data = await db
-        .selectFrom("members_of_parliament")
-        .selectAll()
-        .execute();
+    const data = await getAllMps();
     return data.map((mp) => ({
         params: { memberOfParliament: mp.full_name || "" },
+        props: { mp },
     }));
 }
 
-const { memberOfParliament } = Astro.params;
-
-const mp = await db
-    .selectFrom("members_of_parliament")
-    .where("full_name", "=", memberOfParliament)
-    .leftJoin(
-        "mp_party_memberships",
-        "members_of_parliament.id",
-        "mp_party_memberships.mp_id"
-    )
-    .select([
-        "full_name",
-        "email",
-        "occupation",
-        "place_of_residence",
-        "mp_party_memberships.party_id",
-    ])
-    .selectAll()
-    .executeTakeFirst();
+const { mp } = Astro.props;
 
 const ballotVotes = mp
     ? await db
