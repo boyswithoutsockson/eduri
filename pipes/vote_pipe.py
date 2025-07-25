@@ -6,22 +6,17 @@ import pandas as pd
 csv_path = 'data/preprocessed/votes.csv'
 
 vote_dict = {"Jaa": "yes",
-            "Ja": "yes",
-            "Yes": "yes",
             "Ei": "no",
-            "Nej": "no",
-            "No": "no",
             "Poissa": "absent",
-            "Frånvarande": "absent",
-            "Absent": "absent",
-            "Tyhjää": "abstain",
-            "Avstår": "abstain",
-            "Blank": "abstain"}
+            "Tyhjää": "abstain"}
 
 def preprocess_data():
     with open(os.path.join("data", "raw", "SaliDBAanestysEdustaja.tsv")) as f:
         vote_data = pd.read_csv(f, sep="\t")[["EdustajaHenkiloNumero", "AanestysId", "EdustajaAanestys"]]
 
+    vote_data = vote_data[
+        vote_data["EdustajaAanestys"].str.strip().isin(vote_dict.keys())
+    ]
     vote_data["EdustajaAanestys"] = vote_data["EdustajaAanestys"].str.strip().apply(
         lambda x: vote_dict[x]
     )
