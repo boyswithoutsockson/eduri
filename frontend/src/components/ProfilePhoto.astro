@@ -1,0 +1,50 @@
+---
+import { Image } from "astro:assets";
+import type { ImageMetadata } from "astro";
+import ProfileIcon from "~src/icons/profile.svg";
+import type { LocalImageProps } from "astro:assets";
+
+interface Props {
+    imageProps?: Omit<Partial<LocalImageProps>, "src" | "alt">;
+    mp: {
+        full_name: string | null;
+        photo: string | null;
+        party_id: string | null;
+    };
+}
+
+const { mp, imageProps } = Astro.props;
+const filename = mp.photo && `/src/assets/${mp.photo}`;
+const images = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/*.{jpeg,jpg,png,gif}"
+);
+---
+
+<>
+    {
+        filename && images[filename] ? (
+            <Image
+                alt={mp.full_name}
+                height="150"
+                src={images[filename]()}
+                width="100"
+                {...((imageProps ?? {}) as unknown as any)}
+            />
+        ) : (
+            <ProfileIcon
+                class="missing"
+                height={imageProps?.height}
+                width={imageProps?.width}
+            />
+        )
+    }
+</>
+
+<style>
+    // eslint-disable-next-line astro/no-unused-css-selector
+    .missing {
+        height: 150px;
+        width: 100px;
+        background-color: #ccc;
+    }
+</style>
