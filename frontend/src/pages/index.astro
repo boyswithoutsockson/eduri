@@ -2,10 +2,10 @@
 // we disable this rule as our style declaration has automagically applied
 // styles from live-filter
 /* eslint-disable astro/no-unused-css-selector */
-import Layout from "../layouts/Layout.astro";
+import Layout from "~src/layouts/Layout.astro";
 
-import { db } from "../database";
-import MemberListItem from "../components/MemberListItem.astro";
+import { db } from "~src/database";
+import MemberListItem from "~src/components/MemberListItem.astro";
 
 const data = await db
     .selectFrom("members_of_parliament")
