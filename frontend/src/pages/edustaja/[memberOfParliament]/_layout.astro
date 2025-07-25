@@ -39,7 +39,8 @@ const subpages = [
                         <li>
                             <a
                                 class:list={{
-                                    active: currentPath === page.path,
+                                    active:
+                                        decodeURI(currentPath) === page.path,
                                 }}
                                 href={page.path}
                             >
