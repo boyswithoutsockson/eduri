@@ -1,7 +1,7 @@
 ---
 import type { NotNull } from "kysely";
 import { db } from "~src/database";
-import Layout from "~src/layouts/Layout.astro";
+import Layout from "~src/pages/edustaja/[memberOfParliament]/_layout.astro";
 import { getAllMps } from "~src/pages/edustaja/[memberOfParliament]/_utils";
 import { PARLIAMENT_BASE_URL, VOTE_MAP } from "~src/utils";
 
@@ -36,35 +36,31 @@ const ballotVotes = mp
     : [];
 ---
 
-<Layout>
-    <main>
-        <section>
-            <h2>Äänestykset</h2>
-            <div class="ballot-votes">
-                {
-                    ballotVotes.map((bv) => (
-                        <div class="ballot-vote">
-                            <strong>{bv.title}</strong> |
-                            <a href={`${PARLIAMENT_BASE_URL}${bv.minutes_url}`}>
-                                Pöytäkirja
-                            </a>{" "}
-                            |
-                            <a href={`${PARLIAMENT_BASE_URL}${bv.results_url}`}>
-                                Äänestystulos
-                            </a>
-                            <br />
-                            {bv.session_item_title}
-                            <br />
-                            Ääni:
-                            <span class:list={bv.vote}>
-                                {VOTE_MAP[bv.vote]}
-                            </span>
-                        </div>
-                    ))
-                }
-            </div>
-        </section>
-    </main>
+<Layout mp={mp}>
+    <section>
+        <h2>Äänestykset</h2>
+        <div class="ballot-votes">
+            {
+                ballotVotes.map((bv) => (
+                    <div class="ballot-vote">
+                        <strong>{bv.title}</strong> |
+                        <a href={`${PARLIAMENT_BASE_URL}${bv.minutes_url}`}>
+                            Pöytäkirja
+                        </a>{" "}
+                        |
+                        <a href={`${PARLIAMENT_BASE_URL}${bv.results_url}`}>
+                            Äänestystulos
+                        </a>
+                        <br />
+                        {bv.session_item_title}
+                        <br />
+                        Ääni:
+                        <span class:list={bv.vote}>{VOTE_MAP[bv.vote]}</span>
+                    </div>
+                ))
+            }
+        </div>
+    </section>
 </Layout>
 
 <style>
