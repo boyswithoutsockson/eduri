@@ -2,9 +2,8 @@
 import type { NotNull } from "kysely";
 
 import { db } from "~src/database";
-import Layout from "~src/layouts/Layout.astro";
 import { groupBy, PARLIAMENT_BASE_URL, VOTE_MAP } from "~src/utils";
-
+import Layout from "~src/pages/edustaja/[memberOfParliament]/_layout.astro";
 import { getAllMps } from "~src/pages/edustaja/[memberOfParliament]/_utils";
 
 /** List all items of data that need a page generated for them */
@@ -48,52 +47,42 @@ const ballotVotes = mp
 const groupedInterests = groupBy(interests, (i) => i.category ?? "");
 ---
 
-<Layout>
-    <main>
-        <section>
-            <h1>{mp?.full_name}</h1>
-            <p>{mp?.email}</p>
-            <p>{mp?.party_id}</p>
-            <p>{mp?.occupation}</p>
-            <p>{mp?.place_of_residence}</p>
-        </section>
+<Layout mp={mp}>
+    <section>
+        <h2>Sidonnaisuudet</h2>
+        {
+            Object.entries(groupedInterests).map(([group, interests]) => (
+                <section>
+                    <strong>{group}</strong>
+                    <ul>
+                        {interests.map((int) => (
+                            <li>{int.interest}</li>
+                        ))}
+                    </ul>
+                </section>
+            ))
+        }
+    </section>
 
-        <section>
-            <h2>Sidonnaisuudet</h2>
-            {
-                Object.entries(groupedInterests).map(([group, interests]) => (
-                    <section>
-                        <strong>{group}</strong>
-                        <ul>
-                            {interests.map((int) => (
-                                <li>{int.interest}</li>
-                            ))}
-                        </ul>
-                    </section>
-                ))
-            }
-        </section>
-
-        <section>
-            <h2>Äänestykset</h2>
-            {
-                ballotVotes.map((bv) => (
-                    <p>
-                        <strong>{bv.title}</strong> |
-                        <a href={`${PARLIAMENT_BASE_URL}${bv.minutes_url}`}>
-                            Pöytäkirja
-                        </a>{" "}
-                        |
-                        <a href={`${PARLIAMENT_BASE_URL}${bv.results_url}`}>
-                            Äänestystulos
-                        </a>
-                        <br />
-                        {bv.session_item_title}
-                        <br />
-                        Ääni: <strong>{VOTE_MAP[bv.vote]}</strong>
-                    </p>
-                ))
-            }
-        </section>
-    </main>
+    <section>
+        <h2>Äänestykset</h2>
+        {
+            ballotVotes.map((bv) => (
+                <p>
+                    <strong>{bv.title}</strong> |
+                    <a href={`${PARLIAMENT_BASE_URL}${bv.minutes_url}`}>
+                        Pöytäkirja
+                    </a>{" "}
+                    |
+                    <a href={`${PARLIAMENT_BASE_URL}${bv.results_url}`}>
+                        Äänestystulos
+                    </a>
+                    <br />
+                    {bv.session_item_title}
+                    <br />
+                    Ääni: <strong>{VOTE_MAP[bv.vote]}</strong>
+                </p>
+            ))
+        }
+    </section>
 </Layout>
