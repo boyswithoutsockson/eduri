@@ -1,4 +1,7 @@
 ---
+// This linter fires unnecessarily for some reason, maybe due to conditional rendering
+/* eslint-disable astro/no-unused-css-selector */
+
 import { Image } from "astro:assets";
 import type { ImageMetadata } from "astro";
 import ProfileIcon from "~src/icons/profile.svg";
@@ -41,7 +44,6 @@ const images = import.meta.glob<{ default: ImageMetadata }>(
 </>
 
 <style>
-    // eslint-disable-next-line astro/no-unused-css-selector
     .missing {
         height: 150px;
         width: 100px;
