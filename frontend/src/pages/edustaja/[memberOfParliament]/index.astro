@@ -21,6 +21,10 @@ const interests = mp
     ? await db
           .selectFrom("interests")
           .where("interests.mp_id", "=", mp.id)
+          .where("interests.category", "not in", [
+              "Hallinto- ja luottamustehtävät yksityisissä yrityksissä, yhteisöissä sekä julkisyhteisöissä",
+              "Valtion, kunnan ja muiden julkisyhteisöjen virat",
+          ])
           .select(["interests.category", "interests.interest"])
           .execute()
     : [];
