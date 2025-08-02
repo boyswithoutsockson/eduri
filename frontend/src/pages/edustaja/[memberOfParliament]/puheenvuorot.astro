@@ -1,0 +1,34 @@
+---
+import { db } from "~src/database";
+import Layout from "~src/pages/edustaja/[memberOfParliament]/_layout.astro";
+import { getAllMps } from "~src/pages/edustaja/[memberOfParliament]/_utils";
+
+/** List all items of data that need a page generated for them */
+export async function getStaticPaths() {
+    const data = await getAllMps();
+    return data.map((mp) => ({
+        params: { memberOfParliament: mp.full_name || "" },
+        props: { mp },
+    }));
+}
+
+const { mp } = Astro.props;
+
+// const speeches = mp
+//     ? await db
+//           .selectFrom("speeches")
+//           .where("interests.mp_id", "=", mp.id)
+//           .where("interests.category", "not in", [
+//               "Hallinto- ja luottamustehtävät yksityisissä yrityksissä, yhteisöissä sekä julkisyhteisöissä",
+//               "Valtion, kunnan ja muiden julkisyhteisöjen virat",
+//           ])
+//           .select(["interests.category", "interests.interest"])
+//           .execute()
+//     : [];
+---
+
+<Layout mp={mp}>
+    <section>
+        <h2>Puheenvuorot</h2>
+    </section>
+</Layout>
