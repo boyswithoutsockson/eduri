@@ -97,3 +97,9 @@ CREATE TABLE IF NOT EXISTS mp_committee_memberships (
     role VARCHAR(50) NOT NULL,
     PRIMARY KEY(mp_id, committee_name, start_date, role)
 );
+
+CREATE TABLE IF NOT EXISTS board_proposals (
+    parliament_id VARCHAR(50),
+    brief TEXT,
+    reasoning TEXT
+);
