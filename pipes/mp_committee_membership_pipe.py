@@ -8,7 +8,7 @@ import argparse
 csv_path = 'data/preprocessed/mp_committee_memberships.csv'
 
 def preprocess_data():
-    earliest_retirement_date = "2000-01-01"
+    earliest_retirement_date = "2010-01-01"
 
     roles = {"jäsen": "member",
           "varajäsen": "associate",
@@ -27,12 +27,9 @@ def preprocess_data():
         mp_id = int(henkilo['Henkilo']["HenkiloNro"])
         if henkilo['Henkilo']['KansanedustajuusPaattynytPvm']:
             retirement_date = "-".join(list(reversed((henkilo['Henkilo']['KansanedustajuusPaattynytPvm']).split("."))))
-        else:
-            continue
-
-        if retirement_date < earliest_retirement_date:
-            continue
-
+            if retirement_date < earliest_retirement_date:
+                continue
+        
         cur_committees = henkilo['Henkilo']['NykyisetToimielinjasenyydet']['Toimielin']
 
         if isinstance(cur_committees, dict):
