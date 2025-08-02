@@ -37,28 +37,48 @@ const committees = mp
           .execute()
     : [];
 
-const groupedCommittees = groupBy(
-    committees,
-    (c) => c.committee_name ?? ""
-);
+const groupedCommittees = groupBy(committees, (c) => c.committee_name ?? "");
+
+const roles = {
+    member: "jäsen",
+    associate: "varajäsen",
+    additional: "lisäjäsen",
+    chair: "puheenjohtaja",
+    "first vice": "ensimmäinen varapuheenjohtaja",
+    "second vice": "toinen varapuheenjohtaja",
+};
 ---
 
 <Layout mp={mp}>
     <section>
         <h2>Valiokunnat</h2>
         {
-            Object.entries(groupedCommittees).map(([committeeName, committeeData]) => (
-                <section>
-                    <strong>{committeeName}</strong>
-                    <ul>
-                        {committeeData.map((committee) => (
-                            <li>
-                                {committee.role} | {committee.start_date.toLocaleDateString()} - {committee.end_date ? committee.end_date.toLocaleDateString() : "Nykyinen"}
-                            </li>
-                        ))}
-                    </ul>
-                </section>
-            ))
+            Object.entries(groupedCommittees).map(
+                ([committeeName, committeeData]) => (
+                    <section>
+                        <strong>{committeeName}</strong>
+                        <ul>
+                            {committeeData.map((committee) => (
+                                <li>
+                                    <span
+                                        class:list={
+                                            roles[committee.role.toString()]
+                                        }
+                                    >
+                                        {roles[committee.role.toString()]}
+                                    </span>{" "}
+                                    |{" "}
+                                    {committee.start_date.toLocaleDateString()}{" "}
+                                    -{" "}
+                                    {committee.end_date
+                                        ? committee.end_date.toLocaleDateString()
+                                        : "Nykyinen"}
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )
+            )
         }
     </section>
     <section>
@@ -77,3 +97,52 @@ const groupedCommittees = groupBy(
         }
     </section>
 </Layout>
+
+<style>
+    li {
+        margin: 1rem;
+    }
+    .jäsen {
+        border: 2px solid #333;
+        border-radius: 0.5rem;
+        padding: 0.1rem 0.5rem;
+        background: #cce3fa;
+        color: #0d47a1;
+        border: 2px solid #333;
+    }
+    .varajäsen {
+        border: 2px solid #333;
+        border-radius: 0.5rem;
+        padding: 0.1rem 0.5rem;
+        background: #d0f5e0;
+        color: #1b5e20;
+    }
+    .lisäjäsen {
+        border: 2px solid #333;
+        border-radius: 0.5rem;
+        padding: 0.1rem 0.5rem;
+        background: #fff3c2;
+        color: #f57c00;
+    }
+    .puheenjohtaja {
+        border: 2px solid #333;
+        border-radius: 0.5rem;
+        padding: 0.1rem 0.5rem;
+        background: #ffd6d6;
+        color: #b71c1c;
+    }
+    .ensimmäinen\ varapuheenjohtaja {
+        border: 2px solid #333;
+        border-radius: 0.5rem;
+        padding: 0.1rem 0.5rem;
+        background: #e3d6f7;
+        color: #4a148c;
+    }
+    .toinen\ varapuheenjohtaja {
+        border: 2px solid #333;
+        border-radius: 0.5rem;
+        padding: 0.1rem 0.5rem;
+        background: #c2f0f7;
+        color: #006064;
+    }
+</style>
