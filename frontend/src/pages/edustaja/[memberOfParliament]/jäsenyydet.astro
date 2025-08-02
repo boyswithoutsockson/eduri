@@ -28,10 +28,41 @@ const interests = mp
     : [];
 
 const groupedInterests = groupBy(interests, (i) => i.category ?? "");
+
+const committees = mp
+    ? await db
+          .selectFrom("mp_committee_memberships")
+          .where("mp_committee_memberships.mp_id", "=", mp.id)
+          .select(["committee_name", "start_date", "end_date", "role"])
+          .execute()
+    : [];
+
+const groupedCommittees = groupBy(
+    committees,
+    (c) => c.committee_name ?? ""
+);
 ---
 
 <Layout mp={mp}>
     <section>
+        <h2>Valiokunnat</h2>
+        {
+            Object.entries(groupedCommittees).map(([committeeName, committeeData]) => (
+                <section>
+                    <strong>{committeeName}</strong>
+                    <ul>
+                        {committeeData.map((committee) => (
+                            <li>
+                                {committee.role} | {committee.start_date.toLocaleDateString()} - {committee.end_date ? committee.end_date.toLocaleDateString() : "Nykyinen"}
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            ))
+        }
+    </section>
+    <section>
+        <h2>Sidonnaisuudet</h2>
         {
             Object.entries(groupedInterests).map(([group, interests]) => (
                 <section>
