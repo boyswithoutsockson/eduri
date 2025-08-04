@@ -76,6 +76,7 @@ if __name__ == '__main__':
     if args.import_data:
         import_data()
     if not args.preprocess_data and not args.import_data:
-        import_data()
         preprocess_data()
+        import_data()
+        
 
