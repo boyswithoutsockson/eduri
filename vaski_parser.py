@@ -18,7 +18,7 @@ def vaski_parser():
             try: 
                 vaski_dict[name] = pd.concat([vaski_dict[name], vaski.to_frame().T])
 
-            except (KeyError, AttributeError) as e:
+            except KeyError as e:
                 vaski_dict[name] = vaski.to_frame().T
                 vaski_dict[name].columns = ["Id", "XmlData", "Status", "Created", "Eduskuntatunnus", "AttachmentGroupId", "Imported"]
             
@@ -29,7 +29,7 @@ def vaski_parser():
             try: 
                 vaski_dict[name] = pd.concat([vaski_dict[name], vaski.to_frame().T])
 
-            except (KeyError, AttributeError) as e:
+            except KeyError as e:
                 vaski_dict[name] = vaski.to_frame().T
                 vaski_dict[name].columns = ["Id", "XmlData", "Status", "Created", "Eduskuntatunnus", "AttachmentGroupId", "Imported"]
 
