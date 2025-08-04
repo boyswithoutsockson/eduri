@@ -40,7 +40,7 @@ def preprocess_data():
             if not (p_type and p_year):
                 continue
 
-            parliament_id = f"PTK {p_year.replace(' vp','')}/{p_type} vp"
+            parliament_id = f"PTK {p_type}/{p_year.replace(' vp','')} vp"
 
             # Find speeches
             speeches = root.xpath(".//vsk:PuheenvuoroToimenpide", namespaces=ns)
