@@ -76,13 +76,14 @@ def preprocess_data():
 
                 full_text = "\n\n".join(body_parts)
 
-                parsed_data.append({
-                    "speech_id": speech_id,
-                    "speaker_id": speaker_id,
-                    "parliament_id": parliament_id,
-                    "start_time": start_time,
-                    "speech_text": full_text
-                })
+                if speaker_id:
+                    parsed_data.append({
+                        "speech_id": speech_id,
+                        "speaker_id": speaker_id,
+                        "parliament_id": parliament_id,
+                        "start_time": start_time,
+                        "speech_text": full_text
+                    })
 
         except Exception:
             continue
