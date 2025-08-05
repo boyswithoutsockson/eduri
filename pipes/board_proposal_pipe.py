@@ -4,66 +4,38 @@ import psycopg2
 import argparse
 import xmltodict
 import sys
-import json
+from tqdm import tqdm
 import pandas as pd
+
+
+class IncompleteDecisionTreeException(Exception):
+    # This exception is used in development to show where the 
+    # decision tree is incomplete while parsing xml into string
+    pass
 
 
 csv.field_size_limit(sys.maxsize)
 csv_path = 'data/preprocessed/board_proposal.csv'
 
 
-def _get_doctype(xml):
-    try:
-        document_type = xml['ns11:Siirto']['Sanomavalitys']['ns4:SanomatyyppiNimi']['#text']
-    except KeyError:
-        try:
-            document_type = xml['ns11:Siirto']['Sanomavalitys']['ns2:SanomatyyppiNimi']['#text']
-        except KeyError:
-            document_type = xml['ns11:Siirto']['ns:Sanomavalitys']['ns4:SanomatyyppiNimi']['#text']
-    return document_type
-
-
 def preprocess_data():
-    with open(os.path.join("data", "raw", "VaskiData.tsv"), "r") as f:
-       vaski = pd.read_csv(f, delimiter="\t", quotechar='"')
+    with open(os.path.join("data", "raw", "vaski", "GovernmentProposal_fi.tsv"), "r") as f:
+       board_proposals = pd.read_csv(f, delimiter="\t", quotechar='"')
 
-    board_proposals = vaski[vaski["Eduskuntatunnus"].str.startswith("HE")]
-    board_proposals["XmlData"] = board_proposals["XmlData"].apply(
+    board_proposals["Xml"] = board_proposals["XmlData"].apply(
         lambda x: xmltodict.parse(x))
-    board_proposals["doctype"] = board_proposals[board_proposals["XmlData"].apply(
-        lambda x: _get_doctype(x)
-    )]
-    board_proposals = board_proposals[board_proposals["doctype"].str.endswith("GovernmentProposal_fi")]
+    
     print(f"Processing {len(board_proposals)} proposals:")
     bps = []
 
-    for ek_tunnus, bp in list(zip(board_proposals['Eduskuntatunnus'], board_proposals["XmlData"])):
-        try:
-            bp_brief = xml['ns11:Siirto']['SiirtoAsiakirja']['RakenneAsiakirja']['he:HallituksenEsitys']['asi:SisaltoKuvaus']
-            bp_args = xml['ns11:Siirto']['SiirtoAsiakirja']['RakenneAsiakirja']['he:HallituksenEsitys']['asi:PerusteluOsa']
-        except KeyError:  # Ehkä talousarvio
-            bp_brief = xml['ns11:Siirto']['ns11:SiirtoMetatieto']['jme:JulkaisuMetatieto']['asi:IdentifiointiOsa']['met:Nimeke']['met1:NimekeTeksti']
-            bp_args = ""
-        if type(bp_brief) != str:
-            try:
-                bp_brief = "\n\n".join(bp_brief['sis:KappaleKooste'])
-            except:
-                import pdb;pdb.set_trace()
-        if type(bp_args) == list:
-            args = ""
-            for arg in bp_args:
-                args += parse_law_text_to_markdown(arg['asi:PerusteluLuku'])
-            bp_args = args
-        elif type(bp_args) == str:
-            pass
-        else:
-            bp_args = parse_law_text_to_markdown(bp_args['asi:PerusteluLuku'])
-        bps.append({"parliament_id": ek_tunnus, "brief": bp_brief, "reasoning": bp_args})
+    for ek_tunnus, xml in tqdm(list(zip(board_proposals['Eduskuntatunnus'], board_proposals["Xml"]))):
+        bp_brief, bp_full = parse_law_text_to_markdown(xml)
+        bps.append({"parliament_id": ek_tunnus, "brief": bp_brief, "reasoning": bp_full})
 
     bps = pd.DataFrame.from_dict(bps)
 
     with open(csv_path, 'w') as f:
-        bps.to_csv(f, index=False, header=False)
+        bps.to_csv(f, index=False, header=True)
         
 def import_data():
     conn = psycopg2.connect(database="postgres",
@@ -81,70 +53,161 @@ def import_data():
     conn.close()
 
 def parse_law_text_to_markdown(data):
-    def process_kappale_kooste(kooste):
-        if isinstance(kooste, str):
-            return kooste.strip()
-        elif isinstance(kooste, list):
-            paragraphs = []
-            for item in kooste:
-                if isinstance(item, dict):
-                    kursiivi = item.get('sis1:KursiiviTeksti', '')
-                    text = item.get('#text', '')
-                    if kursiivi:
-                        paragraphs.append(f"*{kursiivi}* {text}".strip())
+    def find_relevant_xml(xml):
+        # There are varying structures for the xml files in the data
+        # In this function we try and locate the relevant segment of the xml file and return it.
+        
+        def parse_with_identifiointiosa(bp_id, bp_brief, bp_full, level=1):
+            def parse_asi_or_sis(xml, level=1):
+                def parse_sub_title(xml, level):
+                    output = "#" * level
+                    if 'sis1:LukuOtsikko' in xml.keys():
+                        output += xml['sis1:LukuOtsikko']
+                    elif 'sis1:OtsikkoTeksti' in xml.keys():
+                        output += xml['sis1:OtsikkoTeksti']
                     else:
-                        paragraphs.append(text.strip())
-                elif isinstance(item, str):
-                    paragraphs.append(item.strip())
-            return "\n\n".join(paragraphs)
-        return ""
+                        IncompleteDecisionTreeException
+                    output += "\n\n"
+                    return output
+                
+                def parse_formatted_text(section):
+                    def parse_str_or_lst(v):
+                        # Formatted text bits contain both strings and lists
+                        output = ""
+                        if isinstance(v, str):
+                            output += v
+                        elif isinstance(v, list):
+                            v = [v_ for v_ in v if v_ is not None]
+                            output += " ".join(v)
+                        else:
+                            raise IncompleteDecisionTreeException
+                        return output
+                    
+                    def parse_links_dict_or_list(v):
+                        output = ""
+                        if isinstance(v, dict):
+                            output += '[' + v['sis1:ViiteTeksti'] + ']'
+                            output += '(' + v['@sis1:viiteURL'] + ')'
+                        elif isinstance(v, list):
+                            for d in v:
+                                output += parse_links_dict_or_list(d)
+                        return output
 
-    def process_perusteluluku(perustelut):
-        parts = []
-        if isinstance(perustelut, dict):
-            perustelut = [perustelut]
-        for perustelu in perustelut:
-            otsikko = perustelu.get('sis:LukuOtsikko', {})
-            nro = otsikko.get('sis1:OtsikkoNroTeksti', '').strip()
-            teksti = otsikko.get('sis1:OtsikkoTeksti', '').strip()
-            if nro or teksti:
-                parts.append(f"## {nro} {teksti}".strip())
+                    
+                    output = ""
+                    if isinstance(section, str):
+                        output += section
+                    elif isinstance(section, dict):
+                        for k, v in section.items():
+                            if v is None:
+                                # No need for formatting if no value
+                                continue
+                            
 
-            kappaleet = perustelu.get('sis:KappaleKooste', '')
-            if kappaleet:
-                parts.append(process_kappale_kooste(kappaleet))
-        return "\n\n".join(parts)
+                            if k == '#text':
+                                output += parse_str_or_lst(v)
+                            elif k == 'sis1:LihavaTeksti':
+                                output += '**'
+                                output += parse_str_or_lst(v)
+                                output += '**'
+                            elif k == 'sis1:KursiiviTeksti' or k == 'sis1:HarvaKursiiviTeksti':
+                                output += '__'
+                                output += parse_str_or_lst(v)
+                                output += '__'
+                            elif k == 'sis1:LihavaKursiiviTeksti':
+                                output += '***'
+                                output += parse_str_or_lst(v)
+                                output += '***'
+                            elif k == 'sis1:YlaindeksiTeksti':
+                                output += '<sup>'  # Markdown uses html tags for sup and sub script
+                                output += parse_str_or_lst(v)
+                                output += '</sup>'
+                            elif k == 'sis1:AlaviiteTeksti' or k == 'sis1:AlaindeksiTeksti':
+                                output += '<sub>'
+                                output += parse_str_or_lst(v)
+                                output += '</sub>'
+                            elif k == 'sis:YleinenViite':
+                                output += parse_links_dict_or_list(v)
+                            elif k == 'sis:AlaviiteKooste':
+                                output += parse_formatted_text(v)
+                            else:
+                                import pdb;pdb.set_trace()
+                                raise IncompleteDecisionTreeException
+                    elif isinstance(section, list):
+                        for item in section:
+                            output += parse_formatted_text(item)
+                    elif section is None:
+                        return output # Don't want to add new lines to the output
+                    else:
+                        raise IncompleteDecisionTreeException
+                    output += "\n\n"
+                    return output
 
-    markdown_parts = []
-    output = ""
+                # Recursively parse out markdown from nested xml
+                if isinstance(xml, str):
+                    output = xml
+                elif 'asi:PerusteluLuku' in xml.keys():  # Perusteluluvuissa useita osioita --> lista
+                    output = parse_sub_title(xml, level)
+                    for section in xml['asi:PerusteluLuku']:
+                        parse_asi_or_sis(section, level+1)
+                elif 'sis:KappaleKooste' in xml.keys():  # Kappalekoosteissa tekstikappaleita
+                    output = parse_sub_title(xml, level)
+                    if isinstance(xml['sis:KappaleKooste'], list):
+                        for section in xml['sis:KappaleKooste']:
+                            output += parse_formatted_text(section)
+                elif 'sis:LukuOtsikko' in xml.keys():
+                    output = parse_sub_title(xml, level)
+                else:
+                    raise IncompleteDecisionTreeException
+                return output
 
-    if type(data) == dict:
-        data = [data]
+            bp_brief_out = bp_id['met:Nimeke']['met1:NimekeTeksti'] + "\n\n"
+            if bp_brief['sis1:OtsikkoTeksti'] is not None:
+                bp_brief_out += "#" + bp_brief['sis1:OtsikkoTeksti']
+            for section in bp_brief['sis:KappaleKooste']:
+                if isinstance(section, dict):
+                    section = section['#text']
+                bp_brief_out += "\n\n" + section
+            if isinstance(bp_full, list):
+                bp_full_out = ""
+                for section in bp_full:
+                    bp_full_out += parse_asi_or_sis(section)
+            else:
+                bp_full_out = parse_asi_or_sis(bp_full)
 
-    for section in data:
-        if type(section) == dict:
-            if 'asi:PerusteluLuku' in section.keys():
-                output += parse_law_text_to_markdown(section['asi:PerusteluLuku'])
-        try:
-            otsikko = section.get('sis:LukuOtsikko', {})
-        except:
-            import pdb;pdb.set_trace()
-        nro = otsikko.get('sis1:OtsikkoNroTeksti', '').strip()
-        teksti = otsikko.get('sis1:OtsikkoTeksti', '').strip()
-        if nro or teksti:
-            markdown_parts.append(f"# {nro} {teksti}".strip())
+            return bp_brief_out, bp_full_out
 
-        perustelut = section.get('asi:PerusteluLuku', [])
-        kappaleet = section.get('sis:KappaleKooste', '')
+        xml = xml['ns11:Siirto']
+        if 'SiirtoAsiakirja' in xml.keys():
+            xml = xml['SiirtoAsiakirja']
+            bp_identifiointiosa = xml['RakenneAsiakirja']['he:HallituksenEsitys']['asi:IdentifiointiOsa']
+            bp_brief = xml['RakenneAsiakirja']['he:HallituksenEsitys']['asi:SisaltoKuvaus']
+            bp_full = xml['RakenneAsiakirja']['he:HallituksenEsitys']['asi:PerusteluOsa']
+            bp_brief, bp_full = parse_with_identifiointiosa(bp_identifiointiosa, bp_brief, bp_full)
+        elif 'ns:SiirtoAsiakirja' in xml.keys():
+            xml = xml['ns:SiirtoAsiakirja']
+            bp_identifiointiosa = xml['ns:RakenneAsiakirja']['he:HallituksenEsitys']['asi:IdentifiointiOsa']
+            bp_brief = xml['ns:RakenneAsiakirja']['he:HallituksenEsitys']['asi:SisaltoKuvaus']
+            bp_full = xml['ns:RakenneAsiakirja']['he:HallituksenEsitys']['asi:PerusteluOsa']
+            bp_brief, bp_full = parse_with_identifiointiosa(bp_identifiointiosa, bp_brief, bp_full)
+        elif 'ns11:SiirtoMetatieto' in xml.keys():
+            xml = xml['ns11:SiirtoMetatieto']
+            bp_full = ""
+            if 'jme:JulkaisuMetatieto' in xml.keys():
+                bp_brief = xml['jme:JulkaisuMetatieto']['asi:IdentifiointiOsa']['met:Nimeke']['met1:NimekeTeksti']
+            elif 'ns:JulkaisuMetatieto' in xml.keys():
+                bp_brief = xml['ns:JulkaisuMetatieto']['ns:IdentifiointiOsa']['ns:Nimeke']['ns:NimekeTeksti']['#text']
+            else:
+                raise IncompleteDecisionTreeException
+        else:
+            raise IncompleteDecisionTreeException        
+        
 
-        if perustelut:
-            markdown_parts.append(process_perusteluluku(perustelut))
-        elif kappaleet:
-            markdown_parts.append(process_kappale_kooste(kappaleet))
+        return bp_brief, bp_full
 
-    output += "\n\n".join(markdown_parts).strip()
-
-    return output
+    bp_brief, bp_full = find_relevant_xml(data)
+    
+    return bp_brief, bp_full
 
 
 if __name__ == '__main__':
