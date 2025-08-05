@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS mp_committee_memberships (
 -- speeches
 CREATE TABLE IF NOT EXISTS speeches (
     id INT PRIMARY KEY NOT NULL,
-    mp_id INT,
+    mp_id INT NOT NULL REFERENCES members_of_parliament(id),
     parliament_id VARCHAR (20) NOT NULL,
     start_time TIMESTAMP WITH TIME ZONE NOT NULL,
     speech TEXT NOT NULL
