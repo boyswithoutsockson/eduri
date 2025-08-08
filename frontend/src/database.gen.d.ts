@@ -5,83 +5,93 @@
 
 import type { ColumnType } from "kysely";
 
-export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
-  ? ColumnType<S, I | undefined, U>
-  : ColumnType<T, T | undefined, T>;
+export type Generated<T> =
+    T extends ColumnType<infer S, infer I, infer U>
+        ? ColumnType<S, I | undefined, U>
+        : ColumnType<T, T | undefined, T>;
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export type Vote = "absent" | "abstain" | "no" | "yes";
 
 export interface Ballots {
-  id: number;
-  minutes_url: string | null;
-  results_url: string | null;
-  session_item_title: string | null;
-  start_time: Timestamp | null;
-  title: string | null;
+    id: number;
+    minutes_url: string | null;
+    results_url: string | null;
+    session_item_title: string | null;
+    start_time: Timestamp | null;
+    title: string | null;
 }
 
 export interface Committees {
-  name: string;
+    name: string;
 }
 
 export interface Interests {
-  category: string | null;
-  id: Generated<number>;
-  interest: string | null;
-  mp_id: number | null;
+    category: string | null;
+    id: Generated<number>;
+    interest: string | null;
+    mp_id: number | null;
 }
 
 export interface MembersOfParliament {
-  constituency: string | null;
-  email: string | null;
-  first_name: string | null;
-  full_name: string | null;
-  id: number;
-  last_name: string | null;
-  minister: boolean | null;
-  occupation: string | null;
-  phone_number: string | null;
-  photo: string | null;
-  place_of_birth: string | null;
-  place_of_residence: string | null;
-  year_of_birth: number | null;
+    constituency: string | null;
+    email: string | null;
+    first_name: string | null;
+    full_name: string | null;
+    id: number;
+    last_name: string | null;
+    minister: boolean | null;
+    occupation: string | null;
+    phone_number: string | null;
+    photo: string | null;
+    place_of_birth: string | null;
+    place_of_residence: string | null;
+    year_of_birth: number | null;
 }
 
 export interface MpCommitteeMemberships {
-  committee_name: string;
-  end_date: Timestamp | null;
-  mp_id: number;
-  role: string;
-  start_date: Timestamp;
+    committee_name: string;
+    end_date: Timestamp | null;
+    mp_id: number;
+    role: string;
+    start_date: Timestamp;
 }
 
 export interface MpPartyMemberships {
-  end_date: Timestamp | null;
-  mp_id: number;
-  party_id: string;
-  start_date: Timestamp;
+    end_date: Timestamp | null;
+    mp_id: number;
+    party_id: string;
+    start_date: Timestamp;
 }
 
 export interface Parties {
-  id: string;
-  name: string | null;
+    id: string;
+    name: string | null;
 }
 
 export interface Votes {
-  ballot_id: number;
-  mp_id: number;
-  vote: Vote | null;
+    ballot_id: number;
+    mp_id: number;
+    vote: Vote | null;
+}
+
+export interface Speeches {
+    id: Generated<number>;
+    mp_id: number;
+    parliament_id: number;
+    start_time: Timestamp | null;
+    speech: string | null;
 }
 
 export interface DB {
-  ballots: Ballots;
-  committees: Committees;
-  interests: Interests;
-  members_of_parliament: MembersOfParliament;
-  mp_committee_memberships: MpCommitteeMemberships;
-  mp_party_memberships: MpPartyMemberships;
-  parties: Parties;
-  votes: Votes;
+    ballots: Ballots;
+    committees: Committees;
+    interests: Interests;
+    members_of_parliament: MembersOfParliament;
+    mp_committee_memberships: MpCommitteeMemberships;
+    mp_party_memberships: MpPartyMemberships;
+    parties: Parties;
+    votes: Votes;
+    speeches: Speeches;
 }

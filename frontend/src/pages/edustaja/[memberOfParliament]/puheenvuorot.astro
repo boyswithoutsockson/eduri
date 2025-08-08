@@ -14,21 +14,39 @@ export async function getStaticPaths() {
 
 const { mp } = Astro.props;
 
-// const speeches = mp
-//     ? await db
-//           .selectFrom("speeches")
-//           .where("interests.mp_id", "=", mp.id)
-//           .where("interests.category", "not in", [
-//               "Hallinto- ja luottamustehtävät yksityisissä yrityksissä, yhteisöissä sekä julkisyhteisöissä",
-//               "Valtion, kunnan ja muiden julkisyhteisöjen virat",
-//           ])
-//           .select(["interests.category", "interests.interest"])
-//           .execute()
-//     : [];
+const speeches = mp
+    ? await db
+          .selectFrom("speeches")
+          .where("speeches.mp_id", "=", mp.id)
+          .select(["id", "mp_id", "parliament_id", "start_time", "speech"])
+          .execute()
+    : [];
 ---
 
 <Layout mp={mp}>
     <section>
         <h2>Puheenvuorot</h2>
+        {
+            speeches.length > 0 ? (
+                <ul>
+                    {speeches.map((speech) => (
+                        <li>
+                            <p>
+                                <strong>Puheenvuoro ID:</strong> {speech.id}
+                            </p>
+                            <p>
+                                <strong>Aloitusaika:</strong>{" "}
+                                {speech.start_time}
+                            </p>
+                            <p>
+                                <strong>Puhe:</strong> {speech.speech}
+                            </p>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p>Tällä edustajalla ei ole puheenvuoroja.</p>
+            )
+        }
     </section>
 </Layout>
