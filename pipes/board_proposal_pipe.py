@@ -6,7 +6,7 @@ import xmltodict
 import sys
 from tqdm import tqdm
 import pandas as pd
-
+import json
 
 class IncompleteDecisionTreeException(Exception):
     # This exception is used in development to show where the 
@@ -56,12 +56,65 @@ def parse_law_text_to_markdown(data):
     def find_relevant_xml(xml):
         # There are varying structures for the xml files in the data
         # In this function we try and locate the relevant segment of the xml file and return it.
-        
+        def parse_table_to_markdown(table_dict):
+            def normalize_tgroups(table_dict):
+                """
+                Normalize tau:tgroup to always be a list of dictionaries, regardless of input structure.
+                This function modifies the input in place.
+                """
+                if isinstance(table_dict, dict):
+                    if "tau:tgroup" in table_dict:
+                        if isinstance(table_dict["tau:tgroup"], dict):
+                            # Single dict: wrap it in a list
+                            table_dict["tau:tgroup"] = [table_dict["tau:tgroup"]]
+                        elif isinstance(table_dict["tau:tgroup"], list):
+                            # Already a list: nothing to do
+                            pass
+                elif isinstance(table_dict, list):
+                    for item in table_dict:
+                        normalize_tgroups(item)
+
+            normalize_tgroups(table_dict)
+            rows = table_dict['tau:tgroup']['tau:tbody']['tau:row']
+            markdown_lines = []
+
+            for i, row in enumerate(rows):
+                entries = row['tau:entry']
+                parsed_row = []
+
+                for entry in entries:
+                    content = entry.get('sis:KappaleKooste', '')
+                    if isinstance(content, list):
+                        # Join multiple lines with a space (you can also use "\n" if you want multiline)
+                        cell = ' '.join(content)
+                    else:
+                        cell = content
+                    if cell is None:
+                        cell = ""
+                    else:
+                        cell = cell.strip()
+                    parsed_row.append(cell)
+
+                # Convert row into Markdown row
+                markdown_row = '| ' + ' | '.join(parsed_row) + ' |'
+                markdown_lines.append(markdown_row)
+
+                # After header row, add a separator
+                if i == 0:
+                    separator = '| ' + ' | '.join(['-' * len(col) for col in parsed_row]) + ' |'
+                    markdown_lines.append(separator)
+
+            return '\n'.join(markdown_lines)
+
         def parse_with_identifiointiosa(bp_id, bp_brief, bp_full, level=1):
             def parse_asi_or_sis(xml, level=1):
                 def parse_sub_title(xml, level):
                     output = "#" * level
-                    if 'sis1:LukuOtsikko' in xml.keys():
+                    if isinstance(xml, str):
+                        output += xml
+                    elif isinstance(xml, list):
+                        output += "; ".join(xml)
+                    elif 'sis1:LukuOtsikko' in xml.keys():
                         output += xml['sis1:LukuOtsikko']
                     elif 'sis1:OtsikkoTeksti' in xml.keys():
                         output += xml['sis1:OtsikkoTeksti']
@@ -131,7 +184,6 @@ def parse_law_text_to_markdown(data):
                             elif k == 'sis:AlaviiteKooste':
                                 output += parse_formatted_text(v)
                             else:
-                                import pdb;pdb.set_trace()
                                 raise IncompleteDecisionTreeException
                     elif isinstance(section, list):
                         for item in section:
@@ -143,20 +195,38 @@ def parse_law_text_to_markdown(data):
                     output += "\n\n"
                     return output
 
+                output = ""
                 # Recursively parse out markdown from nested xml
                 if isinstance(xml, str):
                     output = xml
-                elif 'asi:PerusteluLuku' in xml.keys():  # Perusteluluvuissa useita osioita --> lista
-                    output = parse_sub_title(xml, level)
-                    for section in xml['asi:PerusteluLuku']:
-                        parse_asi_or_sis(section, level+1)
-                elif 'sis:KappaleKooste' in xml.keys():  # Kappalekoosteissa tekstikappaleita
-                    output = parse_sub_title(xml, level)
-                    if isinstance(xml['sis:KappaleKooste'], list):
-                        for section in xml['sis:KappaleKooste']:
-                            output += parse_formatted_text(section)
-                elif 'sis:LukuOtsikko' in xml.keys():
-                    output = parse_sub_title(xml, level)
+                elif isinstance(xml, dict):
+                    for k, v in xml.items():
+                        if k == 'asi:PerusteluLuku':  # Perusteluluvuissa useita osioita --> lista
+                            for section in v:
+                                parse_asi_or_sis(section, level+1)
+                        elif k in [
+                            'sis:KappaleKooste',
+                            'sis:SisennettyKappaleKooste']:  # Kappalekoosteissa tekstikappaleita
+                            if isinstance(v, list):
+                                for section in v:
+                                    output += parse_formatted_text(section)
+                            elif isinstance(v, str) or isinstance(v, dict):
+                                output += parse_formatted_text(v)
+                            else:
+                                raise IncompleteDecisionTreeException
+                        elif k in [
+                            'sis1:OtsikkoTeksti',
+                            'sis1:LukuOtsikko',
+                            'sis:LukuOtsikko',
+                            'sis1:ValiotsikkoTeksti']:
+                            parse_sub_title(v, level=level+1)
+                        elif k == 'tau:table':
+                            output += parse_table_to_markdown(v)
+                        elif k in ['@asi1:perusteluLuokitusKoodi']:
+                            pass
+                        else:
+                            import pdb; pdb.set_trace()
+                            raise IncompleteDecisionTreeException
                 else:
                     raise IncompleteDecisionTreeException
                 return output
@@ -179,33 +249,35 @@ def parse_law_text_to_markdown(data):
 
         xml = xml['ns11:Siirto']
         if 'SiirtoAsiakirja' in xml.keys():
-            xml = xml['SiirtoAsiakirja']
-            bp_identifiointiosa = xml['RakenneAsiakirja']['he:HallituksenEsitys']['asi:IdentifiointiOsa']
-            bp_brief = xml['RakenneAsiakirja']['he:HallituksenEsitys']['asi:SisaltoKuvaus']
-            bp_full = xml['RakenneAsiakirja']['he:HallituksenEsitys']['asi:PerusteluOsa']
+            xml_ = xml['SiirtoAsiakirja']
+            bp_identifiointiosa = xml_['RakenneAsiakirja']['he:HallituksenEsitys']['asi:IdentifiointiOsa']
+            bp_brief = xml_['RakenneAsiakirja']['he:HallituksenEsitys']['asi:SisaltoKuvaus']
+            bp_full = xml_['RakenneAsiakirja']['he:HallituksenEsitys']['asi:PerusteluOsa']
             bp_brief, bp_full = parse_with_identifiointiosa(bp_identifiointiosa, bp_brief, bp_full)
         elif 'ns:SiirtoAsiakirja' in xml.keys():
-            xml = xml['ns:SiirtoAsiakirja']
-            bp_identifiointiosa = xml['ns:RakenneAsiakirja']['he:HallituksenEsitys']['asi:IdentifiointiOsa']
-            bp_brief = xml['ns:RakenneAsiakirja']['he:HallituksenEsitys']['asi:SisaltoKuvaus']
-            bp_full = xml['ns:RakenneAsiakirja']['he:HallituksenEsitys']['asi:PerusteluOsa']
+            xml_ = xml['ns:SiirtoAsiakirja']
+            bp_identifiointiosa = xml_['ns:RakenneAsiakirja']['he:HallituksenEsitys']['asi:IdentifiointiOsa']
+            bp_brief = xml_['ns:RakenneAsiakirja']['he:HallituksenEsitys']['asi:SisaltoKuvaus']
+            bp_full = xml_['ns:RakenneAsiakirja']['he:HallituksenEsitys']['asi:PerusteluOsa']
             bp_brief, bp_full = parse_with_identifiointiosa(bp_identifiointiosa, bp_brief, bp_full)
         elif 'ns11:SiirtoMetatieto' in xml.keys():
-            xml = xml['ns11:SiirtoMetatieto']
+            xml_ = xml['ns11:SiirtoMetatieto']
             bp_full = ""
-            if 'jme:JulkaisuMetatieto' in xml.keys():
-                bp_brief = xml['jme:JulkaisuMetatieto']['asi:IdentifiointiOsa']['met:Nimeke']['met1:NimekeTeksti']
-            elif 'ns:JulkaisuMetatieto' in xml.keys():
-                bp_brief = xml['ns:JulkaisuMetatieto']['ns:IdentifiointiOsa']['ns:Nimeke']['ns:NimekeTeksti']['#text']
+            if 'jme:JulkaisuMetatieto' in xml_.keys():
+                bp_brief = xml_['jme:JulkaisuMetatieto']['asi:IdentifiointiOsa']['met:Nimeke']['met1:NimekeTeksti']
+            elif 'ns:JulkaisuMetatieto' in xml_.keys():
+                bp_brief = xml_['ns:JulkaisuMetatieto']['ns:IdentifiointiOsa']['ns:Nimeke']['ns:NimekeTeksti']['#text']
             else:
                 raise IncompleteDecisionTreeException
         else:
             raise IncompleteDecisionTreeException        
         
-
         return bp_brief, bp_full
 
     bp_brief, bp_full = find_relevant_xml(data)
+
+    if bp_full == "#PERUSTELUT\n\n":
+        import pdb;pdb.set_trace()
     
     return bp_brief, bp_full
 
