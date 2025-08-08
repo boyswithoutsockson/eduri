@@ -5,9 +5,11 @@ import { getSpeechByID } from "~src/pages/edustaja/[memberOfParliament]/_utils";
 
 const { mpID, speechID } = Astro.params;
 /** List all items of data that need a page generated for them */
+import type { Speech } from "~src/types"; // Adjust the import path as needed
+
 export async function getStaticPaths() {
-    const data = await getSpeechByID(mpID, speechID);
-    return data.map((speech) => ({
+    const data: Speech[] = await getSpeechByID(mpID, speechID);
+    return data.map((speech: Speech) => ({
         params: { speech: speech.parliament_id || "" },
     }));
 }
