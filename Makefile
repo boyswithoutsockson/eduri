@@ -76,8 +76,14 @@ data/preprocessed/committees.csv: pipes/committee_pipe.py $(DATA_DUMP)
 data/preprocessed/mp_committee_memberships.csv: pipes/mp_committee_membership_pipe.py $(DATA_DUMP)
 	uv run pipes/mp_committee_membership_pipe.py --preprocess-data
 
+<<<<<<< HEAD
 data/preprocessed/speeches.csv: pipes/speech_pipe.py $(DATA_DUMP)
 	uv run pipes/speech_pipe.py --preprocess-data
+=======
+data/preprocessed/board_proposal.csv: pipes/board_proposal_pipe.py $(DATA_DUMP)
+	uv run pipes/board_proposal_pipe.py --preprocess-data
+
+>>>>>>> a9db081 (WIP2)
 
 #################################
 # Scripts for database creation #
@@ -97,7 +103,11 @@ PREPROCESSED_FILES = data/preprocessed/members_of_parliament.csv \
     data/preprocessed/mp_party_memberships.csv \
     data/preprocessed/committees.csv \
     data/preprocessed/mp_committee_memberships.csv \
+<<<<<<< HEAD
 	data/preprocessed/speeches.csv
+=======
+	data/preprocessed/board_proposal.csv
+>>>>>>> a9db081 (WIP2)
 
 DATABASE = data/.inserted
 $(DATABASE): $(PREPROCESSED_FILES)
@@ -113,7 +123,11 @@ $(DATABASE): $(PREPROCESSED_FILES)
 		pipes/mp_party_membership_pipe.py \
 		pipes/committee_pipe.py \
 		pipes/mp_committee_membership_pipe.py \
+<<<<<<< HEAD
 		pipes/speech_pipe.py;
+=======
+		pipes/board_proposal_pipe.py;
+>>>>>>> a9db081 (WIP2)
 	do \
 		
 		echo "Importing data with $$script"; \
