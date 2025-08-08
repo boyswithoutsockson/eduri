@@ -76,6 +76,8 @@ data/preprocessed/committees.csv: pipes/committee_pipe.py $(DATA_DUMP)
 data/preprocessed/mp_committee_memberships.csv: pipes/mp_committee_membership_pipe.py $(DATA_DUMP)
 	uv run pipes/mp_committee_membership_pipe.py --preprocess-data
 
+data/preprocessed/speeches.csv: pipes/speech_pipe.py $(DATA_DUMP)
+	uv run pipes/speech_pipe.py --preprocess-data
 
 #################################
 # Scripts for database creation #
@@ -94,7 +96,8 @@ PREPROCESSED_FILES = data/preprocessed/members_of_parliament.csv \
     data/preprocessed/parties.csv \
     data/preprocessed/mp_party_memberships.csv \
     data/preprocessed/committees.csv \
-    data/preprocessed/mp_committee_memberships.csv
+    data/preprocessed/mp_committee_memberships.csv \
+	data/preprocessed/speeches.csv
 
 DATABASE = data/.inserted
 $(DATABASE): $(PREPROCESSED_FILES)
@@ -109,8 +112,10 @@ $(DATABASE): $(PREPROCESSED_FILES)
 		pipes/parties_pipe.py \
 		pipes/mp_party_membership_pipe.py \
 		pipes/committee_pipe.py \
-		pipes/mp_committee_membership_pipe.py;
+		pipes/mp_committee_membership_pipe.py \
+		pipes/speech_pipe.py;
 	do \
+		
 		echo "Importing data with $$script"; \
 		time uv run $$script --import-data; \
 	done'
