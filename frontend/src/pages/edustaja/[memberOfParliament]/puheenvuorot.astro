@@ -32,11 +32,12 @@ const speeches = mp
                     {speeches.map((speech) => (
                         <li>
                             <p>
-                                <strong>Puheenvuoro ID:</strong> {speech.id}
+                                <strong>Parliament ID:</strong>{" "}
+                                {speech.parliament_id}
                             </p>
                             <p>
                                 <strong>Aloitusaika:</strong>{" "}
-                                {speech.start_time}
+                                {speech.start_time?.toLocaleDateString()}
                             </p>
                             <p>
                                 <strong>Puhe:</strong> {speech.speech}
