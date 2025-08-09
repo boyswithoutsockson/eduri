@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS committee_reports (
 );
 
 -- committee_budget_reports
-CREATE TABLE IF NOT EXISTS committee_reports (
+CREATE TABLE IF NOT EXISTS committee_budget_reports (
     id VARCHAR(20) PRIMARY KEY NOT NULL,
     proposal_id VARCHAR(20) NOT NULL,
     committee_name VARCHAR(200) NOT NULL REFERENCES committees(name)
