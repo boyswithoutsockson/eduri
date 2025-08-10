@@ -104,5 +104,10 @@ CREATE TABLE IF NOT EXISTS speeches (
     mp_id INT NOT NULL REFERENCES members_of_parliament(id),
     parliament_id VARCHAR (20) NOT NULL,
     start_time TIMESTAMP WITH TIME ZONE NOT NULL,
-    speech TEXT NOT NULL
+    speech TEXT NOT NULL);
+
+CREATE TABLE IF NOT EXISTS board_proposals (
+    parliament_id VARCHAR(50),
+    brief TEXT,
+    reasoning TEXT
 );
