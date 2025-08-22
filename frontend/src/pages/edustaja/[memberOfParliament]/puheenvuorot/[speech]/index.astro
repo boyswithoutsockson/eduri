@@ -1,0 +1,52 @@
+---
+import { db } from "~src/database";
+import Layout from "~src/pages/edustaja/[memberOfParliament]/_layout.astro";
+import {
+    getAllMps,
+    getAllSpeeches,
+} from "~src/pages/edustaja/[memberOfParliament]/_utils";
+
+export async function getStaticPaths() {
+    const mps = await getAllMps();
+    const speeches = await getAllSpeeches();
+    return mps.flatMap((mp) =>
+        speeches
+            .filter((speech) => speech.mp_id === mp.id)
+            .map((speech) => ({
+                params: {
+                    memberOfParliament: mp.full_name || "",
+                    speech: speech.id?.toString() || "",
+                },
+                props: { mp, speech },
+            }))
+    );
+}
+
+const { speech } = Astro.params;
+const { mp } = Astro.props;
+
+const [speechData] = speech
+    ? await db
+          .selectFrom("speeches")
+          .where("speeches.id", "=", Number(speech))
+          .select(["id", "mp_id", "parliament_id", "start_time", "speech"])
+          .execute()
+    : [];
+---
+
+<Layout mp={mp}>
+    <section>
+        <p>
+            <strong>Parliament ID:</strong>{" "}
+            {speechData?.parliament_id}
+        </p>
+        <p>
+            <strong>Aloitusaika:</strong>{" "}
+            {speechData?.start_time?.toLocaleDateString?.()}
+        </p>
+        <p>
+            <strong>Puhe:</strong>
+            {speechData?.speech}
+        </p>
+    </section>
+</Layout>

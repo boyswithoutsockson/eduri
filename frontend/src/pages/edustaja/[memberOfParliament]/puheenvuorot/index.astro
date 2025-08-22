@@ -42,6 +42,13 @@ const speeches = mp
                             <p>
                                 <strong>Puhe:</strong> {speech.speech}
                             </p>
+                            <p>
+                                <a
+                                    href={`/edustaja/${encodeURIComponent(mp.full_name ?? "")}/puheenvuorot/${speech.id}`}
+                                >
+                                    Read more
+                                </a>
+                            </p>
                         </li>
                     ))}
                 </ul>
