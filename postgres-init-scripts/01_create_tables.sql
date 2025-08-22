@@ -107,10 +107,19 @@ CREATE TABLE IF NOT EXISTS speeches (
     speech TEXT NOT NULL
 );
 
+-- government proposals
+CREATE TABLE IF NOT EXISTS government_proposals (
+    id VARCHAR(20) PRIMARY KEY NOT NULL,
+    title TEXT,
+    proposal_text TEXT,
+    reasoning TEXT,
+    law_changes TEXT
+);
+
 -- committee_reports
 CREATE TABLE IF NOT EXISTS committee_reports (
     id VARCHAR(20) PRIMARY KEY NOT NULL,
-    proposal_id VARCHAR(20) NOT NULL,
+    reference_id VARCHAR(20) NOT NULL,
     committee_name VARCHAR(200) NOT NULL REFERENCES committees(name),
     proposal_summary TEXT NOT NULL,
     opinion TEXT NOT NULL,
@@ -121,7 +130,7 @@ CREATE TABLE IF NOT EXISTS committee_reports (
 -- committee_budget_reports
 CREATE TABLE IF NOT EXISTS committee_budget_reports (
     id VARCHAR(20) PRIMARY KEY NOT NULL,
-    proposal_id VARCHAR(20) NOT NULL,
+    reference_id VARCHAR(20) NOT NULL,
     committee_name VARCHAR(200) NOT NULL REFERENCES committees(name)
 );
 
@@ -131,4 +140,5 @@ CREATE TABLE IF NOT EXISTS signatures (
     mp_id INT REFERENCES members_of_parliament(id),
     PRIMARY KEY(committee_report_id, mp_id)
 );
+
 
