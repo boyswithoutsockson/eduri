@@ -8,27 +8,12 @@ csv_path = 'data/preprocessed/mp_party_memberships.csv'
 
 
 def preprocess_data():
-    # First get active MPs
-    conn = psycopg2.connect(database="postgres",
-                            host="db",
-                            user="postgres",
-                            password="postgres",
-                            port="5432")
-    cursor = conn.cursor()
-    cursor.execute("""SELECT id FROM members_of_parliament;""")
-    active_mps = [mp[0] for mp in cursor.fetchall()]
-    cursor.close()
-    conn.close()
-
     rows = []
     with open(os.path.join("data", "raw", "MemberOfParliament.tsv")) as f:
         mp_data = [row for row in csv.reader(f, delimiter="\t", quotechar='"')]
 
     for mp in mp_data[1:]:
         mp_id = int(mp[0])
-
-        if mp_id not in active_mps:
-            continue
 
         xml = mp[7]
         root = etree.fromstring(xml)

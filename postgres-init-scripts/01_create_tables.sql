@@ -106,3 +106,29 @@ CREATE TABLE IF NOT EXISTS speeches (
     start_time TIMESTAMP WITH TIME ZONE NOT NULL,
     speech TEXT NOT NULL
 );
+
+-- committee_reports
+CREATE TABLE IF NOT EXISTS committee_reports (
+    id VARCHAR(20) PRIMARY KEY NOT NULL,
+    proposal_id VARCHAR(20) NOT NULL,
+    committee_name VARCHAR(200) NOT NULL REFERENCES committees(name),
+    proposal_summary TEXT NOT NULL,
+    opinion TEXT NOT NULL,
+    reasoning TEXT,
+    law_changes TEXT
+);
+
+-- committee_budget_reports
+CREATE TABLE IF NOT EXISTS committee_budget_reports (
+    id VARCHAR(20) PRIMARY KEY NOT NULL,
+    proposal_id VARCHAR(20) NOT NULL,
+    committee_name VARCHAR(200) NOT NULL REFERENCES committees(name)
+);
+
+-- signatures
+CREATE TABLE IF NOT EXISTS signatures (
+    committee_report_id VARCHAR(20) REFERENCES committee_reports(id),
+    mp_id INT REFERENCES members_of_parliament(id),
+    PRIMARY KEY(committee_report_id, mp_id)
+);
+
