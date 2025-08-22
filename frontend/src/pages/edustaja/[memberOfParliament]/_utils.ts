@@ -20,5 +20,11 @@ export async function getAllMps() {
         .execute();
 }
 
+export async function getAllSpeeches() {
+    return db.selectFrom("speeches").selectAll().execute();
+}
+
 /** Common type for MPs in all `/edustaja` subpages */
 export type MP = Awaited<ReturnType<typeof getAllMps>>[0];
+
+export type SPEECH = Awaited<ReturnType<typeof getAllSpeeches>>[0];
