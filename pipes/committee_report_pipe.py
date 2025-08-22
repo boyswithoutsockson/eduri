@@ -7,6 +7,7 @@ from io import StringIO
 # Paths
 tsv_path = os.path.join("data", "raw", "vaski", "CommitteeReport_fi.tsv")
 csv_path = os.path.join("data", "preprocessed", "committee_reports.csv")
+signatures_path = os.path.join("data", "preprocessed", "signatures.csv")
 
 # Namespaces
 NS = {
@@ -40,6 +41,8 @@ def preprocess_data():
     df_tsv = pd.read_csv(tsv_path, sep="\t")
 
     records = []
+    sig_records = []
+
     for i, xml_str in enumerate(df_tsv.get("XmlData", []), start=1):
         if not isinstance(xml_str, str) or not xml_str.strip():
             continue
@@ -89,10 +92,8 @@ def preprocess_data():
         opinion = "\n\n".join(p for p in op_parts if p)
 
         # --- reasoning (asi:PerusteluOsa, any subtype) ---
-        # Some docs have @asi1:perusteluLuokitusKoodi, some don't. Grab all PerusteluOsa trees.
         reason_parts = []
         for po in mietinto.findall(".//asi:PerusteluOsa", namespaces=NS):
-            # Include section headings and paragraphs
             reason_parts += _all_txt(po, ".//sis1:OtsikkoTeksti")
             reason_parts += _all_txt(po, ".//sis1:ValiotsikkoTeksti")
             reason_parts += _all_txt(po, ".//sis:KappaleKooste")
@@ -155,6 +156,12 @@ def preprocess_data():
                 law_md_blocks.append(law_md)
         law_changes = "\n\n---\n\n".join(law_md_blocks)
 
+        # --- signatures (vsk:OsallistujaOsa -> org:Henkilo@met1:muuTunnus) ---
+        for h in mietinto.findall(".//vsk:OsallistujaOsa//org:Henkilo", namespaces=NS):
+            mp_id = h.get(f"{{{NS['met1']}}}muuTunnus", "").strip()
+            if mp_id:
+                sig_records.append({"committee_report_id": eid, "mp_id": mp_id})
+
         records.append({
             "id": eid,
             "proposal_id": proposal_id,
@@ -165,6 +172,7 @@ def preprocess_data():
             "law_changes": law_changes,
         })
 
+    # Write CSVs
     df_out = pd.DataFrame(records, columns=[
         "id",
         "proposal_id",
@@ -176,6 +184,10 @@ def preprocess_data():
     ])
     df_out.to_csv(csv_path, index=False, encoding="utf-8")
 
+    pd.DataFrame(sig_records, columns=["committee_report_id", "mp_id"]).to_csv(
+        signatures_path, index=False, encoding="utf-8"
+    )
+
 def import_data():
     conn = psycopg2.connect(
         database="postgres",
@@ -185,6 +197,7 @@ def import_data():
         port="5432"
     )
     cur = conn.cursor()
+    # committee_reports
     with open(csv_path, "r", encoding="utf-8") as f:
         cur.copy_expert(
             """
@@ -193,6 +206,16 @@ def import_data():
             """,
             f
         )
+    # signatures
+    with open(signatures_path, "r", encoding="utf-8") as f:
+        cur.copy_expert(
+            """
+            COPY signatures(committee_report_id, mp_id)
+            FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
+            """,
+            f
+        )
+
     conn.commit()
     cur.close()
     conn.close()
@@ -200,8 +223,8 @@ def import_data():
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--preprocess-data", action="store_true", help="Parse TSV and write CSV")
-    parser.add_argument("--import-data", action="store_true", help="Import CSV into Postgres")
+    parser.add_argument("--preprocess-data", action="store_true", help="Parse TSV and write CSVs")
+    parser.add_argument("--import-data", action="store_true", help="Import CSVs into Postgres")
     args = parser.parse_args()
 
     if args.preprocess_data:
