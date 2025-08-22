@@ -1,11 +1,9 @@
 ---
-// we disable this rule as our style declaration has automagically applied
-// styles from live-filter
-/* eslint-disable astro/no-unused-css-selector */
 import Layout from "~src/layouts/Layout.astro";
 
 import { db } from "~src/database";
-import MemberListItem from "~src/components/MemberListItem.astro";
+import { Search } from "~src/components/MPSearch";
+import { mpWithPhotoUrl } from "~src/utils";
 
 const data = await db
     .selectFrom("members_of_parliament")
@@ -14,14 +12,18 @@ const data = await db
         "members_of_parliament.id",
         "mp_party_memberships.mp_id"
     )
+    .where("mp_party_memberships.end_date", "is", null)
     .select([
         "members_of_parliament.id",
-        "members_of_parliament.full_name",
+        "members_of_parliament.first_name",
+        "members_of_parliament.last_name",
         "members_of_parliament.photo",
         "mp_party_memberships.party_id",
     ])
-    .distinctOn("members_of_parliament.id")
+    .orderBy("members_of_parliament.last_name")
     .execute();
+
+const mpsWithPhotoUrls = await mpWithPhotoUrl(data);
 ---
 
 <Layout>
@@ -29,40 +31,29 @@ const data = await db
         <h1>Eduri</h1>
         <p>Tähän sit kontsaa</p>
 
-        <live-filter case="insensitive">
-            <input
-                aria-controls="list"
-                aria-label="Hae kansanedustajista..."
-                placeholder="Hae kansanedustajista..."
-                type="search"
-            />
-            <ul aria-live="polite" id="list">
-                {
-                    data.map((mp) => (
-                        <li>
-                            <MemberListItem mp={mp} />
-                        </li>
-                    ))
-                }
-            </ul>
-        </live-filter>
+        <Search client:load initial={mpsWithPhotoUrls} />
     </main>
 </Layout>
 
-<script>
-    // as web components rely on DOM APIs, we need to lazily load this script
-    // only in client and not during rendering.
-    import "@daviddarnes/live-filter";
-</script>
-
-<style>
-    ul {
+<style is:global>
+    article {
+        display: flex;
+        flex-direction: row;
+        gap: var(--pico-block-spacing-horizontal);
+    }
+    .missing {
+        height: 150px;
+        width: 100px;
+        background-color: #ccc;
+    }
+    ol {
         padding-inline-start: unset;
     }
     li {
         list-style: none;
     }
-    [data-live-filter-match="false"] {
-        display: none;
+    img {
+        height: revert-layer;
+        object-fit: cover;
     }
 </style>
