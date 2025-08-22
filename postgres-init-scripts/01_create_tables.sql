@@ -124,3 +124,11 @@ CREATE TABLE IF NOT EXISTS committee_budget_reports (
     proposal_id VARCHAR(20) NOT NULL,
     committee_name VARCHAR(200) NOT NULL REFERENCES committees(name)
 );
+
+-- signatures
+CREATE TABLE IF NOT EXISTS signatures (
+    committee_report_id VARCHAR(20) REFERENCES committee_reports(id),
+    mp_id INT REFERENCES members_of_parliament(id),
+    PRIMARY KEY(committee_report_id, mp_id)
+);
+
