@@ -52,6 +52,11 @@ clean: ## deletes all raw data assets
 # Scripts for data preprocessing #
 ##################################
 
+VASKI_DATA = data/raw/vaski/.parsed
+$(VASKI_DATA): pipes/vaski_parser.py $(DATA_DUMP)
+	@touch $@
+	uv run pipes/vaski_parser.py
+
 data/preprocessed/members_of_parliament.csv: pipes/mp_pipe.py $(DATA_DUMP) $(MP_PHOTOS)
 	uv run pipes/mp_pipe.py --preprocess-data
 
@@ -93,7 +98,8 @@ nuke: ## resets all data in the database
 	PGPASSWORD=postgres psql -q -U postgres -h db postgres < postgres-init-scripts/01_create_tables.sql
 	rm -f data/.inserted
 
-PREPROCESSED_FILES = data/preprocessed/members_of_parliament.csv \
+PREPROCESSED_FILES = $(VASKI_DATA) \
+	data/preprocessed/members_of_parliament.csv \
     data/preprocessed/interests.csv \
     data/preprocessed/ballots.csv \
     data/preprocessed/votes.csv \
