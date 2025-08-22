@@ -131,3 +131,4 @@ CREATE TABLE IF NOT EXISTS signatures (
     mp_id INT REFERENCES members_of_parliament(id),
     PRIMARY KEY(committee_report_id, mp_id)
 );
+
