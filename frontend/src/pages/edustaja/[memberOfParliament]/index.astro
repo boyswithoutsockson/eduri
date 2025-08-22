@@ -10,7 +10,7 @@ import { getAllMps } from "~src/pages/edustaja/[memberOfParliament]/_utils";
 export async function getStaticPaths() {
     const data = await getAllMps();
     return data.map((mp) => ({
-        params: { memberOfParliament: mp.full_name || "" },
+        params: { memberOfParliament: `${mp.first_name}+${mp.last_name}` },
         props: { mp },
     }));
 }
