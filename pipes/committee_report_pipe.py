@@ -68,8 +68,8 @@ def preprocess_data():
                 yr = year if "vp" in year else f"{year} vp"
                 eid = f"{typ} {num}/{yr}"
 
-        # --- proposal_id ---
-        proposal_id = _txt(mietinto.find(".//asi:IdentifiointiOsa/asi:Vireilletulo/met1:EduskuntaTunnus", namespaces=NS))
+        # --- reference_id ---
+        reference_id = _txt(mietinto.find(".//asi:IdentifiointiOsa/asi:Vireilletulo/met1:EduskuntaTunnus", namespaces=NS))
 
         # --- committee_name ---
         node = mietinto.find(".//asi:IdentifiointiOsa/met:Toimija[@met1:rooliKoodi='Laatija']/met1:YhteisoTeksti", namespaces=NS)
@@ -164,7 +164,7 @@ def preprocess_data():
 
         records.append({
             "id": eid,
-            "proposal_id": proposal_id,
+            "reference_id": reference_id,
             "committee_name": committee_name,
             "proposal_summary": proposal_summary,
             "opinion": opinion,
@@ -175,7 +175,7 @@ def preprocess_data():
     # Write CSVs
     df_out = pd.DataFrame(records, columns=[
         "id",
-        "proposal_id",
+        "reference_id",
         "committee_name",
         "proposal_summary",
         "opinion",
@@ -215,7 +215,7 @@ def import_data():
     with open(csv_path, "r", encoding="utf-8") as f:
         cur.copy_expert(
             """
-            COPY committee_reports(id, proposal_id, committee_name, proposal_summary, opinion, reasoning, law_changes)
+            COPY committee_reports(id, reference_id, committee_name, proposal_summary, opinion, reasoning, law_changes)
             FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
             """,
             f

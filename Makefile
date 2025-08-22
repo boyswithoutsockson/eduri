@@ -83,6 +83,9 @@ data/preprocessed/mp_committee_memberships.csv: pipes/mp_committee_membership_pi
 
 data/preprocessed/speeches.csv: pipes/speech_pipe.py $(DATA_DUMP)
 	uv run pipes/speech_pipe.py --preprocess-data
+
+data/preprocessed/government_proposals.csv: pipes/government_proposal_pipe.py $(DATA_DUMP)
+	uv run pipes/government_proposal_pipe.py --preprocess-data
   
 data/preprocessed/committee_reports.csv: pipes/committee_report_pipe.py $(DATA_DUMP)
 	uv run pipes/committee_report_pipe.py --preprocess-data
@@ -108,6 +111,7 @@ PREPROCESSED_FILES = $(VASKI_DATA) \
     data/preprocessed/committees.csv \
     data/preprocessed/mp_committee_memberships.csv \
     data/preprocessed/speeches.csv \
+	data/preprocessed/government_proposals.csv \
     data/preprocessed/committee_reports.csv
 
 DATABASE = data/.inserted
@@ -125,6 +129,7 @@ $(DATABASE): $(PREPROCESSED_FILES)
 		pipes/committee_pipe.py \
 		pipes/mp_committee_membership_pipe.py \
 		pipes/speech_pipe.py \
+		pipes/government_proposal_pipe.py \
 		pipes/committee_report_pipe.py;
 	do \
 		
