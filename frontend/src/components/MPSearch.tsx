@@ -1,5 +1,7 @@
 import { useMiniSearch } from "react-minisearch";
 import { useEffect, useState } from "preact/hooks";
+import { PARTY_COLORS } from "~src/constants";
+import { getContrastingColor } from "~src/utils";
 
 // See MiniSearch for documentation on options
 // ref: https://lucaong.github.io/minisearch/types/MiniSearch.SearchOptions.html
@@ -96,46 +98,63 @@ interface MLIProps {
 
 /** A simple component for rendering a single MP from the search results. */
 function MemberListItem({ mp }: MLIProps) {
+    const backgroundColor =
+        PARTY_COLORS[(mp.party_id ?? "") as keyof typeof PARTY_COLORS] ??
+        "#bbbbbb";
+    const textColor = getContrastingColor(backgroundColor, true);
+
     return (
-        <article>
-            {mp.photo ? (
-                <img
-                    src={mp.photo}
-                    alt={mp.first_name + " " + mp.last_name}
-                    height="150"
-                    width="100"
-                />
-            ) : (
-                <div className="missing">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="100%"
-                        height="100%"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="feather feather-user"
+        <>
+            <article>
+                {mp.photo ? (
+                    <img
+                        src={mp.photo}
+                        alt={mp.first_name + " " + mp.last_name}
+                        height="150"
+                        width="100"
+                    />
+                ) : (
+                    <div className="missing">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="100%"
+                            height="100%"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="feather feather-user"
+                        >
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                )}
+                <p>
+                    <strong>
+                        {mp.first_name} {mp.last_name}
+                    </strong>
+                    <span
+                        class="party"
+                        style={{
+                            "--background": backgroundColor,
+                            "--text": textColor,
+                        }}
                     >
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                </div>
-            )}
-            <p>
-                <strong>
-                    {mp.first_name} {mp.last_name}
-                </strong>
-                {mp.party_id}
-                <br />
-                <a
-                    href={`/edustaja/${mp.first_name + "+" + mp.last_name || ""}`}
-                >
-                    open mp page
-                </a>
-            </p>
-        </article>
+                        {mp.party_id}
+                    </span>
+
+                    <br />
+                    <a
+                        href={`/edustaja/${mp.first_name + "+" + mp.last_name || ""}`}
+                    >
+                        open mp page
+                    </a>
+                </p>
+            </article>
+            <hr />
+        </>
     );
 }
