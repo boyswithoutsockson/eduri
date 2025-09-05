@@ -37,6 +37,7 @@ const mpsWithPhotoUrls = await mpWithPhotoUrl(data);
 
 <style is:global>
     article {
+        --pico-card-box-shadow: initial;
         display: flex;
         flex-direction: row;
         gap: var(--pico-block-spacing-horizontal);
@@ -55,5 +56,15 @@ const mpsWithPhotoUrls = await mpWithPhotoUrl(data);
     img {
         height: revert-layer;
         object-fit: cover;
+    }
+    .party {
+        background-color: var(--background);
+        color: var(--text);
+        display: inline-block;
+        text-align: center;
+        margin-inline: 0.5em;
+        padding: 0em 0.4em;
+        border-radius: 0.125em;
+        min-width: 1em;
     }
 </style>

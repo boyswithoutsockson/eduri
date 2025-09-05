@@ -55,3 +55,33 @@ export async function mpWithPhotoUrl<T extends { photo: string | null }>(
         ),
     );
 }
+
+/** We need to get a well-contrasting color for each party color, so this
+ * function calculates whether white or black works better as text color
+ * for a given party color hex */
+export function getContrastingColor(hex: string, bw: boolean) {
+    function padZero(str: string, len = 2) {
+        var zeros = new Array(len).join("0");
+        return (zeros + str).slice(-len);
+    }
+
+    if (hex.indexOf("#") === 0) {
+        hex = hex.slice(1);
+    }
+    if (hex.length !== 6) {
+        throw new Error("Invalid HEX color.");
+    }
+    var r: string | number = parseInt(hex.slice(0, 2), 16),
+        g: string | number = parseInt(hex.slice(2, 4), 16),
+        b: string | number = parseInt(hex.slice(4, 6), 16);
+    if (bw) {
+        // https://stackoverflow.com/a/3943023/112731
+        return r * 0.299 + g * 0.587 + b * 0.114 > 186 ? "#000000" : "#FFFFFF";
+    }
+    // invert color components
+    r = (255 - r).toString(16);
+    g = (255 - g).toString(16);
+    b = (255 - b).toString(16);
+    // pad each with zeros and return
+    return "#" + padZero(r) + padZero(g) + padZero(b);
+}
