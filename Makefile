@@ -81,6 +81,9 @@ data/preprocessed/committees.csv: pipes/committee_pipe.py $(DATA_DUMP)
 data/preprocessed/mp_committee_memberships.csv: pipes/mp_committee_membership_pipe.py $(DATA_DUMP)
 	uv run pipes/mp_committee_membership_pipe.py --preprocess-data
 
+data/preprocessed/agenda_items.csv: pipes/agenda_items.py $(DATA_DUMP)
+	uv run pipes/agenda_items.py --preprocess-data
+
 data/preprocessed/speeches.csv: pipes/speech_pipe.py $(DATA_DUMP)
 	uv run pipes/speech_pipe.py --preprocess-data
   
@@ -107,6 +110,7 @@ PREPROCESSED_FILES = $(VASKI_DATA) \
     data/preprocessed/mp_party_memberships.csv \
     data/preprocessed/committees.csv \
     data/preprocessed/mp_committee_memberships.csv \
+	data/preprocessed/agenda_items.csv \
     data/preprocessed/speeches.csv \
     data/preprocessed/committee_reports.csv
 
@@ -124,6 +128,7 @@ $(DATABASE): $(PREPROCESSED_FILES)
 		pipes/mp_party_membership_pipe.py \
 		pipes/committee_pipe.py \
 		pipes/mp_committee_membership_pipe.py \
+		pipes/agenda_items.py \
 		pipes/speech_pipe.py \
 		pipes/committee_report_pipe.py;
 	do \
