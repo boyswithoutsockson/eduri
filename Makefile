@@ -16,7 +16,7 @@ all: help
 ####################################
 
 data/dump.zip:
-	mkdir -p data/raw
+	mkdir -p data/raw/vaski
 	mkdir -p data/preprocessed
 	FILE_ID=1cQb23nkz-DAlo33cU96BnPjdnXU9MoFA
 	curl -L "https://drive.usercontent.google.com/download?id=$${FILE_ID}&confirm=true" --progress-bar \

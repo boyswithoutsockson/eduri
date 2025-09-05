@@ -9,13 +9,6 @@ def vaski_parser():
     pd.options.mode.copy_on_write = True  # Silence a warning about pandas. See https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
 
     vaski_fname = os.path.join("data", "raw", "VaskiData.tsv")
-    vaski_dir = f_path = os.path.join("data", "raw", "vaski")
-
-    if os.path.exists(vaski_dir):
-        for fname in os.listdir(vaski_dir):
-            os.remove(os.path.join(vaski_dir, fname))
-    else:
-        os.makedirs(vaski_dir)
 
     for vaski_data in tqdm(pd.read_csv(vaski_fname, sep="\t", chunksize=10000), total=31):  # Total achieved by experiment
         vaski_data['Xml'] = vaski_data["XmlData"].apply(
