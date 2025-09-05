@@ -1,0 +1,55 @@
+---
+import { marked } from "marked";
+
+import { db } from "~src/database";
+import Layout from "~src/pages/edustaja/[memberOfParliament]/_layout.astro";
+import { getAllMps } from "~src/pages/edustaja/[memberOfParliament]/_utils";
+
+/** List all items of data that need a page generated for them */
+export async function getStaticPaths() {
+    const data = await getAllMps();
+    return data.map((mp) => ({
+        params: { memberOfParliament: mp.full_name || "" },
+        props: { mp },
+    }));
+}
+
+const { mp } = Astro.props;
+
+const speeches = mp
+    ? await db
+          .selectFrom("speeches")
+          .where("speeches.mp_id", "=", mp.id)
+          .select(["speeches.id", "speeches.parliament_id", "speeches.speech"])
+          .orderBy("speeches.start_time", "desc")
+          .execute()
+    : [];
+---
+
+<Layout mp={mp}>
+    <section>
+        <h2>Puheenvuorot</h2>
+        <ul>
+            {
+                speeches.map((s) => (
+                    <li>
+                        <article>
+                            <h3>{s.parliament_id}</h3>
+                            {/* eslint-disable-next-line astro/no-set-html-directive */}
+                            <Fragment set:html={marked(s.speech)} />
+                        </article>
+                    </li>
+                ))
+            }
+        </ul>
+    </section>
+</Layout>
+
+<style>
+    ul {
+        padding: 0;
+    }
+    li {
+        list-style: none;
+    }
+</style>

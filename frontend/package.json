@@ -13,6 +13,7 @@
     "@daviddarnes/live-filter": "^1.1.0",
     "astro": "^5.8.1",
     "kysely": "^0.28.2",
+    "marked": "^16.2.1",
     "pg": "^8.16.0"
   },
   "devDependencies": {

@@ -16,10 +16,27 @@ export type Vote = "absent" | "abstain" | "no" | "yes";
 export interface Ballots {
   id: number;
   minutes_url: string | null;
+  parliament_id: string | null;
   results_url: string | null;
   session_item_title: string | null;
   start_time: Timestamp | null;
   title: string | null;
+}
+
+export interface CommitteeBudgetReports {
+  committee_name: string;
+  id: string;
+  proposal_id: string;
+}
+
+export interface CommitteeReports {
+  committee_name: string;
+  id: string;
+  law_changes: string | null;
+  opinion: string;
+  proposal_id: string;
+  proposal_summary: string;
+  reasoning: string | null;
 }
 
 export interface Committees {
@@ -69,6 +86,19 @@ export interface Parties {
   name: string | null;
 }
 
+export interface Signatures {
+  committee_report_id: string;
+  mp_id: number;
+}
+
+export interface Speeches {
+  id: number;
+  mp_id: number;
+  parliament_id: string;
+  speech: string;
+  start_time: Timestamp;
+}
+
 export interface Votes {
   ballot_id: number;
   mp_id: number;
@@ -77,11 +107,15 @@ export interface Votes {
 
 export interface DB {
   ballots: Ballots;
+  committee_budget_reports: CommitteeBudgetReports;
+  committee_reports: CommitteeReports;
   committees: Committees;
   interests: Interests;
   members_of_parliament: MembersOfParliament;
   mp_committee_memberships: MpCommitteeMemberships;
   mp_party_memberships: MpPartyMemberships;
   parties: Parties;
+  signatures: Signatures;
+  speeches: Speeches;
   votes: Votes;
 }
