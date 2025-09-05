@@ -220,6 +220,14 @@ def preprocess_data():
     # --- write CSVs
     pd.DataFrame(cr_records).to_csv(committee_reports_csv, index=False, encoding="utf-8")
 
+    # Vaski-datassa on virhe: Saman mp_idn taakse on kirjattu useita eri nimiä
+    # Tämä johtaa tilanteeseen, jossa kansanedustaja voi 'allekirjoittaa'
+    # lausunnon useamman kerran, mikä kaataa ohjelman kantaan kirjoituksen aikana,
+    # sillä duplikaattiallekirjoituksia ei ole sallittu tauluun. 
+    # Virhe on kohtalaisen pieni, 16 mietinnön kohdalla joitain kymmeniä henkilöitä on
+    # kirjattu väärällä mp_idllä. Virheen mittakaavan huomioiden jätetään tässä kohtaa
+    # virheellinen data korjaamatta, vaikka nimitietoja hyödyntäen se olisi teoriassa 
+    # mahdollista. Sen sijaan poistetaan duplikaatit ja säilytetään vain ensimmäinen löytö.
     df_cr_sigs = pd.DataFrame(cr_sig_records).drop_duplicates()
     if not df_cr_sigs.empty:
         df_cr_sigs["mp_id"] = pd.to_numeric(df_cr_sigs["mp_id"], errors="coerce")
