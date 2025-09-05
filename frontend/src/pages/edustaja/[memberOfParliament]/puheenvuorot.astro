@@ -37,6 +37,8 @@ const speeches = mp
                             <h3>{s.parliament_id}</h3>
                             {/* eslint-disable-next-line astro/no-set-html-directive */}
                             <Fragment set:html={marked(s.speech)} />
+
+                            <button id={`collapse-${s.id}`}>Lue lisää</button>
                         </article>
                     </li>
                 ))
@@ -52,4 +54,24 @@ const speeches = mp
     li {
         list-style: none;
     }
+    :global(article p:not(:first-of-type)) {
+        display: none;
+    }
+    :global(article.expanded p) {
+        display: block;
+    }
 </style>
+
+<script>
+    const buttons = document.querySelectorAll("[id^='collapse']");
+
+    buttons.forEach((button) => {
+        button.addEventListener("click", () => {
+            const article = button.parentElement;
+            article?.classList.toggle("expanded");
+            button.textContent = article?.classList.contains("expanded")
+                ? "Lue vähemmän"
+                : "Lue lisää";
+        });
+    });
+</script>
