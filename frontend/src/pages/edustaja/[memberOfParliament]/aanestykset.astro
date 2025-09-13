@@ -2,17 +2,11 @@
 import type { NotNull } from "kysely";
 import { db } from "~src/database";
 import Layout from "~src/pages/edustaja/[memberOfParliament]/_layout.astro";
-import { getAllMps } from "~src/pages/edustaja/[memberOfParliament]/_utils";
+import { getMpStaticPaths } from "~src/pages/edustaja/[memberOfParliament]/_utils";
 import { PARLIAMENT_BASE_URL, VOTE_MAP } from "~src/utils";
 
 /** List all items of data that need a page generated for them */
-export async function getStaticPaths() {
-    const data = await getAllMps();
-    return data.map((mp) => ({
-        params: { memberOfParliament: mp.full_name || "" },
-        props: { mp },
-    }));
-}
+export const getStaticPaths = getMpStaticPaths;
 
 const { mp } = Astro.props;
 

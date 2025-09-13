@@ -2,16 +2,10 @@
 import { db } from "~src/database";
 import { groupBy } from "~src/utils";
 import Layout from "~src/pages/edustaja/[memberOfParliament]/_layout.astro";
-import { getAllMps } from "~src/pages/edustaja/[memberOfParliament]/_utils";
+import { getMpStaticPaths } from "~src/pages/edustaja/[memberOfParliament]/_utils";
 
 /** List all items of data that need a page generated for them */
-export async function getStaticPaths() {
-    const data = await getAllMps();
-    return data.map((mp) => ({
-        params: { memberOfParliament: mp.full_name || "" },
-        props: { mp },
-    }));
-}
+export const getStaticPaths = getMpStaticPaths;
 
 const { mp } = Astro.props;
 
@@ -39,7 +33,7 @@ const committees = mp
 
 const groupedCommittees = groupBy(committees, (c) => c.committee_name ?? "");
 
-const roles = {
+const roles: Record<string, string> = {
     member: "jäsen",
     associate: "varajäsen",
     additional: "lisäjäsen",
@@ -62,10 +56,10 @@ const roles = {
                                 <li>
                                     <span
                                         class:list={
-                                            roles[committee.role.toString()]
+                                            roles[committee.role] as string
                                         }
                                     >
-                                        {roles[committee.role.toString()]}
+                                        {roles[committee.role]}
                                     </span>{" "}
                                     |{" "}
                                     {committee.start_date.toLocaleDateString()}{" "}
