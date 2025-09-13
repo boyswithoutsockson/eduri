@@ -85,8 +85,8 @@ data/preprocessed/mp_committee_memberships.csv: pipes/mp_committee_membership_pi
 data/preprocessed/sessions.csv: pipes/session_pipe.py $(DATA_DUMP)
 	uv run pipes/session_pipe.py --preprocess-data
 
-data/preprocessed/agenda_items.csv: pipes/agenda_items.py $(DATA_DUMP)
-	uv run pipes/agenda_items.py --preprocess-data
+data/preprocessed/agenda_items.csv: pipes/agenda_item_pipe.py $(DATA_DUMP)
+	uv run pipes/agenda_item_pipe.py --preprocess-data
 
 data/preprocessed/speeches.csv: pipes/speech_pipe.py $(DATA_DUMP)
 	uv run pipes/speech_pipe.py --preprocess-data
@@ -134,7 +134,7 @@ $(DATABASE): $(PREPROCESSED_FILES)
 		pipes/committee_pipe.py \
 		pipes/mp_committee_membership_pipe.py \
 		pipes/session_pipe.py \
-		pipes/agenda_items.py \
+		pipes/agenda_item_pipe.py \
 		pipes/speech_pipe.py \
 		pipes/committee_report_pipe.py;
 	do \
