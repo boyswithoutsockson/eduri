@@ -10,13 +10,13 @@ interface Props {
 
 const { mp } = Astro.props;
 
-const currentPathBase = `edustaja/${mp?.full_name}`;
+const currentPathBase = `edustaja/${mp?.first_name}+${mp?.last_name}`;
 const currentPath = Astro.url.pathname;
 const subpages = [
     { name: "Yleistä", path: `/${currentPathBase}` },
     { name: "Puheenvuorot", path: `/${currentPathBase}/puheenvuorot` },
     { name: "Äänestykset", path: `/${currentPathBase}/aanestykset` },
-    { name: "Jäsenyydet", path: `/${currentPathBase}/jäsenyydet` },
+    { name: "Jäsenyydet", path: `/${currentPathBase}/jasenyydet` },
 ];
 ---
 

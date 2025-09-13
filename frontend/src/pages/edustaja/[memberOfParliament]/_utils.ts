@@ -22,3 +22,12 @@ export async function getAllMps() {
 
 /** Common type for MPs in all `/edustaja` subpages */
 export type MP = Awaited<ReturnType<typeof getAllMps>>[0];
+
+/** Common static path generation function for all [membersOfParliament] subpages */
+export async function getMpStaticPaths() {
+    const data = await getAllMps();
+    return data.map((mp) => ({
+        params: { memberOfParliament: `${mp.first_name}+${mp.last_name}` },
+        props: { mp },
+    }));
+}
