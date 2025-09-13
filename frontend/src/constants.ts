@@ -30,3 +30,15 @@ export const PARTY_COLORS = {
     vas: "#BF1E24",
     vihr: "#61BF1A",
 };
+
+export const PARTY_ABBRS = {
+    kd: "KD",
+    kesk: "Kesk.",
+    kok: "Kok.",
+    liik: "Liik.",
+    ps: "PS",
+    r: "RKP",
+    sd: "SDP",
+    vas: "Vas.",
+    vihr: "Vihr.",
+};

@@ -68,14 +68,19 @@ const mpsWithPhotoUrls = await mpWithPhotoUrl(data);
         height: revert-layer;
         object-fit: cover;
     }
+    strong:has(+ .party) {
+        vertical-align: middle;
+    }
     .party {
+        font-size: 0.9em;
+        font-weight: 450;
         background-color: var(--background);
         color: var(--text);
         display: inline-block;
         text-align: center;
+        vertical-align: middle;
         margin-inline: 0.5em;
         padding: 0em 0.4em;
         border-radius: 0.125em;
-        min-width: 1em;
     }
 </style>
