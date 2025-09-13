@@ -1,6 +1,6 @@
 import { useMiniSearch } from "react-minisearch";
 import { useEffect, useState } from "preact/hooks";
-import { PARTY_COLORS } from "~src/constants";
+import { PARTY_ABBRS, PARTY_COLORS } from "~src/constants";
 import { getContrastingColor } from "~src/utils";
 
 // See MiniSearch for documentation on options
@@ -133,17 +133,21 @@ function MemberListItem({ mp }: MLIProps) {
                     </div>
                 )}
                 <p>
-                    <strong>
-                        {mp.first_name} {mp.last_name}
-                    </strong>
-                    <span
-                        class="party"
-                        style={{
-                            "--background": backgroundColor,
-                            "--text": textColor,
-                        }}
-                    >
-                        {mp.party_id}
+                    <span>
+                        <strong>
+                            {mp.first_name} {mp.last_name}
+                        </strong>
+                        <span
+                            class="party"
+                            style={{
+                                "--background": backgroundColor,
+                                "--text": textColor,
+                            }}
+                        >
+                            {PARTY_ABBRS[
+                                mp.party_id as keyof typeof PARTY_ABBRS
+                            ] || mp.party_id}
+                        </span>
                     </span>
 
                     <br />
