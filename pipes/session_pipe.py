@@ -1,22 +1,18 @@
 import os.path
 import pandas as pd
 import psycopg2
-from harmonize import harmonize_party
 
-csv_path = 'data/preprocessed/agenda_items.csv'
+csv_path = 'data/preprocessed/sessions.csv'
 
 
 def preprocess_data():
-    with open(os.path.join("data", "raw", "SaliDBKohta.tsv"), "r") as f:
-        AI = pd.read_csv(f, sep="\t")
+    with open(os.path.join("data", "raw", "SaliDBIstunto.tsv"), "r") as f:
+        sessions = pd.read_csv(f, sep="\t")
 
-    # Jos suomenkielistä otsikkoa ei ole, käytetään ruotsinkielistä
-    AI.OtsikkoFI = AI.OtsikkoFI.combine_first(AI.OtsikkoSV)
+    sessions = sessions[['TekninenAvain', 'IstuntoPvm']]
+    sessions.columns = ['id', 'date']
 
-    AI = AI[["Id", "PJKohtaTunnus", "IstuntoTekninenAvain", "OtsikkoFI"]]
-    AI.columns = ["id", "parliament_id", "session_id", "title"]
-
-    AI.to_csv(csv_path, index=False)
+    sessions.to_csv(csv_path, index=False)
 
 
 def import_data():
@@ -28,7 +24,7 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert("COPY agenda_items(id, parliament_id, session_id, title) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
+        cursor.copy_expert("COPY sessions(id, date) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
 
     conn.commit()
     cursor.close()

@@ -98,16 +98,24 @@ CREATE TABLE IF NOT EXISTS mp_committee_memberships (
     PRIMARY KEY(mp_id, committee_name, start_date, role)
 );
 
+-- sessions
+
+CREATE TABLE IF NOT EXISTS sessions (
+    id VARCHAR(10) PRIMARY KEY NOT NULL,
+    date DATE NOT NULL
+);
+
 -- agenda items
 CREATE TABLE IF NOT EXISTS agenda_items (
     id INT PRIMARY KEY NOT NULL,
     parliament_id VARCHAR (20) NOT NULL,
+    session_id VARCHAR(15) REFERENCES sessions(id),
     title TEXT NOT NULL
 );
 
 -- speeches
 CREATE TABLE IF NOT EXISTS speeches (
-    id INT PRIMARY KEY NOT NULL,
+    id VARCHAR(15) PRIMARY KEY NOT NULL,
     mp_id INT NOT NULL REFERENCES members_of_parliament(id),
     parliament_id VARCHAR (20) NOT NULL,
     start_time TIMESTAMP WITH TIME ZONE NOT NULL,
