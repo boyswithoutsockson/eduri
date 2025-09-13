@@ -1,9 +1,9 @@
 import os.path
-import csv
 import psycopg2
 import pandas as pd
 from lxml import etree
 from io import StringIO
+from tqdm import tqdm
 
 csv_path = os.path.join("data", "preprocessed", "speeches.csv")
 
@@ -26,7 +26,7 @@ def preprocess_data():
 
     parsed_data = []
 
-    for xml_str in df_tsv['XmlData']:
+    for xml_str in tqdm(df_tsv['XmlData']):
         root = etree.parse(StringIO(xml_str)).getroot()
 
         # Get parliament_id
@@ -39,7 +39,7 @@ def preprocess_data():
         if not (p_type and p_year):
             continue
 
-        parliament_id = f"PTK {p_type}/{p_year.replace(' vp','')} vp".lower()
+        parliament_id = f"ptk {p_type}/{p_year.replace(' vp','')} vp"
 
         # Find speeches
         speeches = root.xpath(".//vsk:PuheenvuoroToimenpide", namespaces=ns)
@@ -81,6 +81,10 @@ def preprocess_data():
                     if role != None:
                         if "ministeri" not in role.text:
                             continue
+                    
+                    # There are duplicates in speech ids.
+                    # Add year to the front of speech id to fix issue
+                    speech_id = start_time[:4] + "/" + speech_id
                     parsed_data.append({
                         "speech_id": speech_id,
                         "speaker_id": speaker_id,
