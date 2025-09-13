@@ -85,12 +85,19 @@ def preprocess_data():
                     # There are duplicates in speech ids.
                     # Add year to the front of speech id to fix issue
                     speech_id = start_time[:4] + "/" + speech_id
+                    if speech.find(".//vsk1:TarkenneTeksti", namespaces=ns) is not None and \
+                        speech.find(".//vsk1:TarkenneTeksti", namespaces=ns).text == "(vastauspuheenvuoro)":
+                        response_to = root_id
+                    else:
+                        response_to = None
+                        root_id = speech_id
                     parsed_data.append({
                         "speech_id": speech_id,
                         "speaker_id": speaker_id,
                         "parliament_id": parliament_id,
                         "start_time": start_time,
-                        "speech_text": full_text
+                        "speech_text": full_text,
+                        "response_to": response_to
                     })
 
     # Convert to DataFrame
@@ -108,7 +115,7 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert("COPY speeches(id, mp_id, parliament_id, start_time, speech) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
+        cursor.copy_expert("COPY speeches(id, mp_id, parliament_id, start_time, speech, response_to) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
 
     conn.commit()
     cursor.close()
