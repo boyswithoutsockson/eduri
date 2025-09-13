@@ -46,28 +46,32 @@ export function Search({ initial }: Props) {
 
     // When this component renders itself for the first time, fetch the
     // MP data form the data.json file to be used for searching
-    useEffect(
-        () =>
-            void fetch("/data.json")
-                .then((resp) => resp.json())
-                .then(addAll),
-        [],
-    );
+    useEffect(() => {
+        const input = document.querySelector(
+            "input[type='search']",
+        ) as HTMLInputElement;
+        fetch("/data.json")
+            .then((resp) => resp.json())
+            .then(addAll)
+            .then(() => handleSearchChange(input.value));
+    }, []);
 
     /** Whenever the user writes stuff into the search bar, handle the query
      * variable change and also perform the search with the most recent input
      * value */
-    const handleSearchChange = (event: any) => {
-        const current = event.target.value.toLowerCase();
-        search(current);
-        setQuery(current);
+    const handleSearchChange = (input: string) => {
+        const inputValue = input.toLowerCase();
+        search(inputValue);
+        setQuery(inputValue);
     };
 
     return (
         <div>
             <input
                 type="search"
-                onChange={handleSearchChange}
+                onChange={(event: any) =>
+                    handleSearchChange(event.target.value)
+                }
                 placeholder="Hae kansanedustajia..."
                 aria-label="Hae kansanedustajia..."
                 aria-controls="results"
