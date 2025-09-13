@@ -136,10 +136,25 @@ CREATE TABLE IF NOT EXISTS committee_budget_reports (
     committee_name VARCHAR(200) NOT NULL REFERENCES committees(name)
 );
 
--- signatures
-CREATE TABLE IF NOT EXISTS signatures (
+-- committee_report_signatures
+CREATE TABLE IF NOT EXISTS committee_report_signatures (
     committee_report_id VARCHAR(20) REFERENCES committee_reports(id),
     mp_id INT REFERENCES members_of_parliament(id),
     PRIMARY KEY(committee_report_id, mp_id)
+);
+
+-- objections
+CREATE TABLE IF NOT EXISTS objections (
+    id SERIAL PRIMARY KEY,
+    committee_report_id VARCHAR(20) REFERENCES committee_reports(id),
+    reasoning TEXT,
+    motion TEXT
+);
+
+-- objection_signatures
+CREATE TABLE IF NOT EXISTS objection_signatures (
+    objection_id SERIAL REFERENCES objections(id),
+    mp_id INT REFERENCES members_of_parliament(id),
+    PRIMARY KEY(objection_id, mp_id)
 );
 
