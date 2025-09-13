@@ -4,6 +4,7 @@ import Layout from "~src/layouts/Layout.astro";
 import { db } from "~src/database";
 import { Search } from "~src/components/MPSearch";
 import { mpWithPhotoUrl } from "~src/utils";
+import Logo from "~src/icons/logo.svg";
 
 const data = await db
     .selectFrom("members_of_parliament")
@@ -28,7 +29,10 @@ const mpsWithPhotoUrls = await mpWithPhotoUrl(data);
 
 <Layout>
     <main>
-        <h1>Eduri</h1>
+        <h1>
+            <Logo />
+            Eduri
+        </h1>
         <p>Tähän sit kontsaa</p>
 
         <Search client:load initial={mpsWithPhotoUrls} />
@@ -36,6 +40,13 @@ const mpsWithPhotoUrls = await mpWithPhotoUrl(data);
 </Layout>
 
 <style is:global>
+    svg {
+        display: block;
+        --side: 84px;
+        width: var(--side);
+        height: var(--side);
+        margin-bottom: -0.2em;
+    }
     article {
         --pico-card-box-shadow: initial;
         display: flex;
