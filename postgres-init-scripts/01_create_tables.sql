@@ -15,6 +15,14 @@ CREATE TABLE IF NOT EXISTS members_of_parliament (
     photo VARCHAR(100)
 );
 
+CREATE TABLE IF NOT EXISTS ministers (
+    mp_id INT REFERENCES members_of_parliament(id),
+    ministry VARCHAR(100), 
+    cabinet_id VARCHAR(50), 
+    start_date DATE,
+    end_date DATE,
+    PRIMARY KEY(ministry, mp_id, start_date)
+);
 
 -- Interests (sidonnaisuudet)
 CREATE TABLE IF NOT EXISTS interests (
@@ -23,18 +31,6 @@ CREATE TABLE IF NOT EXISTS interests (
     category VARCHAR(200), 
     interest TEXT
 );
-
-/*
--- Agenda items (kokouskohdat)
-CREATE TABLE IF NOT EXISTS agenda_items (
-    id INT PRIMARY KEY,
-    title VARCHAR(1000),
-    start_time TIMESTAMP WITH TIME ZONE,
-    session VARCHAR(10),
-    sequence INT,
-    number FLOAT
-);
-*/
 
 -- Ballots (äänestykset)
 CREATE TABLE IF NOT EXISTS ballots (

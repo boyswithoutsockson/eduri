@@ -61,6 +61,9 @@ $(VASKI_DATA): pipes/vaski_parser.py $(DATA_DUMP)
 data/preprocessed/members_of_parliament.csv: pipes/mp_pipe.py $(DATA_DUMP) $(MP_PHOTOS)
 	uv run pipes/mp_pipe.py --preprocess-data
 
+data/preprocessed/ministers.csv: pipes/minister_pipe.py $(DATA_DUMP)
+	uv run pipes/minister_pipe.py --preprocess-data
+
 data/preprocessed/interests.csv: pipes/interest_pipe.py $(DATA_DUMP)
 	uv run pipes/interest_pipe.py --preprocess-data
 
@@ -107,6 +110,7 @@ nuke: ## resets all data in the database
 
 PREPROCESSED_FILES = $(VASKI_DATA) \
 	data/preprocessed/members_of_parliament.csv \
+	data/preprocessed/ministers.csv \
     data/preprocessed/interests.csv \
     data/preprocessed/ballots.csv \
     data/preprocessed/votes.csv \
@@ -126,6 +130,7 @@ $(DATABASE): $(PREPROCESSED_FILES)
 	TIMEFORMAT="Finished in %3R seconds."; \
 	for script in \
 		pipes/mp_pipe.py \
+		pipes/minister_pipe.py \
 		pipes/interest_pipe.py \
 		pipes/ballot_pipe.py \
 		pipes/vote_pipe.py \
