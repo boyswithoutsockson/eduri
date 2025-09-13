@@ -16,8 +16,6 @@ all: help
 ####################################
 
 data/dump.zip:
-	mkdir -p data/raw/vaski
-	mkdir -p data/preprocessed
 	FILE_ID=1cQb23nkz-DAlo33cU96BnPjdnXU9MoFA
 	curl -L "https://drive.usercontent.google.com/download?id=$${FILE_ID}&confirm=true" --progress-bar \
 		-o $@
@@ -25,6 +23,7 @@ data/dump.zip:
 DATA_DUMP = data/.unzipped
 $(DATA_DUMP): data/dump.zip
 	@touch $@
+	mkdir -p data/raw
 	unzip -oq data/dump.zip -d data/raw
 
 
@@ -42,11 +41,19 @@ $(MP_PHOTOS): frontend/src/assets/photos-2023-2026.zip
 .PHONY: data
 data: $(DATA_DUMP) $(MP_PHOTOS) ## download and extract all raw data assets
 
-.PHONY: clean-data
+.PHONY: clean
 clean: ## deletes all raw data assets
 	rm -rf data/.[!.]*
 	rm -f frontend/src/assets/.[!.]*
 
+.PHONY: clean-preprocessed
+clean-preprocessed: ## removes all preprocessed files
+	rm -rf data/preprocessed/*
+
+.PHONY: clean-vaski
+clean-vaski: ## removes vaski data
+	rm -rf data/raw/vaski/*
+	rm -f data/raw/vaski/.parsed
 
 ##################################
 # Scripts for data preprocessing #
@@ -59,42 +66,55 @@ $(VASKI_DATA): pipes/vaski_parser.py $(DATA_DUMP)
 	uv run pipes/vaski_parser.py
 
 data/preprocessed/members_of_parliament.csv: pipes/mp_pipe.py $(DATA_DUMP) $(MP_PHOTOS)
+	mkdir -p data/preprocessed
 	uv run pipes/mp_pipe.py --preprocess-data
 
 data/preprocessed/ministers.csv: pipes/minister_pipe.py $(DATA_DUMP)
+	mkdir -p data/preprocessed
 	uv run pipes/minister_pipe.py --preprocess-data
 
 data/preprocessed/interests.csv: pipes/interest_pipe.py $(DATA_DUMP)
+	mkdir -p data/preprocessed
 	uv run pipes/interest_pipe.py --preprocess-data
 
 data/preprocessed/ballots.csv: pipes/ballot_pipe.py $(DATA_DUMP)
+	mkdir -p data/preprocessed
 	uv run pipes/ballot_pipe.py --preprocess-data
 
 data/preprocessed/votes.csv: pipes/vote_pipe.py $(DATA_DUMP)
+	mkdir -p data/preprocessed
 	uv run pipes/vote_pipe.py --preprocess-data
 
 data/preprocessed/parties.csv: pipes/parties_pipe.py $(DATA_DUMP)
+	mkdir -p data/preprocessed
 	uv run pipes/parties_pipe.py --preprocess-data
 
 data/preprocessed/mp_party_memberships.csv: pipes/mp_party_membership_pipe.py $(DATA_DUMP)
+	mkdir -p data/preprocessed
 	uv run pipes/mp_party_membership_pipe.py --preprocess-data
 
 data/preprocessed/committees.csv: pipes/committee_pipe.py $(DATA_DUMP)
+	mkdir -p data/preprocessed
 	uv run pipes/committee_pipe.py --preprocess-data
 
 data/preprocessed/mp_committee_memberships.csv: pipes/mp_committee_membership_pipe.py $(DATA_DUMP)
+	mkdir -p data/preprocessed
 	uv run pipes/mp_committee_membership_pipe.py --preprocess-data
 
 data/preprocessed/sessions.csv: pipes/session_pipe.py $(DATA_DUMP)
+	mkdir -p data/preprocessed
 	uv run pipes/session_pipe.py --preprocess-data
 
 data/preprocessed/agenda_items.csv: pipes/agenda_item_pipe.py $(DATA_DUMP)
+	mkdir -p data/preprocessed
 	uv run pipes/agenda_item_pipe.py --preprocess-data
 
 data/preprocessed/speeches.csv: pipes/speech_pipe.py $(DATA_DUMP)
+	mkdir -p data/preprocessed
 	uv run pipes/speech_pipe.py --preprocess-data
   
 data/preprocessed/committee_reports.csv: pipes/committee_report_pipe.py $(DATA_DUMP)
+	mkdir -p data/preprocessed
 	uv run pipes/committee_report_pipe.py --preprocess-data
 
 
