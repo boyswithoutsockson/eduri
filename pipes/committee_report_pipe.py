@@ -36,10 +36,6 @@ def _txt(node):
         return ""
     return " ".join("".join(node.itertext()).split())
 
-def _all_txt(root, xpath):
-    """List of collapsed texts for all matches."""
-    return [_txt(n) for n in root.findall(xpath, namespaces=NS)]
-
 def preprocess_data():
     os.makedirs(os.path.dirname(committee_reports_csv), exist_ok=True)
     df_tsv = pd.read_csv(tsv_path, sep="\t")
@@ -50,18 +46,13 @@ def preprocess_data():
     objection_sig_records = [] # objection_signatures rows (includes local objection_index)
 
     for xml_str in df_tsv.get("XmlData", []):
-        if not isinstance(xml_str, str) or not xml_str.strip():
-            continue
 
-        try:
-            root = etree.parse(StringIO(xml_str)).getroot()
-        except Exception:
-            # skip broken XML rows
-            continue
+        root = etree.parse(StringIO(xml_str)).getroot()
 
         mietinto = root.find(".//vml:Mietinto", namespaces=NS)
         if mietinto is None:
-            # Not a standard Mietinto
+            # Talousarviomietinnöt (TalousarvioMietinto) skipataan vielä tässä vaiheessa, koska ne on niin erilaisia
+            # NE PITÄÄ IMPLEMENTOIDA
             continue
 
         # --- committee_report id (eid) ---
@@ -206,7 +197,7 @@ def preprocess_data():
                     })
 
         # --- collect committee report row (check for duplicates)
-        cr_record = {
+        cr_records.append({
             "id": eid,
             "proposal_id": proposal_id,
             "committee_name": committee_name,
@@ -214,12 +205,19 @@ def preprocess_data():
             "opinion": opinion,
             "reasoning": doc_reasoning,  # report-level reasoning (not objection reasoning)
             "law_changes": law_changes,
-        }
-        if cr_record not in cr_records:
-            cr_records.append(cr_record)
+        })
 
     # Write CSVs
     pd.DataFrame(cr_records).to_csv(committee_reports_csv, index=False, encoding="utf-8")
+    
+    # Vaski-datassa on virhe: Saman mp_idn taakse on kirjattu useita eri nimiä
+    # Tämä johtaa tilanteeseen, jossa kansanedustaja voi 'allekirjoittaa'
+    # lausunnon useamman kerran, mikä kaataa ohjelman kantaan kirjoituksen aikana,
+    # sillä duplikaattiallekirjoituksia ei ole sallittu tauluun. 
+    # Virhe on kohtalaisen pieni, 16 mietinnön kohdalla joitain kymmeniä henkilöitä on
+    # kirjattu väärällä mp_idllä. Virheen mittakaavan huomioiden jätetään tässä kohtaa
+    # virheellinen data korjaamatta, vaikka nimitietoja hyödyntäen se olisi teoriassa 
+    # mahdollista. Sen sijaan poistetaan duplikaatit ja säilytetään vain ensimmäinen löytö.
     df_cr_sigs = pd.DataFrame(cr_sig_records).drop_duplicates(subset=["committee_report_id", "mp_id"])
     if not df_cr_sigs.empty:
         df_cr_sigs["mp_id"] = pd.to_numeric(df_cr_sigs["mp_id"], errors="coerce")
