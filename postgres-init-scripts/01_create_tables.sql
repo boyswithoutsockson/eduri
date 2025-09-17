@@ -119,6 +119,37 @@ CREATE TABLE IF NOT EXISTS speeches (
     response_to VARCHAR(15) REFERENCES speeches(id)
 );
 
+DO $$ BEGIN  
+    CREATE TYPE proposal_proposer AS ENUM ('government', 'citizen', 'mp');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN  
+    CREATE TYPE proposal_status AS ENUM ('open', 'expired', 'cancelled', 'rejected', 'resting', 'passed', 'passed_changed', 'passed_urgent');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+-- proposals
+CREATE TABLE IF NOT EXISTS proposals (
+    id VARCHAR(20) PRIMARY KEY NOT NULL,
+    proposer proposal_proposer,
+    summary TEXT NOT NULL,
+    reasoning TEXT NOT NULL,
+    law_changes TEXT,
+    status proposal_status NOT NULL
+);
+
+-- proposal_signatures
+CREATE TABLE IF NOT EXISTS proposal_signatures (
+    proposal_id VARCHAR(20) REFERENCES proposals(id),
+    mp_id INT REFERENCES members_of_parliament(id),
+    first BOOLEAN,
+    PRIMARY KEY(proposal_id, mp_id)
+);
+
+
 -- committee_reports
 CREATE TABLE IF NOT EXISTS committee_reports (
     id VARCHAR(20) PRIMARY KEY NOT NULL,

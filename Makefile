@@ -101,6 +101,10 @@ data/preprocessed/mp_committee_memberships.csv: pipes/mp_committee_membership_pi
 	mkdir -p data/preprocessed
 	uv run pipes/mp_committee_membership_pipe.py --preprocess-data
 
+data/preprocessed/government_proposals.csv: pipes/government_proposal_pipe.py $(DATA_DUMP)
+	mkdir -p data/preprocessed
+	uv run pipes/government_proposal_pipe.py --preprocess-data
+
 data/preprocessed/sessions.csv: pipes/session_pipe.py $(DATA_DUMP)
 	mkdir -p data/preprocessed
 	uv run pipes/session_pipe.py --preprocess-data
@@ -138,6 +142,7 @@ PREPROCESSED_FILES = $(VASKI_DATA) \
     data/preprocessed/mp_party_memberships.csv \
     data/preprocessed/committees.csv \
     data/preprocessed/mp_committee_memberships.csv \
+	data/preprocessed/government_proposals.csv \
 	data/preprocessed/sessions.csv \
 	data/preprocessed/agenda_items.csv \
     data/preprocessed/speeches.csv \
@@ -158,6 +163,7 @@ $(DATABASE): $(PREPROCESSED_FILES)
 		pipes/mp_party_membership_pipe.py \
 		pipes/committee_pipe.py \
 		pipes/mp_committee_membership_pipe.py \
+		pipes/government_proposal_pipe.py \
 		pipes/session_pipe.py \
 		pipes/agenda_item_pipe.py \
 		pipes/speech_pipe.py \

@@ -4,6 +4,7 @@ import pandas as pd
 import psycopg2
 from lxml import etree
 from io import StringIO
+from XML_parsing_help_functions import _txt, id_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Ponsi_parse, Saados_parse, Paatos_parse, Osallistuja_parse
 
 # Paths
 tsv_path = os.path.join("data", "raw", "vaski", "CommitteeReport_fi.tsv")
@@ -14,20 +15,33 @@ objection_signatures_csv = os.path.join("data", "preprocessed", "objection_signa
 
 # Namespaces
 NS = {
-    "asi": "http://www.vn.fi/skeemat/asiakirjakooste/2010/04/27",
-    "asi1": "http://www.vn.fi/skeemat/asiakirjaelementit/2010/04/27",
-    "met": "http://www.vn.fi/skeemat/metatietokooste/2010/04/27",
-    "met1": "http://www.vn.fi/skeemat/metatietoelementit/2010/04/27",
-    "org": "http://www.vn.fi/skeemat/organisaatiokooste/2010/02/15",
-    "org1": "http://www.vn.fi/skeemat/organisaatioelementit/2010/02/15",
-    "sis": "http://www.vn.fi/skeemat/sisaltokooste/2010/04/27",
-    "sis1": "http://www.vn.fi/skeemat/sisaltoelementit/2010/04/27",
-    "vml": "http://www.eduskunta.fi/skeemat/mietinto/2011/01/04",
-    "vsk": "http://www.eduskunta.fi/skeemat/vaskikooste/2011/01/04",
-    "vsk1": "http://www.eduskunta.fi/skeemat/vaskielementit/2011/01/04",
-    "saa": "http://www.vn.fi/skeemat/saadoskooste/2010/04/27",
-    "saa1": "http://www.vn.fi/skeemat/saadoselementit/2010/04/27",
-    "vas": "http://www.eduskunta.fi/skeemat/vastalause/2011/01/04",  # objections namespace
+    'asi': 'http://www.vn.fi/skeemat/asiakirjakooste/2010/04/27',
+    'asi1': 'http://www.vn.fi/skeemat/asiakirjaelementit/2010/04/27',
+    'met': 'http://www.vn.fi/skeemat/metatietokooste/2010/04/27',
+    'met1': 'http://www.vn.fi/skeemat/metatietoelementit/2010/04/27',
+    'org': 'http://www.vn.fi/skeemat/organisaatiokooste/2010/02/15',
+    'org1': 'http://www.vn.fi/skeemat/organisaatioelementit/2010/02/15',
+    'sis': 'http://www.vn.fi/skeemat/sisaltokooste/2010/04/27',
+    'sis1': 'http://www.vn.fi/skeemat/sisaltoelementit/2010/04/27',
+    'vml': 'http://www.eduskunta.fi/skeemat/mietinto/2011/01/04',
+    'vsk': 'http://www.eduskunta.fi/skeemat/vaskikooste/2011/01/04',
+    'vsk1': 'http://www.eduskunta.fi/skeemat/vaskielementit/2011/01/04',
+    'saa': 'http://www.vn.fi/skeemat/saadoskooste/2010/04/27',
+    'saa1': 'http://www.vn.fi/skeemat/saadoselementit/2010/04/27',
+    'vas': 'http://www.eduskunta.fi/skeemat/vastalause/2011/01/04',
+    'jme': 'http://www.eduskunta.fi/skeemat/julkaisusiirtokooste/2011/12/20',
+    'ns11': 'http://www.eduskunta.fi/skeemat/siirto/2011/09/07',
+    'ns4': 'http://www.eduskunta.fi/skeemat/siirtoelementit/2011/05/17',
+    's359': 'http://www.vn.fi/skeemat/metatietoelementit/2010/04/27',
+    's360': 'http://www.vn.fi/skeemat/metatietoelementit/2010/04/27',
+    'sii': 'http://www.eduskunta.fi/skeemat/siirtokooste/2011/05/17',
+    'sii1': 'http://www.eduskunta.fi/skeemat/siirtoelementit/2011/05/17',
+    'he': 'http://www.vn.fi/skeemat/he/2010/04/27',
+    'tau': 'http://www.vn.fi/skeemat/taulukkokooste/2010/04/27',
+    'mix': 'http://www.loc.gov/mix/v20',
+    'narc': 'http://www.narc.fi/sahke2/2010-09_vnk',
+    'xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+    'def': 'http://www.eduskunta.fi/skeemat/siirtokooste/2011/05/17'
 }
 
 def _txt(node):
@@ -37,13 +51,23 @@ def _txt(node):
     return " ".join("".join(node.itertext()).split())
 
 def preprocess_data():
+
+    conn = psycopg2.connect(
+        database="postgres",
+        host="db",
+        user="postgres",
+        password="postgres",
+        port="5432"
+    )
+    cur = conn.cursor()
+
     os.makedirs(os.path.dirname(committee_reports_csv), exist_ok=True)
     df_tsv = pd.read_csv(tsv_path, sep="\t")
 
     cr_records = []            # committee_reports rows
-    cr_sig_records = []        # committee_report_signatures rows
+    cr_sgn_records = []        # committee_report_signatures rows
     objection_records = []     # objections rows
-    objection_sig_records = [] # objection_signatures rows (includes local objection_index)
+    objection_sgn_records = [] # objection_signatures rows (includes local objection_index)
 
     for xml_str in df_tsv.get("XmlData", []):
 
@@ -56,7 +80,7 @@ def preprocess_data():
             continue
 
         # --- committee_report id (eid) ---
-        eid = mietinto.get(f"{{{NS['met1']}}}eduskuntaTunnus", "").strip().lower()
+        eid = id_parse(root, NS)
 
         # --- proposal_id ---
         proposal_id = _txt(mietinto.find(".//asi:IdentifiointiOsa/asi:Vireilletulo/met1:EduskuntaTunnus", namespaces=NS)).lower()
@@ -69,143 +93,87 @@ def preprocess_data():
 
         # --- proposal_summary (restrict to content NOT under objections) ---
         # Using XPath to exclude any descendants that live inside vas:JasenMielipideOsa
-        ps_nodes = mietinto.xpath(
-            ".//vsk:AsiaKuvaus//sis:KappaleKooste[not(ancestor::vas:JasenMielipideOsa)] | "
-            ".//asi:SisaltoKuvaus//sis:KappaleKooste[not(ancestor::vas:JasenMielipideOsa)]",
-            namespaces=NS
-        )
-        proposal_summary = "\n\n".join([_txt(n) for n in ps_nodes])
+        proposal_summary = AsiaSisaltoKuvaus_parse(mietinto, NS, not_child_of="vas:JasenMielipideOsa")
 
         # --- opinion (vsk:PaatosOsa), excluding any objection subtrees ---
-        op_nodes = mietinto.xpath(
-            ".//vsk:PaatosOsa//sis1:OtsikkoTeksti[not(ancestor::vas:JasenMielipideOsa)] | "
-            ".//vsk:PaatosOsa//asi1:JohdantoTeksti[not(ancestor::vas:JasenMielipideOsa)] | "
-            ".//vsk:PaatosOsa//sis:KappaleKooste[not(ancestor::vas:JasenMielipideOsa)] | "
-            ".//vsk:PaatosOsa//sis:SisennettyKappaleKooste[not(ancestor::vas:JasenMielipideOsa)]",
-            namespaces=NS
-        )
-        opinion = "\n\n".join([_txt(n) for n in op_nodes])
+        opinion = Paatos_parse(root, NS, not_child_of="vas:JasenMielipideOsa")
 
         # --- report-level reasoning (exclude objection reasoning) ---
-        po_nodes = mietinto.xpath(
-            ".//asi:PerusteluOsa[not(ancestor::vas:JasenMielipideOsa)]//sis1:OtsikkoTeksti | "
-            ".//asi:PerusteluOsa[not(ancestor::vas:JasenMielipideOsa)]//sis1:ValiotsikkoTeksti | "
-            ".//asi:PerusteluOsa[not(ancestor::vas:JasenMielipideOsa)]//sis:KappaleKooste | "
-            ".//asi:PerusteluOsa[not(ancestor::vas:JasenMielipideOsa)]//sis:SisennettyKappaleKooste",
-            namespaces=NS
-        )
-        doc_reasoning = "\n\n".join([_txt(n) for n in po_nodes])
+        reasoning = Perustelu_parse(mietinto, NS, not_child_of="vas:JasenMielipideOsa")
 
         # --- law changes (saa:SaadosOsa -> Markdown) ---
-        def saados_to_md(saados):
-            title_bits = []
-            stype = _txt(saados.find(".//saa:SaadostyyppiKooste", namespaces=NS))
-            sname = _txt(saados.find(".//saa:SaadosNimekeKooste", namespaces=NS))
-            num = _txt(saados.find(".//saa:LakiehdotusNumeroKooste", namespaces=NS))
-            if num: title_bits.append(num.strip(".") + ".")
-            if stype: title_bits.append(stype)
-            if sname: title_bits.append(sname)
-            header = " ".join(title_bits).strip()
-            out = []
-            if header:
-                out.append(f"### {header}")
-
-            # Johtolause (preamble)
-            for jl in saados.findall(".//saa:Johtolause", namespaces=NS):
-                for p in jl.findall(".//saa:SaadosKappaleKooste", namespaces=NS):
-                    txt = _txt(p)
-                    if txt:
-                        out.append(txt)
-
-            # Pykälät
-            for pyk in saados.findall(".//saa:Pykala", namespaces=NS):
-                pykno = _txt(pyk.find(".//saa:PykalaTunnusKooste", namespaces=NS))
-                ots = _txt(pyk.find(".//saa:SaadosOtsikkoKooste", namespaces=NS))
-                head = f"**{pykno} {ots}**".strip()
-                if head and head != "** **":
-                    out.append(head)
-
-                for mom in pyk.findall(".//saa:MomenttiKooste", namespaces=NS):
-                    mtxt = _txt(mom)
-                    if mtxt:
-                        out.append(mtxt)
-
-                for km in pyk.findall(".//saa:KohdatMomentti", namespaces=NS):
-                    johd = _txt(km.find(".//saa:MomenttiJohdantoKooste", namespaces=NS))
-                    if johd:
-                        out.append(johd)
-                    for k in km.findall(".//saa:MomenttiKohtaKooste", namespaces=NS):
-                        kt = _txt(k)
-                        if kt:
-                            out.append(f"- {kt}")
-
-            return "\n\n".join(out)
-
-        law_md_blocks = []
-        for saados in mietinto.findall(".//saa:SaadosOsa/saa:Saados", namespaces=NS):
-            law_md = saados_to_md(saados)
-            if law_md:
-                law_md_blocks.append(law_md)
-        law_changes = "\n\n---\n\n".join(law_md_blocks)
+        law_changes = Saados_parse(root, NS)
 
         # --- committee_report_signatures (vsk:OsallistujaOsa)
-        for h in mietinto.findall(".//vsk:OsallistujaOsa//org:Henkilo", namespaces=NS):
-            mp_id = h.get(f"{{{NS['met1']}}}muuTunnus", "").strip()
-            if mp_id.isdigit():
-                cr_sig_records.append({"committee_report_id": eid, "mp_id": int(mp_id)})
+        cr_sgn_records.extend(Osallistuja_parse(root, NS, eid))
 
         # --- objections (vas:JasenMielipideOsa) + objection signatures
         obj_idx = 0
-        for jm in mietinto.findall(".//vas:JasenMielipideOsa", namespaces=NS):
+        for objection in mietinto.findall(".//vas:JasenMielipideOsa", namespaces=NS):
             obj_idx += 1  # 1-based index per report
 
             # Reasoning = asi:PerusteluOsa -> headers + paragraphs (both sis: and sis1:)
-            reason_nodes = []
-            reason_nodes += jm.findall(".//asi:PerusteluOsa//sis1:OtsikkoTeksti", namespaces=NS)
-            reason_nodes += jm.findall(".//asi:PerusteluOsa//sis1:ValiotsikkoTeksti", namespaces=NS)
-            reason_nodes += jm.findall(".//asi:PerusteluOsa//sis:KappaleKooste", namespaces=NS)
-            reason_nodes += jm.findall(".//asi:PerusteluOsa//sis:SisennettyKappaleKooste", namespaces=NS)
-            reason_nodes += jm.findall(".//asi:PerusteluOsa//sis1:KappaleKooste", namespaces=NS)
-            reason_nodes += jm.findall(".//asi:PerusteluOsa//sis1:SisennettyKappaleKooste", namespaces=NS)
-            obj_reasoning = "\n\n".join([_txt(n) for n in reason_nodes])
+            obj_reasoning = Perustelu_parse(objection, NS)
 
             # Motion = asi:PonsiOsa -> johdanto + paragraphs (both sis: and sis1:)
-            motion_nodes = []
-            motion_nodes += jm.findall(".//asi:PonsiOsa//sis1:OtsikkoTeksti", namespaces=NS)
-            motion_nodes += jm.findall(".//asi:PonsiOsa//asi1:JohdantoTeksti", namespaces=NS)
-            motion_nodes += jm.findall(".//asi:PonsiOsa//sis:KappaleKooste", namespaces=NS)
-            motion_nodes += jm.findall(".//asi:PonsiOsa//sis:SisennettyKappaleKooste", namespaces=NS)
-            motion_nodes += jm.findall(".//asi:PonsiOsa//sis1:KappaleKooste", namespaces=NS)
-            motion_nodes += jm.findall(".//asi:PonsiOsa//sis1:SisennettyKappaleKooste", namespaces=NS)
-            obj_motion = "\n\n".join([_txt(n) for n in motion_nodes])
+            obj_motion = Ponsi_parse(objection, NS)
 
             objection_records.append({
-                "committee_report_id": eid,
+                "committee_report_id": eid.lower(),
                 "objection_index": obj_idx,
                 "reasoning": obj_reasoning,
                 "motion": obj_motion
             })
 
             # objection signatures under this JasenMielipideOsa
-            for h in jm.findall(".//asi:Allekirjoittaja//org:Henkilo", namespaces=NS):
-                mp_id = h.get(f"{{{NS['met1']}}}muuTunnus", "").strip()
-                if mp_id.isdigit():
-                    objection_sig_records.append({
-                        "committee_report_id": eid,
-                        "objection_index": obj_idx,
-                        "mp_id": int(mp_id)
-                    })
+            for signer in objection.findall(".//asi:Allekirjoittaja", namespaces=NS):
+                if signer is None:
+                    continue
+                mp_id = signer.find(".//org:Henkilo", namespaces=NS).attrib.get(f"{{{NS['met1']}}}muuTunnus")
+                if mp_id is None:
+                    first_name = signer.find(".//org:Henkilo/org1:EtuNimi", namespaces=NS).text
+                    last_name = signer.find(".//org:Henkilo/org1:SukuNimi", namespaces=NS).text
+                    if not first_name or not last_name:                         # Joskus nääki voi puuttua huoh
+                        continue
+                    # Joskus sukunimen yhteydessä on puolue
+                    if len(last_name.split()) > 1 and last_name.split()[-1].endswith(("ps", "kok", "vihr", "sd", "r", "liik", "kesk", "vas")):
+                        last_name = "".join(last_name.split()[:-1]).strip()
+                    cur.execute("""
+                        SELECT id 
+                        FROM public.members_of_parliament 
+                        WHERE LOWER(first_name) = %s AND LOWER(last_name) = %s""", 
+                        (first_name.strip().lower(), last_name.strip().lower())
+                        )
+                    
+                    mp_id = cur.fetchone()
+                    if mp_id is not None:
+                        mp_id = mp_id[0]
+                    else:
+                        # Tänne menee sihteerit yms. jotka on joskus allekirjoittamassa esityksiä
+                        continue
+                objection_sgn_records.append({
+                    "committee_report_id": eid,
+                    "objection_index": obj_idx,
+                    "mp_id": int(mp_id)
+                })
+
+        
 
         # --- collect committee report row (check for duplicates)
         cr_records.append({
-            "id": eid,
+            "id": eid.lower(),
             "proposal_id": proposal_id,
             "committee_name": committee_name,
             "proposal_summary": proposal_summary,
             "opinion": opinion,
-            "reasoning": doc_reasoning,  # report-level reasoning (not objection reasoning)
+            "reasoning": reasoning,  # report-level reasoning (not objection reasoning)
             "law_changes": law_changes,
         })
+
+    conn.commit()
+    cur.close()
+    conn.close()
+    
 
     # Write CSVs
     pd.DataFrame(cr_records).to_csv(committee_reports_csv, index=False, encoding="utf-8")
@@ -218,22 +186,23 @@ def preprocess_data():
     # kirjattu väärällä mp_idllä. Virheen mittakaavan huomioiden jätetään tässä kohtaa
     # virheellinen data korjaamatta, vaikka nimitietoja hyödyntäen se olisi teoriassa 
     # mahdollista. Sen sijaan poistetaan duplikaatit ja säilytetään vain ensimmäinen löytö.
-    df_cr_sigs = pd.DataFrame(cr_sig_records).drop_duplicates(subset=["committee_report_id", "mp_id"])
-    if not df_cr_sigs.empty:
-        df_cr_sigs["mp_id"] = pd.to_numeric(df_cr_sigs["mp_id"], errors="coerce")
-        df_cr_sigs = df_cr_sigs.dropna(subset=["mp_id"])
-        df_cr_sigs["mp_id"] = df_cr_sigs["mp_id"].astype(int)
-    df_cr_sigs.to_csv(committee_report_signatures_csv, index=False, encoding="utf-8")
+    df_cr_sgns = pd.DataFrame(cr_sgn_records).drop_duplicates(subset=["committee_report_id", "mp_id"])
+    if not df_cr_sgns.empty:
+        df_cr_sgns["mp_id"] = pd.to_numeric(df_cr_sgns["mp_id"], errors="coerce")
+        df_cr_sgns = df_cr_sgns.dropna(subset=["mp_id"])
+        df_cr_sgns["mp_id"] = df_cr_sgns["mp_id"].astype(int)
+    df_cr_sgns.to_csv(committee_report_signatures_csv, index=False, encoding="utf-8")
 
     df_objs = pd.DataFrame(objection_records, columns=["committee_report_id", "objection_index", "reasoning", "motion"])
     df_objs.to_csv(objections_csv, index=False, encoding="utf-8")
 
-    df_obj_sigs = pd.DataFrame(objection_sig_records, columns=["committee_report_id", "objection_index", "mp_id"]).drop_duplicates(subset=["committee_report_id", "objection_index", "mp_id"])
-    if not df_obj_sigs.empty:
-        df_obj_sigs["mp_id"] = pd.to_numeric(df_obj_sigs["mp_id"], errors="coerce")
-        df_obj_sigs = df_obj_sigs.dropna(subset=["mp_id"])
-        df_obj_sigs["mp_id"] = df_obj_sigs["mp_id"].astype(int)
-    df_obj_sigs.to_csv(objection_signatures_csv, index=False, encoding="utf-8")
+    df_obj_sgns = pd.DataFrame(objection_sgn_records, columns=["committee_report_id", "objection_index", "mp_id"]).drop_duplicates(subset=["committee_report_id", "objection_index", "mp_id"])
+    if not df_obj_sgns.empty:
+        df_obj_sgns["mp_id"] = pd.to_numeric(df_obj_sgns["mp_id"], errors="coerce")
+        df_obj_sgns = df_obj_sgns.dropna(subset=["mp_id"])
+        df_obj_sgns["mp_id"] = df_obj_sgns["mp_id"].astype(int)
+    df_obj_sgns.to_csv(objection_signatures_csv, index=False, encoding="utf-8")
+    
 
 def import_data():
     conn = psycopg2.connect(
@@ -291,18 +260,16 @@ def import_data():
         reader = csv.DictReader(f)
         seen = set()
         for row in reader:
-            cr_id = row["committee_report_id"]
+            cr_id = row["committee_report_id"].lower()
             ob_idx = int(row["objection_index"])
             mp_id = int(row["mp_id"])
             key = (cr_id, ob_idx, mp_id)
             if key in seen:
                 continue
             seen.add(key)
-
             ob_id = obj_id_map.get((cr_id, ob_idx))
             if ob_id is None:
                 continue  # safety guard
-
             cur.execute(
                 """
                 INSERT INTO objection_signatures (objection_id, mp_id)
