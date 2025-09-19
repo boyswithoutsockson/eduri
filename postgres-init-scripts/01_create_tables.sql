@@ -135,7 +135,8 @@ END $$;
 CREATE TABLE IF NOT EXISTS proposals (
     id VARCHAR(20) PRIMARY KEY NOT NULL,
     proposer proposal_proposer,
-    summary TEXT NOT NULL,
+    title VARCHAR(1000),
+    summary TEXT,
     reasoning TEXT NOT NULL,
     law_changes TEXT,
     status proposal_status NOT NULL

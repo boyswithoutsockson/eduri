@@ -109,6 +109,16 @@ def Perustelu_parse(root, NS, not_child_of=""):
 
     return reasoning
 
+def Nimeke_parse(root, NS):
+    
+    title_nodes = root.xpath(
+            f".//met:Nimeke//met1:NimekeTeksti",
+            namespaces=NS
+        )
+    title = "\n\n".join([_txt(n) for n in title_nodes])
+
+    return title
+
 def AsiaSisaltoKuvaus_parse(root, NS, not_child_of=""):
     if not_child_of:
         filter = f"[not(ancestor::{not_child_of})]"
