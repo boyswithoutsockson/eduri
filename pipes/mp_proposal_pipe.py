@@ -48,8 +48,6 @@ def preprocess_data():
     os.makedirs(os.path.dirname(mp_proposals_csv), exist_ok=True)
     mpp_df = pd.read_csv(mp_proposal_tsv_path, sep="\t")
     handling_df = pd.read_csv(handling_tsv_path, sep="\t")
-    
-    n = 0
 
     mpp_records = []            # government_proposals rows
     sgn_records = []  
