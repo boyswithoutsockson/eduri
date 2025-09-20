@@ -105,17 +105,17 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 -- agenda items
 CREATE TABLE IF NOT EXISTS agenda_items (
-    id INT PRIMARY KEY NOT NULL,
-    parliament_id VARCHAR (20) NOT NULL,
+    parliament_id VARCHAR (20),
     session_id VARCHAR(15) REFERENCES sessions(id),
-    title TEXT NOT NULL
+    title TEXT NOT NULL,
+    PRIMARY KEY(parliament_id, session_id)
 );
 
 -- speeches
 CREATE TABLE IF NOT EXISTS speeches (
     id VARCHAR(15) PRIMARY KEY NOT NULL,
     person_id INT NOT NULL REFERENCES persons(id),
-    parliament_id VARCHAR (20) NOT NULL,
+    agenda_item_parliament_id VARCHAR (20) REFERENCES agenda_items(parliament_id),
     start_time TIMESTAMP WITH TIME ZONE NOT NULL,
     speech TEXT NOT NULL,
     response_to VARCHAR(15) REFERENCES speeches(id)
