@@ -13,7 +13,7 @@ const { mp } = Astro.props;
 const ballotVotes = mp
     ? await db
           .selectFrom("votes")
-          .where("votes.mp_id", "=", mp.id)
+          .where("votes.person_id", "=", mp.id)
           .where("votes.vote", "is not", null)
           .leftJoin("ballots", "votes.ballot_id", "ballots.id")
           .select([
