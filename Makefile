@@ -85,13 +85,13 @@ data/preprocessed/votes.csv: pipes/vote_pipe.py $(DATA_DUMP)
 	mkdir -p data/preprocessed
 	uv run pipes/vote_pipe.py --preprocess-data
 
-data/preprocessed/parties.csv: pipes/parties_pipe.py $(DATA_DUMP)
+data/preprocessed/parliamentary_groups.csv: pipes/parliamentary_groups_pipe.py $(DATA_DUMP)
 	mkdir -p data/preprocessed
-	uv run pipes/parties_pipe.py --preprocess-data
+	uv run pipes/parliamentary_groups_pipe.py --preprocess-data
 
-data/preprocessed/mp_party_memberships.csv: pipes/mp_party_membership_pipe.py $(DATA_DUMP)
+data/preprocessed/mp_par_memberships.csv: pipes/mp_parliamentary_group_pipe.py $(DATA_DUMP)
 	mkdir -p data/preprocessed
-	uv run pipes/mp_party_membership_pipe.py --preprocess-data
+	uv run pipes/mp_parliamentary_group_pipe.py --preprocess-data
 
 data/preprocessed/committees.csv: pipes/committee_pipe.py $(DATA_DUMP)
 	mkdir -p data/preprocessed
@@ -134,8 +134,8 @@ PREPROCESSED_FILES = $(VASKI_DATA) \
     data/preprocessed/interests.csv \
     data/preprocessed/ballots.csv \
     data/preprocessed/votes.csv \
-    data/preprocessed/parties.csv \
-    data/preprocessed/mp_party_memberships.csv \
+    data/preprocessed/parliamentary_groups.csv \
+    data/preprocessed/mp_parliamentary_group_memberships.csv \
     data/preprocessed/committees.csv \
     data/preprocessed/mp_committee_memberships.csv \
 	data/preprocessed/sessions.csv \
@@ -154,8 +154,8 @@ $(DATABASE): $(PREPROCESSED_FILES)
 		pipes/interest_pipe.py \
 		pipes/ballot_pipe.py \
 		pipes/vote_pipe.py \
-		pipes/parties_pipe.py \
-		pipes/mp_party_membership_pipe.py \
+		pipes/parliamentary_groups_pipe.py \
+		pipes/mp_parliamentary_group_pipe.py \
 		pipes/committee_pipe.py \
 		pipes/mp_committee_membership_pipe.py \
 		pipes/session_pipe.py \

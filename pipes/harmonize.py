@@ -1,36 +1,36 @@
-def harmonize_party(party):
+def harmonize_parliamentary_group(parliamentary_group):
 
-    if party in ["vas", "Vasemmistoliiton eduskuntaryhmä", "Left Alliance Parliamentary Group"]:
-        party = "vas"
+    if parliamentary_group in ["vas", "Vasemmistoliiton eduskuntaryhmä", "Left Alliance Parliamentary Group"]:
+        parliamentary_group = "vas"
 
-    elif party in ["kok", "Kansallisen kokoomuksen eduskuntaryhmä", "Parliamentary Group of the National Coalition Party"]:
-        party = "kok"
+    elif parliamentary_group in ["kok", "Kansallisen kokoomuksen eduskuntaryhmä", "Parliamentary Group of the National Coalition parliamentary_group"]:
+        parliamentary_group = "kok"
 
-    elif party in ["ps", "Perussuomalaisten eduskuntaryhmä", "The Finns Party Parliamentary Group"]:
-        party = "ps"
+    elif parliamentary_group in ["ps", "Perussuomalaisten eduskuntaryhmä", "The Finns parliamentary_group Parliamentary Group"]:
+        parliamentary_group = "ps"
 
-    elif party in ["vihr", "Vihreä eduskuntaryhmä", "Green Parliamentary Group"]:
-        party = "vihr"
+    elif parliamentary_group in ["vihr", "Vihreä eduskuntaryhmä", "Green Parliamentary Group"]:
+        parliamentary_group = "vihr"
 
-    elif party in ["sd", "Sosialidemokraattinen eduskuntaryhmä", "Social Democratic Parliamentary Group"]:
-        party = "sd"
+    elif parliamentary_group in ["sd", "Sosialidemokraattinen eduskuntaryhmä", "Social Democratic Parliamentary Group"]:
+        parliamentary_group = "sd"
 
-    elif party in ["kd", "Kristillisdemokraattinen eduskuntaryhmä", "Christian Democratic Parliamentary Group"]:
-        party = "kd"
+    elif parliamentary_group in ["kd", "Kristillisdemokraattinen eduskuntaryhmä", "Christian Democratic Parliamentary Group"]:
+        parliamentary_group = "kd"
 
-    elif party in ["kesk", "Keskustan eduskuntaryhmä", "Centre Party Parliamentary Group"]:
-        party = "kesk"
+    elif parliamentary_group in ["kesk", "Keskustan eduskuntaryhmä", "Centre parliamentary_group Parliamentary Group"]:
+        parliamentary_group = "kesk"
 
-    elif party in ["r", "Ruotsalainen eduskuntaryhmä", "Swedish Parliamentary Group"]:
-        party = "r"
+    elif parliamentary_group in ["r", "Ruotsalainen eduskuntaryhmä", "Swedish Parliamentary Group"]:
+        parliamentary_group = "r"
 
-    elif party in ["liik", "Liike Nyt -eduskuntaryhmä", "Liike Nyt-Movement's Parliamentary Group"]:
-        party = "liik"
+    elif parliamentary_group in ["liik", "Liike Nyt -eduskuntaryhmä", "Liike Nyt-Movement's Parliamentary Group"]:
+        parliamentary_group = "liik"
 
-    elif party == "Eduskuntaryhmään kuulumaton":
-        party = "-"
+    elif parliamentary_group == "Eduskuntaryhmään kuulumaton":
+        parliamentary_group = "-"
 
     else:
-        party = party.lower()
+        parliamentary_group = parliamentary_group.lower()
 
-    return party
+    return parliamentary_group

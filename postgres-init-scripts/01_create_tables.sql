@@ -63,19 +63,19 @@ CREATE TABLE IF NOT EXISTS votes (
 -- );
 
 
--- Parties (puolueet)
-CREATE TABLE IF NOT EXISTS parties (
+-- parliamentary_groups (puolueet)
+CREATE TABLE IF NOT EXISTS parliamentary_groups (
     id VARCHAR(100) PRIMARY KEY,
     name VARCHAR(100)
 );
 
--- mp_party_memberships
-CREATE TABLE IF NOT EXISTS mp_party_memberships (
-    party_id VARCHAR(100) REFERENCES parties(id),
+-- mp_parliamentary_group_memberships
+CREATE TABLE IF NOT EXISTS mp_parliamentary_group_memberships (
+    pg_id VARCHAR(100) REFERENCES parliamentary_groups(id),
     mp_id INT REFERENCES members_of_parliament(id),
     start_date DATE,
     end_date DATE,
-    PRIMARY KEY(party_id, mp_id, start_date)
+    PRIMARY KEY(pg_id, mp_id, start_date)
 );
 
 -- committees (valiokunnat)
