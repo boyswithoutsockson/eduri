@@ -14,9 +14,10 @@ def preprocess_data():
     # Jos suomenkielistä otsikkoa ei ole, käytetään ruotsinkielistä
     AI.OtsikkoFI = AI.OtsikkoFI.combine_first(AI.OtsikkoSV)
 
-    AI = AI[["Id", "PJKohtaTunnus", "IstuntoTekninenAvain", "OtsikkoFI"]]
-    AI.columns = ["id", "parliament_id", "session_id", "title"]
-
+    AI = AI[["PJKohtaTunnus", "IstuntoTekninenAvain", "OtsikkoFI"]]
+    AI.columns = ["parliament_id", "session_id", "title"]
+    AI.drop_duplicates(inplace=True)
+    import pdb;pdb.set_trace()
     AI.to_csv(csv_path, index=False)
 
 
@@ -25,7 +26,7 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert("COPY agenda_items(id, parliament_id, session_id, title) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
+        cursor.copy_expert("COPY agenda_items(parliament_id, session_id, title) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
 
     conn.commit()
     cursor.close()
