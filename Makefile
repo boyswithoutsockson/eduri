@@ -17,6 +17,7 @@ PIPES := \
 	ministers \
 	mp_committee_memberships \
 	mp_law_proposals \
+	mp_petition_proposals \
 	mp_parliamentary_group_memberships \
 	mps \
 	parliamentary_groups \
@@ -105,6 +106,7 @@ $(PREPROCESSED)/election_seasons.csv: $(ELECTION_SEASONS)
 $(PREPROCESSED)/government_proposals.csv: $(DB)/mps
 $(PREPROCESSED)/mp_law_proposals.csv: $(DB)/mps
 $(PREPROCESSED)/mps.csv: $(MP_PHOTOS)
+$(PREPROCESSED)/mp_petition_proposals.csv: $(DB)/mps
 
 
 .PHONY: preprocess
