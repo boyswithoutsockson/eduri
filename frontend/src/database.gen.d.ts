@@ -9,6 +9,10 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
   : ColumnType<T, T | undefined, T>;
 
+export type ProposalStatus = "cancelled" | "expired" | "open" | "passed" | "passed_changed" | "passed_urgent" | "rejected" | "resting";
+
+export type ProposalType = "citizen" | "government" | "mp_debate" | "mp_law" | "mp_petition";
+
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export type Vote = "absent" | "abstain" | "no" | "yes";
@@ -48,56 +52,45 @@ export interface CommitteeReports {
 
 export interface CommitteeReportSignatures {
   committee_report_id: string;
-  mp_id: number;
+  person_id: number;
 }
 
 export interface Committees {
   name: string;
 }
 
+export interface ElectionSeasons {
+  end_year: Timestamp;
+  start_year: Timestamp;
+}
+
 export interface Interests {
   category: string | null;
   id: Generated<number>;
   interest: string | null;
-  mp_id: number | null;
-}
-
-export interface MembersOfParliament {
-  constituency: string | null;
-  email: string | null;
-  first_name: string | null;
-  full_name: string | null;
-  id: number;
-  last_name: string | null;
-  minister: boolean | null;
-  occupation: string | null;
-  phone_number: string | null;
-  photo: string | null;
-  place_of_birth: string | null;
-  place_of_residence: string | null;
-  year_of_birth: number | null;
+  person_id: number | null;
 }
 
 export interface Ministers {
   cabinet_id: string | null;
   end_date: Timestamp | null;
   ministry: string;
-  mp_id: number;
+  person_id: number;
   start_date: Timestamp;
 }
 
 export interface MpCommitteeMemberships {
   committee_name: string;
   end_date: Timestamp | null;
-  mp_id: number;
+  person_id: number;
   role: string;
   start_date: Timestamp;
 }
 
-export interface MpPartyMemberships {
+export interface MpParliamentaryGroupMemberships {
   end_date: Timestamp | null;
-  mp_id: number;
-  party_id: string;
+  person_id: number;
+  pg_id: string;
   start_date: Timestamp;
 }
 
@@ -109,13 +102,43 @@ export interface Objections {
 }
 
 export interface ObjectionSignatures {
-  mp_id: number;
   objection_id: Generated<number>;
+  person_id: number;
 }
 
-export interface Parties {
+export interface ParliamentaryGroups {
   id: string;
   name: string | null;
+}
+
+export interface Persons {
+  email: string | null;
+  first_name: string | null;
+  full_name: string | null;
+  id: number;
+  last_name: string | null;
+  occupation: string | null;
+  phone_number: string | null;
+  photo: string | null;
+  place_of_birth: string | null;
+  place_of_residence: string | null;
+  year_of_birth: number | null;
+}
+
+export interface Proposals {
+  id: string;
+  law_changes: string | null;
+  ptype: ProposalType | null;
+  reasoning: string | null;
+  status: ProposalStatus;
+  summary: string | null;
+  title: string | null;
+}
+
+export interface ProposalSignatures {
+  first: boolean | null;
+  person_id: number;
+  proposal_id: string;
 }
 
 export interface Sessions {
@@ -125,8 +148,8 @@ export interface Sessions {
 
 export interface Speeches {
   id: string;
-  mp_id: number;
   parliament_id: string;
+  person_id: number;
   response_to: string | null;
   speech: string;
   start_time: Timestamp;
@@ -134,7 +157,7 @@ export interface Speeches {
 
 export interface Votes {
   ballot_id: number;
-  mp_id: number;
+  person_id: number;
   vote: Vote | null;
 }
 
@@ -145,14 +168,17 @@ export interface DB {
   committee_report_signatures: CommitteeReportSignatures;
   committee_reports: CommitteeReports;
   committees: Committees;
+  election_seasons: ElectionSeasons;
   interests: Interests;
-  members_of_parliament: MembersOfParliament;
   ministers: Ministers;
   mp_committee_memberships: MpCommitteeMemberships;
-  mp_party_memberships: MpPartyMemberships;
+  mp_parliamentary_group_memberships: MpParliamentaryGroupMemberships;
   objection_signatures: ObjectionSignatures;
   objections: Objections;
-  parties: Parties;
+  parliamentary_groups: ParliamentaryGroups;
+  persons: Persons;
+  proposal_signatures: ProposalSignatures;
+  proposals: Proposals;
   sessions: Sessions;
   speeches: Speeches;
   votes: Votes;
