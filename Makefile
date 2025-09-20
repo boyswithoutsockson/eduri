@@ -3,6 +3,32 @@
 SHELL := /bin/bash
 .ONESHELL:
 
+# Data pipeline configs
+DB = data/.inserted
+PREPROCESSED = data/preprocessed
+PIPES := \
+	agenda_items \
+	ballots \
+	committee_reports \
+	committees \
+	election_seasons \
+	government_proposals \
+	interests \
+	ministers \
+	mp_committee_memberships \
+	mp_law_proposals \
+	mp_parliamentary_group_memberships \
+	mps \
+	parliamentary_groups \
+	sessions \
+	speeches \
+	votes
+
+
+###################
+# Generic scripts #
+###################
+
 .PHONY: help
 help: ## show help message
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make <command> \033[36m\033[0m\n"} /^[$$()% a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
@@ -52,135 +78,74 @@ clean: ## deletes all raw data assets
 	rm -rf data/.[!.]*
 	rm -f frontend/src/assets/.[!.]*
 
-.PHONY: clean-preprocessed
-clean-preprocessed: ## removes all preprocessed files
-	rm -rf data/preprocessed/*
-
-.PHONY: clean-vaski
-clean-vaski: ## removes vaski data
-	rm -rf data/raw/vaski/*
-	rm -f data/raw/vaski/.parsed
 
 ##################################
 # Scripts for data preprocessing #
 ##################################
 
-VASKI_DATA = data/raw/vaski/.parsed
+VASKI_DATA_DIR = data/raw/vaski
+VASKI_DATA = $(VASKI_DATA_DIR)/.parsed
 $(VASKI_DATA): pipes/vaski_parser.py $(DATA_DUMP)
-	mkdir -p data/raw/vaski
-	@touch $@
-	uv run pipes/vaski_parser.py
+	@echo "Parsing VASKI..."
+	mkdir -p $(VASKI_DATA_DIR)
+	uv run $<
+	touch $@
 
-data/preprocessed/members_of_parliament.csv: pipes/mp_pipe.py $(DATA_DUMP) $(MP_PHOTOS)
-	mkdir -p data/preprocessed
-	uv run pipes/mp_pipe.py --preprocess-data
+.PHONY: clean-vaski
+clean-vaski: ## removes vaski data
+	rm -rf $(VASKI_DATA_DIR)
 
-data/preprocessed/ministers.csv: pipes/minister_pipe.py $(DATA_DUMP)
-	mkdir -p data/preprocessed
-	uv run pipes/minister_pipe.py --preprocess-data
+# Recipe for constructing all CSVs
+$(PREPROCESSED)/%.csv: pipes/%_pipe.py $(DATA_DUMP) $(VASKI_DATA)
+	@echo "Preprocessing $*..."
+	mkdir -p $(PREPROCESSED)
+	uv run $< --preprocess-data
 
-data/preprocessed/interests.csv: pipes/interest_pipe.py $(DATA_DUMP)
-	mkdir -p data/preprocessed
-	uv run pipes/interest_pipe.py --preprocess-data
+# Prerequisites for preprocessing
+$(PREPROCESSED)/mps.csv: $(MP_PHOTOS)
+$(PREPROCESSED)/government_proposals.csv: $(DB)/mps
+$(PREPROCESSED)/mp_law_proposals.csv: $(DB)/mps
 
-data/preprocessed/ballots.csv: pipes/ballot_pipe.py $(DATA_DUMP)
-	mkdir -p data/preprocessed
-	uv run pipes/ballot_pipe.py --preprocess-data
 
-data/preprocessed/votes.csv: pipes/vote_pipe.py $(DATA_DUMP)
-	mkdir -p data/preprocessed
-	uv run pipes/vote_pipe.py --preprocess-data
+.PHONY: preprocess
+preprocess: $(addprefix $(PREPROCESSED)/,$(addsuffix .csv,$(PIPES)))
 
-data/preprocessed/parliamentary_groups.csv: pipes/parliamentary_groups_pipe.py $(DATA_DUMP)
-	mkdir -p data/preprocessed
-	uv run pipes/parliamentary_groups_pipe.py --preprocess-data
+.PHONY: clean-preprocessed
+clean-preprocessed: ## removes all preprocessed files
+	rm -rf $(PREPROCESSED)
 
-data/preprocessed/mp_parliamentary_group_memberships.csv: pipes/mp_parliamentary_group_memberships_pipe.py $(DATA_DUMP)
-	mkdir -p data/preprocessed
-	uv run pipes/mp_parliamentary_group_memberships_pipe.py --preprocess-data
-
-data/preprocessed/committees.csv: pipes/committee_pipe.py $(DATA_DUMP)
-	mkdir -p data/preprocessed
-	uv run pipes/committee_pipe.py --preprocess-data
-
-data/preprocessed/mp_committee_memberships.csv: pipes/mp_committee_membership_pipe.py $(DATA_DUMP)
-	mkdir -p data/preprocessed
-	uv run pipes/mp_committee_membership_pipe.py --preprocess-data
-
-data/preprocessed/sessions.csv: pipes/session_pipe.py $(DATA_DUMP)
-	mkdir -p data/preprocessed
-	uv run pipes/session_pipe.py --preprocess-data
-
-data/preprocessed/agenda_items.csv: pipes/agenda_item_pipe.py $(DATA_DUMP)
-	mkdir -p data/preprocessed
-	uv run pipes/agenda_item_pipe.py --preprocess-data
-
-data/preprocessed/speeches.csv: pipes/speech_pipe.py $(DATA_DUMP)
-	mkdir -p data/preprocessed
-	uv run pipes/speech_pipe.py --preprocess-data
-  
-data/preprocessed/committee_reports.csv: pipes/committee_report_pipe.py $(DATA_DUMP)
-	mkdir -p data/preprocessed
-	uv run pipes/committee_report_pipe.py --preprocess-data
-
-data/preprocessed/election_seasons.csv: pipes/election_seasons_pipe.py $(ELECTION_SEASONS)
-	mkdir -p data/preprocessed
-	uv run pipes/election_seasons_pipe.py --preprocess-data
 
 #################################
 # Scripts for database creation #
 #################################
 
+# Recipe for inserting all data
+$(DB)/%: data/preprocessed/%.csv
+	@echo "Inserting $*..."
+	mkdir -p $(DB)
+	uv run pipes/$*_pipe.py --import-data
+	touch $@
+
+# Prerequisites for inserting data into database
+$(DB)/agenda_items: $(DB)/sessions
+$(DB)/committee_reports: $(DB)/mps $(DB)/committees
+$(DB)/interests: $(DB)/mps
+$(DB)/ministers: $(DB)/mps
+$(DB)/mp_committee_memberships: $(DB)/mps $(DB)/committees
+$(DB)/mp_law_proposals: $(DB)/mps
+$(DB)/mp_parliamentary_group_memberships: $(DB)/mps $(DB)/committees $(DB)/parliamentary_groups
+$(DB)/speeches: $(DB)/mps
+$(DB)/votes: $(DB)/ballots $(DB)/mps
+
+
+.PHONY: database
+database: $(addprefix $(DB)/,$(PIPES))  ## runs all data pipelines into the database
+
 .PHONY: nuke
 nuke: ## resets all data in the database
 	PGPASSWORD=postgres psql -q -U postgres -h db postgres < DELETE_ALL_TABLES.sql
 	PGPASSWORD=postgres psql -q -U postgres -h db postgres < postgres-init-scripts/01_create_tables.sql
-	rm -f data/.inserted
-
-PREPROCESSED_FILES = $(VASKI_DATA) \
-	data/preprocessed/members_of_parliament.csv \
-	data/preprocessed/ministers.csv \
-    data/preprocessed/interests.csv \
-    data/preprocessed/ballots.csv \
-    data/preprocessed/votes.csv \
-    data/preprocessed/parliamentary_groups.csv \
-    data/preprocessed/mp_parliamentary_group_memberships.csv \
-    data/preprocessed/committees.csv \
-    data/preprocessed/mp_committee_memberships.csv \
-	data/preprocessed/sessions.csv \
-	data/preprocessed/agenda_items.csv \
-    data/preprocessed/speeches.csv \
-    data/preprocessed/committee_reports.csv
-
-DATABASE = data/.inserted
-$(DATABASE): $(PREPROCESSED_FILES)
-	@touch $@
-	@bash -c '\
-	TIMEFORMAT="Finished in %3R seconds."; \
-	for script in \
-		pipes/mp_pipe.py \
-		pipes/minister_pipe.py \
-		pipes/interest_pipe.py \
-		pipes/ballot_pipe.py \
-		pipes/vote_pipe.py \
-		pipes/parliamentary_groups_pipe.py \
-		pipes/mp_parliamentary_group_memberships_pipe.py \
-		pipes/committee_pipe.py \
-		pipes/mp_committee_membership_pipe.py \
-		pipes/session_pipe.py \
-		pipes/agenda_item_pipe.py \
-		pipes/speech_pipe.py \
-		pipes/committee_report_pipe.py \
-		pipes/election_seasons_pipe.py;
-	do \
-		
-		echo "Importing data with $$script"; \
-		time uv run $$script --import-data; \
-	done'
-
-.PHONY: database
-database: $(DATABASE) ## runs all data pipelines into the database
-
+	rm -rf $(DB)
 
 ###############################
 # Frontend management scripts #

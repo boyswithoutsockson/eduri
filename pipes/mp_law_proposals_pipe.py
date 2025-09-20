@@ -8,7 +8,7 @@ from XML_parsing_help_functions import id_parse, Nimeke_parse, AsiaSisaltoKuvaus
 
 # Paths
 mp_proposal_tsv_path = os.path.join("data", "raw", "vaski", "LegislativeMotion_fi.tsv")
-mp_proposals_csv = os.path.join("data", "preprocessed", "mp_proposals.csv")
+mp_proposals_csv = os.path.join("data", "preprocessed", "mp_law_proposals.csv")
 mp_proposal_signatures_csv = os.path.join("data", "preprocessed", "mp_proposal_signatures.csv")
 handling_tsv_path = os.path.join("data", "raw", "vaski", "KasittelytiedotValtiopaivaasia_fi.tsv")
 

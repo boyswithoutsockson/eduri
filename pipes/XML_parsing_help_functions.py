@@ -214,7 +214,7 @@ def Allekirjoittaja_parse(root, NS, eid, cursor=None):
 
                 cursor.execute("""
                     SELECT id 
-                    FROM public.members_of_parliament 
+                    FROM persons
                     WHERE LOWER(first_name) = %s AND LOWER(last_name) = %s""", 
                     (first_name.strip().lower(), last_name.strip().lower())
                     )
