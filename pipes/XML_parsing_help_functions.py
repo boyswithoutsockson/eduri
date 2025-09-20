@@ -21,7 +21,7 @@ def saados_to_md(saados, NS):
             header = " ".join(title_bits).strip()
             out = []
             if header:
-                out.append(f"### {header}")
+                out.append(f"# {header}\n")
 
             # Johtolause (preamble)
             for jl in saados.findall(".//saa:Johtolause", namespaces=NS):
@@ -54,43 +54,40 @@ def saados_to_md(saados, NS):
 
             return "\n\n".join(out)
 
-def parse_tau_table(table_element):
-    """
-    Parse a <tau:table> XML element into a JSON-friendly dict:
-    {
-      "title": "...",
-      "rows": [
-        {"column_1": "...", "column_2": "...", "column_3": ["...", "..."]},
-        ...
-      ]
-    }
-    """
-    namespaces = {'tau': 'tau', 'sis': 'sis'}
-
-    result = {}
-    # Capture table title if it exists
-    title_elem = table_element.find(".//tau:title/sis:KappaleKooste", namespaces)
-    if title_elem is not None:
-        result["title"] = title_elem.text.strip()
-
+def tau_to_md(root, NS):
+    
     rows = []
-    for row in table_element.findall(".//tau:row", namespaces):
-        entries = row.findall("tau:entry", namespaces)
-        row_data = {}
-        for idx, entry in enumerate(entries, start=1):
-            # Collect all kappale texts from the entry
-            kappale_list = entry.findall("sis:KappaleKooste", namespaces)
+    for row in root.findall(".//tau:row", NS):
+        entries = row.findall("tau:entry", NS)
+        row_values = []
+        for entry in entries:
+            kappale_list = entry.findall("sis:KappaleKooste", NS)
             values = [k.text.strip() for k in kappale_list if k.text and k.text.strip()]
-
             if not values and entry.text and entry.text.strip():
                 values.append(entry.text.strip())
+            # Join multiple values with <br> for markdown
+            row_values.append(" <br> ".join(values) if values else "")
+        rows.append(row_values)
 
-            # Store list if multiple values, string if single, None if empty
-            row_data[f"column_{idx}"] = values[0] if len(values) == 1 else (values or None)
-        rows.append(row_data)
+    if not rows:
+        return ""
 
-    result["rows"] = rows
-    return result
+    # First row = header
+    header = rows[0]
+    # Markdown table header line
+    md = "| " + " | ".join(f"**{h}**" for h in header) + " |\n"
+    # Separator
+    md += "| " + " | ".join("---" for _ in header) + " |\n"
+    # Remaining rows
+    for row in rows[1:]:
+        md += "| " + " | ".join(row) + " |\n"
+
+    # Optional: include table title if present
+    title_elem = root.find(".//tau:title/sis:KappaleKooste", NS)
+    if title_elem is not None and title_elem.text:
+        return f"**{title_elem.text.strip()}**\n\n" + md
+    return md
+
 
 def Perustelu_parse(root, NS, not_child_of=""):
     if not_child_of:
@@ -159,8 +156,19 @@ def Saados_parse(root, NS):
     law_md_blocks = []
     for saados in root.findall(".//saa:SaadosOsa/saa:Saados", namespaces=NS):
         law_md = saados_to_md(saados, NS)
+
+        for table in saados.findall(".//tau:table", NS):
+            table_md = tau_to_md(table, NS)
+            print(table_md)
+            if table_md:
+                # Replace the XML <tau:table> with its Markdown representation
+                # naive approach: just append at the end of the block where it belongs
+                law_md += "\n\n" + table_md + "\n\n"
+
         if law_md:
             law_md_blocks.append(law_md)
+
+        
     law_changes = "\n\n---\n\n".join(law_md_blocks)
 
     return law_changes
