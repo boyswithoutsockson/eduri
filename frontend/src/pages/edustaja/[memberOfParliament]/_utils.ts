@@ -3,18 +3,18 @@ import { db } from "~src/database";
 /** Helper function for `getStaticPaths` for `/edustaja` subpages */
 export async function getAllMps() {
     return db
-        .selectFrom("members_of_parliament")
+        .selectFrom("persons")
         .leftJoin(
-            "mp_party_memberships",
-            "members_of_parliament.id",
-            "mp_party_memberships.mp_id",
+            "mp_parliamentary_group_memberships",
+            "persons.id",
+            "mp_parliamentary_group_memberships.person_id",
         )
         .select([
             "full_name",
             "email",
             "occupation",
             "place_of_residence",
-            "mp_party_memberships.party_id",
+            "mp_parliamentary_group_memberships.pg_id as party_id",
         ])
         .selectAll()
         .execute();

@@ -1,26 +1,26 @@
 import { db } from "~src/database";
-import { mpWithPhotoUrl } from "~src/utils";
+import { mpsWithPhotoUrl } from "~src/utils";
 
 /** Partial query for MP data in mp listings */
 export function mpData() {
     return db
-        .selectFrom("members_of_parliament")
+        .selectFrom("persons")
         .leftJoin(
-            "mp_party_memberships",
-            "members_of_parliament.id",
-            "mp_party_memberships.mp_id",
+            "mp_parliamentary_group_memberships",
+            "persons.id",
+            "mp_parliamentary_group_memberships.person_id",
         )
         .leftJoin("ministers", (join) =>
             join
-                .onRef("ministers.mp_id", "=", "members_of_parliament.id")
+                .onRef("ministers.person_id", "=", "persons.id")
                 .on("ministers.end_date", "is", null),
         )
         .select([
-            "members_of_parliament.id",
-            "members_of_parliament.first_name",
-            "members_of_parliament.last_name",
-            "members_of_parliament.photo",
-            "mp_party_memberships.party_id",
+            "persons.id",
+            "persons.first_name",
+            "persons.last_name",
+            "persons.photo",
+            "mp_parliamentary_group_memberships.pg_id as party_id",
             "ministers.ministry",
         ]);
 }
@@ -32,11 +32,9 @@ export function mpData() {
  * data whenever the user uses the search bar.
  */
 export async function GET() {
-    const data = await mpData()
-        .distinctOn("members_of_parliament.id")
-        .execute();
+    const data = await mpData().distinctOn("persons.id").execute();
 
-    const mpsWithPhotoUrls = await mpWithPhotoUrl(data);
+    const mpsWithPhotoUrls = await mpsWithPhotoUrl(data);
 
     return new Response(JSON.stringify(mpsWithPhotoUrls));
 }
