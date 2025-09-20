@@ -5,7 +5,7 @@ import csv
 import psycopg2
 
 
-csv_path = 'data/preprocessed/members_of_parliament.csv'
+csv_path = 'data/preprocessed/mps.csv'
 
 
 def preprocess_data():
