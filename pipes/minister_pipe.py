@@ -16,7 +16,7 @@ def preprocess_data():
     for mp in df.iterrows():
         mp = mp[1]
 
-        mp_id = mp['personId']
+        person_id = mp['personId']
         xml = mp['XmlDataFi']
         tree = ET.fromstring(xml)
 
@@ -37,7 +37,7 @@ def preprocess_data():
                     end = end + "-12-31"
             
                 rows.append({
-                    "mp_id": mp_id,
+                    "person_id": person_id,
                     "ministry": ministry_name,
                     "cabinet_id": cab_id,
                     "start_date": start,
@@ -57,7 +57,7 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert("COPY ministers(mp_id, ministry, cabinet_id, start_date, end_date) FROM stdin DELIMITERS ',' CSV QUOTE '\"';", f)
+        cursor.copy_expert("COPY ministers(person_id, ministry, cabinet_id, start_date, end_date) FROM stdin DELIMITERS ',' CSV QUOTE '\"';", f)
 
     conn.commit()
     cursor.close()

@@ -21,7 +21,7 @@ def preprocess_data():
         lambda x: vote_dict[x]
     )
 
-    vote_data.columns = ["mp_id", "ballot_id", "vote"]
+    vote_data.columns = ["person_id", "ballot_id", "vote"]
     vote_data.to_csv(csv_path, index=False)
 
 def import_data():
@@ -33,7 +33,7 @@ def import_data():
     cursor = conn.cursor()
     with open(csv_path) as f:
         cursor.execute("ALTER TABLE votes DISABLE TRIGGER ALL;")
-        cursor.copy_expert("COPY votes(mp_id, ballot_id, vote) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
+        cursor.copy_expert("COPY votes(person_id, ballot_id, vote) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
         cursor.execute("ALTER TABLE votes ENABLE TRIGGER ALL;")
     conn.commit()
     cursor.close()

@@ -129,8 +129,8 @@ def preprocess_data():
             for signer in objection.findall(".//asi:Allekirjoittaja", namespaces=NS):
                 if signer is None:
                     continue
-                mp_id = signer.find(".//org:Henkilo", namespaces=NS).attrib.get(f"{{{NS['met1']}}}muuTunnus")
-                if mp_id is None:
+                person_id = signer.find(".//org:Henkilo", namespaces=NS).attrib.get(f"{{{NS['met1']}}}muuTunnus")
+                if person_id is None:
                     first_name = signer.find(".//org:Henkilo/org1:EtuNimi", namespaces=NS).text
                     last_name = signer.find(".//org:Henkilo/org1:SukuNimi", namespaces=NS).text
                     if not first_name or not last_name:                         # Joskus nääki voi puuttua huoh
@@ -140,21 +140,21 @@ def preprocess_data():
                         last_name = "".join(last_name.split()[:-1]).strip()
                     cur.execute("""
                         SELECT id 
-                        FROM public.members_of_parliament 
+                        FROM public.persons 
                         WHERE LOWER(first_name) = %s AND LOWER(last_name) = %s""", 
                         (first_name.strip().lower(), last_name.strip().lower())
                         )
                     
-                    mp_id = cur.fetchone()
-                    if mp_id is not None:
-                        mp_id = mp_id[0]
+                    person_id = cur.fetchone()
+                    if person_id is not None:
+                        person_id = person_id[0]
                     else:
                         # Tänne menee sihteerit yms. jotka on joskus allekirjoittamassa esityksiä
                         continue
                 objection_sgn_records.append({
                     "committee_report_id": eid,
                     "objection_index": obj_idx,
-                    "mp_id": int(mp_id)
+                    "person_id": int(person_id)
                 })
 
         
@@ -178,29 +178,29 @@ def preprocess_data():
     # Write CSVs
     pd.DataFrame(cr_records).to_csv(committee_reports_csv, index=False, encoding="utf-8")
     
-    # Vaski-datassa on virhe: Saman mp_idn taakse on kirjattu useita eri nimiä
+    # Vaski-datassa on virhe: Saman persp_idn taakse on kirjattu useita eri nimiä
     # Tämä johtaa tilanteeseen, jossa kansanedustaja voi 'allekirjoittaa'
     # lausunnon useamman kerran, mikä kaataa ohjelman kantaan kirjoituksen aikana,
     # sillä duplikaattiallekirjoituksia ei ole sallittu tauluun. 
     # Virhe on kohtalaisen pieni, 16 mietinnön kohdalla joitain kymmeniä henkilöitä on
-    # kirjattu väärällä mp_idllä. Virheen mittakaavan huomioiden jätetään tässä kohtaa
+    # kirjattu väärällä person_idllä. Virheen mittakaavan huomioiden jätetään tässä kohtaa
     # virheellinen data korjaamatta, vaikka nimitietoja hyödyntäen se olisi teoriassa 
     # mahdollista. Sen sijaan poistetaan duplikaatit ja säilytetään vain ensimmäinen löytö.
-    df_cr_sgns = pd.DataFrame(cr_sgn_records).drop_duplicates(subset=["committee_report_id", "mp_id"])
+    df_cr_sgns = pd.DataFrame(cr_sgn_records).drop_duplicates(subset=["committee_report_id", "person_id"])
     if not df_cr_sgns.empty:
-        df_cr_sgns["mp_id"] = pd.to_numeric(df_cr_sgns["mp_id"], errors="coerce")
-        df_cr_sgns = df_cr_sgns.dropna(subset=["mp_id"])
-        df_cr_sgns["mp_id"] = df_cr_sgns["mp_id"].astype(int)
+        df_cr_sgns["person_id"] = pd.to_numeric(df_cr_sgns["person_id"], errors="coerce")
+        df_cr_sgns = df_cr_sgns.dropna(subset=["person_id"])
+        df_cr_sgns["person_id"] = df_cr_sgns["person_id"].astype(int)
     df_cr_sgns.to_csv(committee_report_signatures_csv, index=False, encoding="utf-8")
 
     df_objs = pd.DataFrame(objection_records, columns=["committee_report_id", "objection_index", "reasoning", "motion"])
     df_objs.to_csv(objections_csv, index=False, encoding="utf-8")
 
-    df_obj_sgns = pd.DataFrame(objection_sgn_records, columns=["committee_report_id", "objection_index", "mp_id"]).drop_duplicates(subset=["committee_report_id", "objection_index", "mp_id"])
+    df_obj_sgns = pd.DataFrame(objection_sgn_records, columns=["committee_report_id", "objection_index", "person_id"]).drop_duplicates(subset=["committee_report_id", "objection_index", "person_id"])
     if not df_obj_sgns.empty:
-        df_obj_sgns["mp_id"] = pd.to_numeric(df_obj_sgns["mp_id"], errors="coerce")
-        df_obj_sgns = df_obj_sgns.dropna(subset=["mp_id"])
-        df_obj_sgns["mp_id"] = df_obj_sgns["mp_id"].astype(int)
+        df_obj_sgns["person_id"] = pd.to_numeric(df_obj_sgns["person_id"], errors="coerce")
+        df_obj_sgns = df_obj_sgns.dropna(subset=["person_id"])
+        df_obj_sgns["person_id"] = df_obj_sgns["person_id"].astype(int)
     df_obj_sgns.to_csv(objection_signatures_csv, index=False, encoding="utf-8")
     
 
@@ -228,7 +228,7 @@ def import_data():
     with open(committee_report_signatures_csv, "r", encoding="utf-8") as f:
         cur.copy_expert(
             """
-            COPY committee_report_signatures(committee_report_id, mp_id)
+            COPY committee_report_signatures(committee_report_id, person_id)
             FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
             """,
             f
@@ -262,8 +262,8 @@ def import_data():
         for row in reader:
             cr_id = row["committee_report_id"].lower()
             ob_idx = int(row["objection_index"])
-            mp_id = int(row["mp_id"])
-            key = (cr_id, ob_idx, mp_id)
+            person_id = int(row["person_id"])
+            key = (cr_id, ob_idx, person_id)
             if key in seen:
                 continue
             seen.add(key)
@@ -272,10 +272,10 @@ def import_data():
                 continue  # safety guard
             cur.execute(
                 """
-                INSERT INTO objection_signatures (objection_id, mp_id)
+                INSERT INTO objection_signatures (objection_id, person_id)
                 VALUES (%s, %s);
                 """,
-                (ob_id, mp_id)
+                (ob_id, person_id)
             )
 
     conn.commit()

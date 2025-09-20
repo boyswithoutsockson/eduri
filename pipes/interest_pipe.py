@@ -14,7 +14,7 @@ def preprocess_data():
     xml_dicts = MoP.XmlDataFi.apply(xmltodict.parse)
     rows = []
     for henkilo in xml_dicts:
-        mp_id = henkilo['Henkilo']['HenkiloNro']
+        person_id = henkilo['Henkilo']['HenkiloNro']
 
         if henkilo['Henkilo']['Sidonnaisuudet'] is None:
             continue
@@ -25,13 +25,13 @@ def preprocess_data():
             interest = [interest]
 
         rows.extend([
-            {'mp_id': mp_id, 'category': x['RyhmaOtsikko'], 'interest': x['Sidonta']}
+            {'person_id': person_id, 'category': x['RyhmaOtsikko'], 'interest': x['Sidonta']}
             for x in interest
             if 'Sidonta' in x and x['Sidonta'] not in [None, 'Ei ilmoitettavia sidonnaisuuksia', 'Ei ilmoitettavia tuloja']
         ])
 
     with open(csv_path, 'w') as f:
-        writer = csv.DictWriter(f, fieldnames=["mp_id", "category", "interest"])
+        writer = csv.DictWriter(f, fieldnames=["person_id", "category", "interest"])
         writer.writerows(rows)
 
 def import_data():
@@ -43,7 +43,7 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert("COPY interests(mp_id, category, interest) FROM stdin DELIMITERS ',' CSV QUOTE '\"';", f)
+        cursor.copy_expert("COPY interests(person_id, category, interest) FROM stdin DELIMITERS ',' CSV QUOTE '\"';", f)
 
     conn.commit()
     cursor.close()

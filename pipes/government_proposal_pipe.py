@@ -138,7 +138,7 @@ def import_data():
     with open(government_proposal_signatures_csv, "r", encoding="utf-8") as f:
         cur.copy_expert(
             """
-            COPY proposal_signatures(proposal_id, mp_id, first)
+            COPY proposal_signatures(proposal_id, person_id, first)
             FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
             """,
             f
