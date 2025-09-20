@@ -26,6 +26,12 @@ $(DATA_DUMP): data/dump.zip
 	mkdir -p data/raw
 	unzip -oq data/dump.zip -d data/raw
 
+data/raw/kansanedustajat_vaalikausittain.csv:
+	FILE_ID=1bNQBZA6fxm3RYDSB7dT_D7fdYkEIUf_9
+	curl -L "https://drive.usercontent.google.com/download?id=$${FILE_ID}&confirm=true" --progress-bar \
+		-o $@
+
+ELECTION_SEASONS = data/raw/kansanedustajat_vaalikausittain.csv
 
 frontend/src/assets/photos-2023-2026.zip:
 	mkdir -p frontend/src/assets
@@ -117,6 +123,9 @@ data/preprocessed/committee_reports.csv: pipes/committee_report_pipe.py $(DATA_D
 	mkdir -p data/preprocessed
 	uv run pipes/committee_report_pipe.py --preprocess-data
 
+data/preprocessed/election_seasons.csv: pipes/election_seasons_pipe.py $(ELECTION_SEASONS)
+	mkdir -p data/preprocessed
+	uv run pipes/election_seasons_pipe.py --preprocess-data
 
 #################################
 # Scripts for database creation #
@@ -161,7 +170,8 @@ $(DATABASE): $(PREPROCESSED_FILES)
 		pipes/session_pipe.py \
 		pipes/agenda_item_pipe.py \
 		pipes/speech_pipe.py \
-		pipes/committee_report_pipe.py;
+		pipes/committee_report_pipe.py \
+		pipes/election_seasons_pipe.py;
 	do \
 		
 		echo "Importing data with $$script"; \
