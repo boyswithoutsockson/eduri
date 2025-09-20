@@ -3,9 +3,9 @@ import pandas as pd
 import numpy as np
 import xmltodict
 import psycopg2
-from harmonize import harmonize_party
+from harmonize import harmonize_parliamentary_group
 
-csv_path = 'data/preprocessed/parties.csv'
+csv_path = 'data/preprocessed/parliamentary_groups.csv'
 
 
 def preprocess_data():
@@ -13,24 +13,24 @@ def preprocess_data():
         MoP = pd.read_csv(f, sep="\t")
 
     xml_dicts = MoP.XmlDataFi.apply(xmltodict.parse)
-    parties = []
+    parliamentary_groups = []
     for henkilo in xml_dicts:
         try:
-            parties.append(henkilo['Henkilo']['Eduskuntaryhmat']['NykyinenEduskuntaryhma']['Nimi'])
+            parliamentary_groups.append(henkilo['Henkilo']['Eduskuntaryhmat']['NykyinenEduskuntaryhma']['Nimi'])
         except KeyError:
             pass  # Ei nykyistä puoluetta
         try:
-            parties.append(henkilo['Henkilo']['Eduskuntaryhmat']['EdellisetEduskuntaryhmat']['Eduskuntaryhma']['Nimi'])
+            parliamentary_groups.append(henkilo['Henkilo']['Eduskuntaryhmat']['EdellisetEduskuntaryhmat']['Eduskuntaryhma']['Nimi'])
         except TypeError:
             if henkilo['Henkilo']['Eduskuntaryhmat']['EdellisetEduskuntaryhmat']:
                 for ekr in henkilo['Henkilo']['Eduskuntaryhmat']['EdellisetEduskuntaryhmat']['Eduskuntaryhma']:
-                    parties.append(ekr['Nimi'])
-    parties = [p for p in set(parties) if p is not None]
+                    parliamentary_groups.append(ekr['Nimi'])
+    parliamentary_groups = [p for p in set(parliamentary_groups) if p is not None]
 
-    party_keys = [harmonize_party(party) for party in parties]
-    parties_df = pd.DataFrame({"id": party_keys, "name": parties})
+    parliamentary_group_keys = [harmonize_parliamentary_group(parliamentary_group) for parliamentary_group in parliamentary_groups]
+    parliamentary_groups_df = pd.DataFrame({"id": parliamentary_group_keys, "name": parliamentary_groups})
 
-    parties_df.to_csv(csv_path, index=False)
+    parliamentary_groups_df.to_csv(csv_path, index=False)
 
 
 def import_data():
@@ -42,7 +42,7 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert("COPY parties(id, name) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
+        cursor.copy_expert("COPY parliamentary_groups(id, name) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
 
     conn.commit()
     cursor.close()

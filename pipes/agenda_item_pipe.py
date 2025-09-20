@@ -1,7 +1,6 @@
 import os.path
 import pandas as pd
 import psycopg2
-from harmonize import harmonize_party
 
 csv_path = 'data/preprocessed/agenda_items.csv'
 
