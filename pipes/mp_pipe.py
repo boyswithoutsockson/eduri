@@ -23,8 +23,6 @@ def preprocess_data():
 
         id = mp['personId']
 
-        minister = True if mp['minister'] == 't' else False
-
         xml = mp['XmlDataFi']
         tree = ET.fromstring(xml)
 
@@ -33,7 +31,6 @@ def preprocess_data():
             "first_name": mp['firstname'].strip(),
             "last_name": mp['lastname'].strip(),
             "full_name": f"{tree[1].text} {tree[2].text}",
-            "minister": minister,
             "phone_number": tree[6].text,
             "email": tree[7].text,
             "occupation": tree[9].text,
@@ -59,7 +56,7 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert("COPY members_of_parliament(id, first_name, last_name, full_name, minister, phone_number, email, occupation, year_of_birth, place_of_birth, place_of_residence, constituency, photo) FROM stdin DELIMITERS ',' CSV QUOTE '\"';", f)
+        cursor.copy_expert("COPY members_of_parliament(id, first_name, last_name, full_name, phone_number, email, occupation, year_of_birth, place_of_birth, place_of_residence, constituency, photo) FROM stdin DELIMITERS ',' CSV QUOTE '\"';", f)
 
     conn.commit()
     cursor.close()
