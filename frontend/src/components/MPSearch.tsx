@@ -24,6 +24,7 @@ type MP = {
     last_name: string | null;
     photo: string | null;
     party_id: string | null;
+    ministry: string | null;
 };
 
 interface Props {
@@ -154,6 +155,12 @@ function MemberListItem({ mp }: MLIProps) {
                         </span>
                     </span>
 
+                    {mp.ministry ? (
+                        <>
+                            <br />
+                            {mp.ministry}
+                        </>
+                    ) : null}
                     <br />
                     <a
                         href={`/edustaja/${mp.first_name + "+" + mp.last_name || ""}`}
