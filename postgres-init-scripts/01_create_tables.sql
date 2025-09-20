@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS proposals (
     ptype proposal_type,
     title VARCHAR(1000),
     summary TEXT,
-    reasoning TEXT NOT NULL,
+    reasoning TEXT,
     law_changes TEXT,
     status proposal_status NOT NULL
 );

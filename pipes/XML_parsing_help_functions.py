@@ -149,9 +149,6 @@ def Ponsi_parse(root, NS):
     return ponsi
 
 
-
-
-
 def Saados_parse(root, NS):
     law_md_blocks = []
     for saados in root.findall(".//saa:SaadosOsa/saa:Saados", namespaces=NS):
@@ -164,6 +161,8 @@ def Saados_parse(root, NS):
 
 def status_parse(handling_root, handling_xml_str, NS):
     handling_root = etree.parse(StringIO(handling_xml_str)).getroot()
+    if handling_root.find(".//vsk:EduskuntakasittelyPaatosKuvaus", namespaces=NS) is None:
+        return "open"
     status = handling_root.find(".//vsk:EduskuntakasittelyPaatosKuvaus", namespaces=NS).attrib.get(f"{{{NS['vsk1']}}}eduskuntakasittelyPaatosKoodi")
     match status:
         case None:
@@ -199,43 +198,47 @@ def Paatos_parse(root, NS, not_child_of=""):
 def Allekirjoittaja_parse(root, NS, eid, cursor=None):
     sgn_records = []
     for signer in root.findall(".//asi:Allekirjoittaja", namespaces=NS):
-            if signer.find(".//org:Henkilo/org1:EtuNimi", namespaces=NS).text is None:       # Joskus nää on vaan jostain syystä tyhjiä
+        if signer.find(".//org:Henkilo/org1:EtuNimi", namespaces=NS) is None:       # Joskus nää on vaan jostain syystä tyhjiä
+            continue
+        
+        person_id = signer.find(".//org:Henkilo", namespaces=NS).attrib.get(f"{{{NS['met1']}}}muuTunnus")
+        if person_id == '*':
+            continue
+
+        if person_id is None:
+            first_name = signer.find(".//org:Henkilo/org1:EtuNimi", namespaces=NS).text
+            last_name = signer.find(".//org:Henkilo/org1:SukuNimi", namespaces=NS).text
+            if not first_name or not last_name:                         # Joskus nääki voi puuttua huoh
                 continue
-            person_id = signer.find(".//org:Henkilo", namespaces=NS).attrib.get(f"{{{NS['met1']}}}muuTunnus")
-            if person_id is None:
-                first_name = signer.find(".//org:Henkilo/org1:EtuNimi", namespaces=NS).text
-                last_name = signer.find(".//org:Henkilo/org1:SukuNimi", namespaces=NS).text
-                if not first_name or not last_name:                         # Joskus nääki voi puuttua huoh
-                    continue
 
-                # Joskus sukunimen yhteydessä on puolue
-                if len(last_name.split()) > 1 and last_name.split()[-1].endswith(("ps", "kok", "vihr", "sd", "r", "liik", "kesk", "vas")):
-                    last_name = "".join(last_name.split()[:-1]).strip()
+            # Joskus sukunimen yhteydessä on puolue
+            if len(last_name.split()) > 1 and last_name.split()[-1].endswith(("ps", "kok", "vihr", "sd", "r", "liik", "kesk", "vas")):
+                last_name = "".join(last_name.split()[:-1]).strip()
 
-                cursor.execute("""
-                    SELECT id 
-                    FROM persons
-                    WHERE LOWER(first_name) = %s AND LOWER(last_name) = %s""", 
-                    (first_name.strip().lower(), last_name.strip().lower())
-                    )
-                
-                person_id = cursor.fetchone()
-                if person_id is not None:
-                    person_id = person_id[0]
-                else:
-                    # Tänne menee sihteerit yms. jotka on joskus allekirjoittamassa esityksiä
-                    continue
-
-            if signer.attrib.get(f"{{{NS['asi1']}}}allekirjoitusLuokitusKoodi") == "EnsimmainenAllekirjoittaja":     # Hallitusten esityksissä ei kai käytetä tätä systeemiä
-                first = 1                                                                                       # joten tää on käytännössä vielä testaamatta
+            cursor.execute("""
+                SELECT id 
+                FROM persons
+                WHERE LOWER(first_name) = %s AND LOWER(last_name) = %s""", 
+                (first_name.strip().lower(), last_name.strip().lower())
+                )
+            
+            person_id = cursor.fetchone()
+            if person_id is not None:
+                person_id = person_id[0]
             else:
-                first = 0
+                # Tänne menee sihteerit yms. jotka on joskus allekirjoittamassa esityksiä
+                continue
 
-            sgn_records.append({
-                "government_proposal_id": eid.lower(),
-                "person_id": int(person_id),
-                "first": first
-            })
+        if signer.attrib.get(f"{{{NS['asi1']}}}allekirjoitusLuokitusKoodi") == "EnsimmainenAllekirjoittaja":     # Hallitusten esityksissä ei kai käytetä tätä systeemiä
+            first = 1                                                                                         # joten tää on käytännössä vielä testaamatta
+        else:
+            first = 0
+
+        sgn_records.append({
+            "government_proposal_id": eid.lower(),
+            "person_id": int(person_id),
+            "first": first
+        })
     return sgn_records
 
 def Osallistuja_parse(root, NS, eid):

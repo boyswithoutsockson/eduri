@@ -7,9 +7,9 @@ from io import StringIO
 from XML_parsing_help_functions import id_parse, Nimeke_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Saados_parse, status_parse, Allekirjoittaja_parse
 
 # Paths
-mp_proposal_tsv_path = os.path.join("data", "raw", "vaski", "LegislativeMotion_fi.tsv")
-mp_proposals_csv = os.path.join("data", "preprocessed", "mp_law_proposals.csv")
-mp_proposal_signatures_csv = os.path.join("data", "preprocessed", "mp_law_proposal_signatures.csv")
+mp_petition_tsv_path = os.path.join("data", "raw", "vaski", "PetitionaryMotion_fi.tsv")
+mp_petitions_csv = os.path.join("data", "preprocessed", "mp_petition_proposals.csv")
+mp_petition_signatures_csv = os.path.join("data", "preprocessed", "mp_petition_proposal_signatures.csv")
 handling_tsv_path = os.path.join("data", "raw", "vaski", "KasittelytiedotValtiopaivaasia_fi.tsv")
 
 # Namespaces
@@ -45,12 +45,12 @@ NS = {
 }
 
 def preprocess_data():
-    os.makedirs(os.path.dirname(mp_proposals_csv), exist_ok=True)
-    mpp_df = pd.read_csv(mp_proposal_tsv_path, sep="\t")
+    os.makedirs(os.path.dirname(mp_petitions_csv), exist_ok=True)
+    mpp_df = pd.read_csv(mp_petition_tsv_path, sep="\t")
     handling_df = pd.read_csv(handling_tsv_path, sep="\t")
 
-    mpp_records = []        
-    sgn_records = []  
+    mpp_records = []           
+    sgn_records = [] 
 
     conn = psycopg2.connect(
         database="postgres",
@@ -68,12 +68,10 @@ def preprocess_data():
 
         eid = id_parse(mpp_root, NS)
 
-        proposal = mpp_root.find(".//eka:Lakialoite", namespaces=NS)
+        proposal = mpp_root.find(".//eka:EduskuntaAloite", namespaces=NS)
         if proposal is None:                                                # Joskus oikean aloitteen lisäksi on tyhjä aloite samalla id:llä                         
             if len(mpp_df.loc[mpp_df['Eduskuntatunnus'] == eid]) > 1:       # Tarkistetaan että samalla id:llä löytyy toinenkin (oikea) aloite
                 continue                                                    # Skipataan tämä           
-            elif eid == "LA 78/2017 vp":    # 2017 itsenäisyyspäivänä perustettu Itsenäisyyden juhlavuoden lastensäätiö perustettiin lakialoitteena                                                                       
-                continue
             else:
                 raise Exception
 
@@ -82,7 +80,7 @@ def preprocess_data():
 
         mpp_records.append({
             "id": eid.lower(),
-            "ptype": "mp_law",
+            "ptype": "mp_petition",
             "title": Nimeke_parse(proposal, NS),
             "summary": AsiaSisaltoKuvaus_parse(proposal, NS),
             "reasoning": Perustelu_parse(proposal, NS),
@@ -96,8 +94,8 @@ def preprocess_data():
     cur.close()
     conn.close()
 
-    pd.DataFrame(mpp_records).to_csv(mp_proposals_csv, index=False, encoding="utf-8")
-    pd.DataFrame(sgn_records).drop_duplicates().to_csv(mp_proposal_signatures_csv, index=False, encoding="utf-8")
+    pd.DataFrame(mpp_records).to_csv(mp_petitions_csv, index=False, encoding="utf-8")
+    pd.DataFrame(sgn_records).drop_duplicates().to_csv(mp_petition_signatures_csv, index=False, encoding="utf-8") 
 
 def import_data():
     conn = psycopg2.connect(
@@ -109,7 +107,7 @@ def import_data():
     )
     cur = conn.cursor()
 
-    with open(mp_proposals_csv, "r", encoding="utf-8") as f:
+    with open(mp_petitions_csv, "r", encoding="utf-8") as f:
         cur.copy_expert(
             """
             COPY proposals(id, ptype, title, summary, reasoning, law_changes, status)
@@ -118,7 +116,7 @@ def import_data():
             f
         )
 
-    with open(mp_proposal_signatures_csv, "r", encoding="utf-8") as f:
+    with open(mp_petition_signatures_csv, "r", encoding="utf-8") as f:
         cur.copy_expert(
             """
             COPY proposal_signatures(proposal_id, person_id, first)
