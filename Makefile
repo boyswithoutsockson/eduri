@@ -52,12 +52,11 @@ $(DATA_DUMP): data/dump.zip
 	mkdir -p data/raw
 	unzip -oq data/dump.zip -d data/raw
 
-data/raw/kansanedustajat_vaalikausittain.csv:
+ELECTION_SEASONS = data/raw/kansanedustajat_vaalikausittain.csv
+$(ELECTION_SEASONS):
 	FILE_ID=1bNQBZA6fxm3RYDSB7dT_D7fdYkEIUf_9
 	curl -L "https://drive.usercontent.google.com/download?id=$${FILE_ID}&confirm=true" --progress-bar \
 		-o $@
-
-ELECTION_SEASONS = data/raw/kansanedustajat_vaalikausittain.csv
 
 frontend/src/assets/photos-2023-2026.zip:
 	mkdir -p frontend/src/assets
@@ -102,9 +101,10 @@ $(PREPROCESSED)/%.csv: pipes/%_pipe.py $(DATA_DUMP) $(VASKI_DATA)
 	uv run $< --preprocess-data
 
 # Prerequisites for preprocessing
-$(PREPROCESSED)/mps.csv: $(MP_PHOTOS)
+$(PREPROCESSED)/election_seasons.csv: $(ELECTION_SEASONS)
 $(PREPROCESSED)/government_proposals.csv: $(DB)/mps
 $(PREPROCESSED)/mp_law_proposals.csv: $(DB)/mps
+$(PREPROCESSED)/mps.csv: $(MP_PHOTOS)
 
 
 .PHONY: preprocess
