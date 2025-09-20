@@ -8,6 +8,7 @@ from tqdm import tqdm
 from db import get_connection
 
 csv_path = os.path.join("data", "preprocessed", "speeches.csv")
+agenda_items_csv_path = os.path.join("data", "preprocessed", "agenda_items.csv")
 
 def preprocess_data():
     # Load the TSV file
@@ -27,6 +28,7 @@ def preprocess_data():
     }
 
     parsed_data = []
+    agenda_items = []
 
     for xml_str in tqdm(df_tsv['XmlData']):
         root = etree.parse(StringIO(xml_str)).getroot()
@@ -41,79 +43,104 @@ def preprocess_data():
         if not (p_type and p_year):
             continue
 
-        parliament_id = f"ptk {p_type}/{p_year.replace(' vp','')} vp"
+        session_parliament_id = f"ptk {p_type}/{p_year.replace(' vp','')} vp"
 
         # Find speeches
-        speeches = root.xpath(".//vsk:PuheenvuoroToimenpide", namespaces=ns)
-        for speech in speeches:
-            speaker = speech.find(".//org:Henkilo", namespaces=ns)
-            speaker_id = speaker.get(f"{{{ns['met1']}}}muuTunnus") if speaker is not None else None
+        asiakohdat = root.xpath(".//vsk:Asiakohta", namespaces=ns)
+        for asiakohta in asiakohdat:
+            asiakohta_otsikko = asiakohta.find(".//vsk:KohtaNimeke/met1:NimekeTeksti", namespaces=ns).text
+            agenda_item_parliament_id = asiakohta.get('{http://www.vn.fi/skeemat/metatietoelementit/2010/04/27}eduskuntaTunnus')
+            if agenda_item_parliament_id is None:
+                agenda_item_parliament_id = asiakohta.get('{http://www.vn.fi/skeemat/metatietoelementit/2010/04/27}muuTunnus')
+            agenda_items.append({
+                "session_id": session_parliament_id.lower(),
+                "parliament_id": agenda_item_parliament_id.lower(),
+                "title": asiakohta_otsikko
+            })
+            speeches = asiakohta.xpath(".//vsk:PuheenvuoroToimenpide", namespaces=ns)
+            for speech in speeches:
+                speaker = speech.find(".//org:Henkilo", namespaces=ns)
+                speaker_id = speaker.get(f"{{{ns['met1']}}}muuTunnus") if speaker is not None else None
 
-            speech_id_tag = speech.find(".//vsk:PuheenvuoroOsa", namespaces=ns)
-            speech_id = speech_id_tag.get(f"{{{ns['met1']}}}muuTunnus") if speech_id_tag is not None else None
+                speech_id_tag = speech.find(".//vsk:PuheenvuoroOsa", namespaces=ns)
+                speech_id = speech_id_tag.get(f"{{{ns['met1']}}}muuTunnus") if speech_id_tag is not None else None
 
-            start_time = speech.get(f"{{{ns['vsk1']}}}puheenvuoroAloitusHetki")
-            if start_time:
-                start_time = start_time.replace("T", " ") + " Europe/Helsinki"
+                start_time = speech.get(f"{{{ns['vsk1']}}}puheenvuoroAloitusHetki")
+                if start_time:
+                    start_time = start_time.replace("T", " ") + " Europe/Helsinki"
 
-            # Build speech text
-            body_parts = []
-            # Extract regular speech paragraphs
-            paragraphs = speech.xpath(".//vsk:PuheenvuoroOsa//sis:KappaleKooste", namespaces=ns)
-            for para in paragraphs:
-                text = para.text.strip() if para.text else ""
-                if text:
-                    body_parts.append(text)
+                # Build speech text
+                body_parts = []
+                # Extract regular speech paragraphs
+                paragraphs = speech.xpath(".//vsk:PuheenvuoroOsa//sis:KappaleKooste", namespaces=ns)
+                for para in paragraphs:
+                    text = para.text.strip() if para.text else ""
+                    if text:
+                        body_parts.append(text)
 
-            # Append puhemies interventions (separately)
-            interventions = speech.xpath(".//vsk:PuheenjohtajaRepliikki", namespaces=ns)
-            for intervention in interventions:
-                chair_text = intervention.findtext(".//vsk1:PuheenjohtajaTeksti", namespaces=ns)
-                chair_paragraphs = intervention.findall(".//sis:KappaleKooste", namespaces=ns)
-                for para in chair_paragraphs:
-                    ptext = para.text.strip() if para.text else ""
-                    if chair_text and ptext:
-                        body_parts.append(f"**{chair_text}**: {ptext}")
+                # Append puhemies interventions (separately)
+                interventions = speech.xpath(".//vsk:PuheenjohtajaRepliikki", namespaces=ns)
+                for intervention in interventions:
+                    chair_text = intervention.findtext(".//vsk1:PuheenjohtajaTeksti", namespaces=ns)
+                    chair_paragraphs = intervention.findall(".//sis:KappaleKooste", namespaces=ns)
+                    for para in chair_paragraphs:
+                        ptext = para.text.strip() if para.text else ""
+                        if chair_text and ptext:
+                            body_parts.append(f"**{chair_text}**: {ptext}")
 
-            full_text = "\n\n".join(body_parts)
-            
-            if speaker_id:
-                if speaker_id.strip():
-                    role = speech.find(".//org1:AsemaTeksti", namespaces=ns)
-                    if role != None:
-                        if "ministeri" not in role.text:
-                            continue
-                    
-                    # There are duplicates in speech ids.
-                    # Add year to the front of speech id to fix issue
-                    speech_id = start_time[:4] + "/" + speech_id
-                    if speech.find(".//vsk1:TarkenneTeksti", namespaces=ns) is not None and \
-                        speech.find(".//vsk1:TarkenneTeksti", namespaces=ns).text == "(vastauspuheenvuoro)":
-                        response_to = root_id
-                    else:
-                        response_to = None
-                        root_id = speech_id
-                    parsed_data.append({
-                        "speech_id": speech_id,
-                        "speaker_id": speaker_id,
-                        "parliament_id": parliament_id,
-                        "start_time": start_time,
-                        "speech_text": full_text,
-                        "response_to": response_to
-                    })
+                full_text = "\n\n".join(body_parts)
+                
+                if speaker_id:
+                    if speaker_id.strip():
+                        role = speech.find(".//org1:AsemaTeksti", namespaces=ns)
+                        if role != None:
+                            if "ministeri" not in role.text:
+                                continue
+                        
+                        # There are duplicates in speech ids.
+                        # Add year to the front of speech id to fix issue
+                        speech_id = start_time[:4] + "/" + speech_id
+                        if speech.find(".//vsk1:TarkenneTeksti", namespaces=ns) is not None and \
+                            speech.find(".//vsk1:TarkenneTeksti", namespaces=ns).text == "(vastauspuheenvuoro)":
+                            response_to = root_id
+                        else:
+                            response_to = None
+                            root_id = speech_id
+                        parsed_data.append({
+                            "speech_id": speech_id,
+                            "speaker_id": speaker_id,
+                            "agenda_item_parliament_id": agenda_item_parliament_id,
+                            "start_time": start_time,
+                            "speech_text": full_text,
+                            "response_to": response_to
+                        })
+
 
     # Convert to DataFrame
     df_speeches = pd.DataFrame(parsed_data)
+    df_agenda_items = pd.DataFrame(agenda_items)
 
     # Optional: Save to CSV
     df_speeches.to_csv(csv_path, index=False, encoding="utf-8")
+
+    # For unknown reasons, the agenda items are presented multiple times.
+    # It doesn't matter as long as the references are to the correct title
+    df_agenda_items.title = df_agenda_items.title.str.strip()
+    df_agenda_items.title = df_agenda_items.title.apply(lambda x: " ".join(x.split()))
+    df_agenda_items.title = df_agenda_items.title.str.replace("-—", "-")
+    df_agenda_items.drop_duplicates(subset=["parliament_id", "session_id"], inplace=True, keep="first")
+    df_agenda_items.to_csv(agenda_items_csv_path, index=False)
 
 def import_data():
     conn = get_connection()
     cursor = conn.cursor()
 
+    with open(agenda_items_csv_path) as f:
+        cursor.copy_expert("COPY agenda_items(parliament_id, session_id, title) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
+
     with open(csv_path) as f:
-        cursor.copy_expert("COPY speeches(id, person_id, parliament_id, start_time, speech, response_to) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
+        cursor.copy_expert("COPY speeches(id, person_id, agenda_item_parliament_id, start_time, speech, response_to) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
+
 
     conn.commit()
     cursor.close()

@@ -11,7 +11,6 @@ MAKEFLAGS += -j$(NPROCS)
 DB = data/.inserted
 PREPROCESSED = data/preprocessed
 PIPES := \
-	agenda_items \
 	ballots \
 	committee_reports \
 	committees \
