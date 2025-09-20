@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS speeches (
 );
 
 DO $$ BEGIN  
-    CREATE TYPE proposal_proposer AS ENUM ('government', 'citizen', 'mp');
+    CREATE TYPE proposal_type AS ENUM ('government', 'citizen', 'mp_law', 'mp_petition', 'mp_debate');
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;
@@ -134,7 +134,7 @@ END $$;
 -- proposals
 CREATE TABLE IF NOT EXISTS proposals (
     id VARCHAR(20) PRIMARY KEY NOT NULL,
-    proposer proposal_proposer,
+    ptype proposal_type,
     title VARCHAR(1000),
     summary TEXT,
     reasoning TEXT NOT NULL,

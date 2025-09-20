@@ -82,7 +82,7 @@ def preprocess_data():
 
         mpp_records.append({
             "id": eid.lower(),
-            "proposer": "mp",
+            "ptype": "mp_law",
             "title": Nimeke_parse(proposal, NS),
             "summary": AsiaSisaltoKuvaus_parse(proposal, NS),
             "reasoning": Perustelu_parse(proposal, NS),
@@ -112,7 +112,7 @@ def import_data():
     with open(mp_proposals_csv, "r", encoding="utf-8") as f:
         cur.copy_expert(
             """
-            COPY proposals(id, proposer, title, summary, reasoning, law_changes, status)
+            COPY proposals(id, ptype, title, summary, reasoning, law_changes, status)
             FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
             """,
             f

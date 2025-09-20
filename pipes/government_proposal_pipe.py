@@ -97,7 +97,7 @@ def preprocess_data():
 
         gp_records.append({
                 "id": eid.lower(),
-                "proposer": "government",
+                "ptype": "government",
                 "title": title,
                 "summary": summary,
                 "reasoning": reasoning,
@@ -129,7 +129,7 @@ def import_data():
     with open(government_proposals_csv, "r", encoding="utf-8") as f:
         cur.copy_expert(
             """
-            COPY proposals(id, proposer, title, summary, reasoning, law_changes, status)
+            COPY proposals(id, ptype, title, summary, reasoning, law_changes, status)
             FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
             """,
             f
