@@ -13,6 +13,13 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export type Vote = "absent" | "abstain" | "no" | "yes";
 
+export interface AgendaItems {
+  id: number;
+  parliament_id: string;
+  session_id: string | null;
+  title: string;
+}
+
 export interface Ballots {
   id: number;
   minutes_url: string | null;
@@ -37,6 +44,11 @@ export interface CommitteeReports {
   proposal_id: string;
   proposal_summary: string;
   reasoning: string | null;
+}
+
+export interface CommitteeReportSignatures {
+  committee_report_id: string;
+  mp_id: number;
 }
 
 export interface Committees {
@@ -66,6 +78,14 @@ export interface MembersOfParliament {
   year_of_birth: number | null;
 }
 
+export interface Ministers {
+  cabinet_id: string | null;
+  end_date: Timestamp | null;
+  ministry: string;
+  mp_id: number;
+  start_date: Timestamp;
+}
+
 export interface MpCommitteeMemberships {
   committee_name: string;
   end_date: Timestamp | null;
@@ -81,20 +101,33 @@ export interface MpPartyMemberships {
   start_date: Timestamp;
 }
 
+export interface Objections {
+  committee_report_id: string | null;
+  id: Generated<number>;
+  motion: string | null;
+  reasoning: string | null;
+}
+
+export interface ObjectionSignatures {
+  mp_id: number;
+  objection_id: Generated<number>;
+}
+
 export interface Parties {
   id: string;
   name: string | null;
 }
 
-export interface Signatures {
-  committee_report_id: string;
-  mp_id: number;
+export interface Sessions {
+  date: Timestamp;
+  id: string;
 }
 
 export interface Speeches {
-  id: number;
+  id: string;
   mp_id: number;
   parliament_id: string;
+  response_to: string | null;
   speech: string;
   start_time: Timestamp;
 }
@@ -106,16 +139,21 @@ export interface Votes {
 }
 
 export interface DB {
+  agenda_items: AgendaItems;
   ballots: Ballots;
   committee_budget_reports: CommitteeBudgetReports;
+  committee_report_signatures: CommitteeReportSignatures;
   committee_reports: CommitteeReports;
   committees: Committees;
   interests: Interests;
   members_of_parliament: MembersOfParliament;
+  ministers: Ministers;
   mp_committee_memberships: MpCommitteeMemberships;
   mp_party_memberships: MpPartyMemberships;
+  objection_signatures: ObjectionSignatures;
+  objections: Objections;
   parties: Parties;
-  signatures: Signatures;
+  sessions: Sessions;
   speeches: Speeches;
   votes: Votes;
 }
