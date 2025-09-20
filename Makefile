@@ -131,6 +131,7 @@ $(DB)/%: data/preprocessed/%.csv
 # Prerequisites for inserting data into database
 $(DB)/agenda_items: $(DB)/sessions
 $(DB)/committee_reports: $(DB)/mps $(DB)/committees
+$(DB)/government_proposals: $(DB)/mps
 $(DB)/interests: $(DB)/mps
 $(DB)/ministers: $(DB)/mps
 $(DB)/mp_committee_memberships: $(DB)/mps $(DB)/committees
