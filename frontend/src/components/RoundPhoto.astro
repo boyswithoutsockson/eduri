@@ -1,0 +1,100 @@
+---
+// This linter fires unnecessarily for some reason, maybe due to conditional rendering
+/* eslint-disable astro/no-unused-css-selector */
+
+import { Image } from "astro:assets";
+import type { ImageMetadata } from "astro";
+import ProfileIcon from "~src/icons/profile.svg";
+import type { LocalImageProps } from "astro:assets";
+import { PARTY_ABBRS, PARTY_COLORS } from "~src/constants";
+
+interface Props {
+    imageProps?: Omit<Partial<LocalImageProps>, "src" | "alt">;
+    mp: {
+        first_name: string | null;
+        last_name: string | null;
+        photo: string | null;
+        party_id: string | null;
+    };
+}
+
+const { mp, imageProps } = Astro.props;
+const filename = mp.photo && `/src/assets/${mp.photo}`;
+const images = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/*.{jpeg,jpg,png,gif}"
+);
+
+const partyColor =
+    PARTY_COLORS[(mp.party_id ?? "") as keyof typeof PARTY_COLORS] ?? "#bbbbbb";
+
+const label = `${mp.first_name} ${mp.last_name} (${PARTY_ABBRS[mp.party_id as keyof typeof PARTY_ABBRS]})`;
+---
+
+<a href={`/edustaja/${mp.first_name}+${mp.last_name}`}>
+    {
+        filename && images[filename] ? (
+            <Image
+                alt={label}
+                height="128"
+                src={images[filename]()}
+                style={{ "--color": partyColor }}
+                title={label}
+                width="128"
+                {...((imageProps ?? {}) as unknown as any)}
+            />
+        ) : (
+            <span
+                aria-label={label}
+                style={{ "--color": partyColor }}
+                title={label}
+            >
+                {mp.first_name && mp.last_name ? (
+                    `${mp.first_name[0]}${mp.last_name[0]}`
+                ) : (
+                    <ProfileIcon
+                        class="missing"
+                        height={imageProps?.height}
+                        width={imageProps?.width}
+                    />
+                )}
+            </span>
+        )
+    }
+</a>
+
+<style>
+    a {
+        color: var(--pico-h1-color);
+        text-decoration: none;
+        --size: 64px;
+        --border: 4px;
+    }
+    a > * {
+        width: var(--size) !important;
+        height: var(--size) !important;
+        border-radius: 50%;
+        border: calc(var(--border) / 2) solid white;
+        box-shadow: 0 0 0 var(--border) var(--color);
+    }
+    img {
+        object-fit: cover;
+        object-position: top;
+    }
+    span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: white;
+
+        font-size: 1.25rem;
+        font-weight: 500;
+    }
+    span:has(svg) {
+        padding: 12px;
+        background-color: #eee;
+    }
+    .missing {
+        width: 100%;
+        height: 100%;
+    }
+</style>
