@@ -4,7 +4,6 @@ CREATE TABLE IF NOT EXISTS members_of_parliament (
     first_name VARCHAR(200),
     last_name VARCHAR(200),
     full_name VARCHAR(200), 
-    minister BOOLEAN,
     phone_number VARCHAR(50), 
     email VARCHAR(200), 
     occupation VARCHAR(200), 
