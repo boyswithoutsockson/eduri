@@ -31,11 +31,11 @@ def preprocess_data():
 
                 # Alter date format
                 start = "-".join(reversed(start.split(".")))
-                end = "-".join(reversed(start.split(".")))
+                end = "-".join(reversed(end.split(".")))
                 if "-" not in start:
                     start = start + "-01-01"
                     end = end + "-12-31"
-            
+           
                 rows.append({
                     "person_id": person_id,
                     "ministry": ministry_name,
