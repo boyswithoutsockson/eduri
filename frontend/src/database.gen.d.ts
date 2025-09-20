@@ -72,10 +72,14 @@ export interface Interests {
   person_id: number | null;
 }
 
+export interface MinisterPositions {
+  title: string;
+}
+
 export interface Ministers {
   cabinet_id: string | null;
   end_date: Timestamp | null;
-  ministry: string;
+  minister_position: string;
   person_id: number;
   start_date: Timestamp;
 }
@@ -172,6 +176,7 @@ export interface DB {
   committees: Committees;
   election_seasons: ElectionSeasons;
   interests: Interests;
+  minister_positions: MinisterPositions;
   ministers: Ministers;
   mp_committee_memberships: MpCommitteeMemberships;
   mp_parliamentary_group_memberships: MpParliamentaryGroupMemberships;
