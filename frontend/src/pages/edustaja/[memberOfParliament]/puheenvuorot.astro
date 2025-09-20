@@ -13,7 +13,7 @@ const { mp } = Astro.props;
 const speeches = mp
     ? await db
           .selectFrom("speeches")
-          .where("speeches.mp_id", "=", mp.id)
+          .where("speeches.person_id", "=", mp.id)
           .select(["speeches.id", "speeches.parliament_id", "speeches.speech"])
           .orderBy("speeches.start_time", "desc")
           .execute()

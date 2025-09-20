@@ -2,16 +2,16 @@
 import Layout from "~src/layouts/Layout.astro";
 
 import { Search } from "~src/components/MPSearch";
-import { mpWithPhotoUrl } from "~src/utils";
+import { mpsWithPhotoUrl } from "~src/utils";
 import Logo from "~src/icons/logo.svg";
 import { mpData } from "~src/pages/data.json";
 
 const data = await mpData()
-    .where("mp_party_memberships.end_date", "is", null)
-    .orderBy("members_of_parliament.last_name")
+    .where("mp_parliamentary_group_memberships.end_date", "is", null)
+    .orderBy("persons.last_name")
     .execute();
 
-const mpsWithPhotoUrls = await mpWithPhotoUrl(data);
+const mpsWithPhotoUrls = await mpsWithPhotoUrl(data);
 ---
 
 <Layout>
