@@ -13,7 +13,7 @@ def preprocess_data():
         mp_data = [row for row in csv.reader(f, delimiter="\t", quotechar='"')]
 
     for mp in mp_data[1:]:
-        mp_id = int(mp[0])
+        person_id = int(mp[0])
 
         xml = mp[7]
         root = etree.fromstring(xml)
@@ -28,11 +28,10 @@ def preprocess_data():
             end_date = None
 
             rows.append({
-                "mp_id": mp_id,
+                "person_id": person_id,
                 "pg_id": parliamentary_group,
                 "start_date": start_date,
-                "end_date": end_date
-            })
+                "end_date": end_date})
 
         for group in root.find("./Eduskuntaryhmat/EdellisetEduskuntaryhmat", namespaces):
             if group[0].text:
@@ -46,14 +45,14 @@ def preprocess_data():
                     end_date = "-".join(list(reversed((LoppuPvm.text).split("."))))
 
                     rows.append({
-                        "mp_id": mp_id,
+                        "person_id": person_id,
                         "pg_id": parliamentary_group,
                         "start_date": start_date,
                         "end_date": end_date
                     })
 
     with open(csv_path, 'w') as f:
-        writer = csv.DictWriter(f, fieldnames=["mp_id", "pg_id", "start_date", "end_date"])
+        writer = csv.DictWriter(f, fieldnames=["person_id", "pg_id", "start_date", "end_date"])
         writer.writeheader()
         writer.writerows(rows)
 
@@ -67,7 +66,7 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert("COPY mp_parliamentary_group_memberships(mp_id, pg_id, start_date, end_date) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
+        cursor.copy_expert("COPY mp_parliamentary_group_memberships(person_id, pg_id, start_date, end_date) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
 
     conn.commit()
     cursor.close()

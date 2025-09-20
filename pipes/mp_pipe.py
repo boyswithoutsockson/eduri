@@ -37,7 +37,6 @@ def preprocess_data():
             "year_of_birth": tree[10].text,
             "place_of_birth": tree[11].text,
             "place_of_residence": tree[15].text,
-            "constituency": tree[26][0][0].text,
             "photo": photo_filename_dict[str(id)] if str(id) in photo_filename_dict else None
         }
 
@@ -56,7 +55,7 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert("COPY members_of_parliament(id, first_name, last_name, full_name, phone_number, email, occupation, year_of_birth, place_of_birth, place_of_residence, constituency, photo) FROM stdin DELIMITERS ',' CSV QUOTE '\"';", f)
+        cursor.copy_expert("COPY persons(id, first_name, last_name, full_name, phone_number, email, occupation, year_of_birth, place_of_birth, place_of_residence, photo) FROM stdin DELIMITERS ',' CSV QUOTE '\"';", f)
 
     conn.commit()
     cursor.close()

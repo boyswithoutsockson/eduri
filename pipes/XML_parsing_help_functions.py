@@ -201,8 +201,8 @@ def Allekirjoittaja_parse(root, NS, eid, cursor=None):
     for signer in root.findall(".//asi:Allekirjoittaja", namespaces=NS):
             if signer.find(".//org:Henkilo/org1:EtuNimi", namespaces=NS).text is None:       # Joskus nää on vaan jostain syystä tyhjiä
                 continue
-            mp_id = signer.find(".//org:Henkilo", namespaces=NS).attrib.get(f"{{{NS['met1']}}}muuTunnus")
-            if mp_id is None:
+            person_id = signer.find(".//org:Henkilo", namespaces=NS).attrib.get(f"{{{NS['met1']}}}muuTunnus")
+            if person_id is None:
                 first_name = signer.find(".//org:Henkilo/org1:EtuNimi", namespaces=NS).text
                 last_name = signer.find(".//org:Henkilo/org1:SukuNimi", namespaces=NS).text
                 if not first_name or not last_name:                         # Joskus nääki voi puuttua huoh
@@ -219,9 +219,9 @@ def Allekirjoittaja_parse(root, NS, eid, cursor=None):
                     (first_name.strip().lower(), last_name.strip().lower())
                     )
                 
-                mp_id = cursor.fetchone()
-                if mp_id is not None:
-                    mp_id = mp_id[0]
+                person_id = cursor.fetchone()
+                if person_id is not None:
+                    person_id = person_id[0]
                 else:
                     # Tänne menee sihteerit yms. jotka on joskus allekirjoittamassa esityksiä
                     continue
@@ -233,7 +233,7 @@ def Allekirjoittaja_parse(root, NS, eid, cursor=None):
 
             sgn_records.append({
                 "government_proposal_id": eid.lower(),
-                "mp_id": int(mp_id),
+                "person_id": int(person_id),
                 "first": first
             })
     return sgn_records
@@ -241,9 +241,9 @@ def Allekirjoittaja_parse(root, NS, eid, cursor=None):
 def Osallistuja_parse(root, NS, eid):
     sgn_records = []
     for person in root.findall(".//vsk:OsallistujaOsa//org:Henkilo", namespaces=NS):
-            mp_id = person.get(f"{{{NS['met1']}}}muuTunnus", "").strip()
-            if mp_id.isdigit():
-                sgn_records.append({"committee_report_id": eid.lower(), "mp_id": int(mp_id)})
+            person_id = person.get(f"{{{NS['met1']}}}muuTunnus", "").strip()
+            if person_id.isdigit():
+                sgn_records.append({"committee_report_id": eid.lower(), "person_id": int(person_id)})
 
     return sgn_records
 

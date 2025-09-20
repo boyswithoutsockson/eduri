@@ -22,9 +22,9 @@ def preprocess_data():
         MoP = pd.read_csv(f, sep="\t")
 
     xml_dicts = MoP.XmlDataFi.apply(xmltodict.parse)
-    membership_df = pd.DataFrame(columns=["mp_id", "committee_name", "start_date", "end_date", "role"])
+    membership_df = pd.DataFrame(columns=["person_id", "committee_name", "start_date", "end_date", "role"])
     for henkilo in xml_dicts:
-        mp_id = int(henkilo['Henkilo']["HenkiloNro"])
+        person_id = int(henkilo['Henkilo']["HenkiloNro"])
         if henkilo['Henkilo']['KansanedustajuusPaattynytPvm']:
             retirement_date = "-".join(list(reversed((henkilo['Henkilo']['KansanedustajuusPaattynytPvm']).split("."))))
             if retirement_date < earliest_retirement_date:
@@ -62,7 +62,7 @@ def preprocess_data():
                                 if len(end_date) < 10:
                                     end_date = f"{end_date[:4]}-12-31"
                             role = roles[membership["Rooli"].lower()]
-                            membership_df.loc[len(membership_df)] = [mp_id, committee_name, start_date, end_date, role]
+                            membership_df.loc[len(membership_df)] = [person_id, committee_name, start_date, end_date, role]
         
     membership_df.to_csv(csv_path, index=False)
 
@@ -75,7 +75,7 @@ def import_data():
     cursor = conn.cursor()
     
     with open(csv_path) as f:
-        cursor.copy_expert("COPY mp_committee_memberships(mp_id, committee_name, start_date, end_date, role) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
+        cursor.copy_expert("COPY mp_committee_memberships(person_id, committee_name, start_date, end_date, role) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
     
     conn.commit()
     cursor.close()

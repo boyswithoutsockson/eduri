@@ -1,5 +1,5 @@
 -- Members of Parliament
-CREATE TABLE IF NOT EXISTS members_of_parliament (
+CREATE TABLE IF NOT EXISTS persons (
     id INT PRIMARY KEY NOT NULL,
     first_name VARCHAR(200),
     last_name VARCHAR(200),
@@ -10,23 +10,22 @@ CREATE TABLE IF NOT EXISTS members_of_parliament (
     year_of_birth INT, 
     place_of_birth VARCHAR(200), 
     place_of_residence VARCHAR(200), 
-    constituency VARCHAR(200),
     photo VARCHAR(100)
 );
 
 CREATE TABLE IF NOT EXISTS ministers (
-    mp_id INT REFERENCES members_of_parliament(id),
+    person_id INT REFERENCES persons(id),
     ministry VARCHAR(100), 
     cabinet_id VARCHAR(50), 
     start_date DATE,
     end_date DATE,
-    PRIMARY KEY(ministry, mp_id, start_date)
+    PRIMARY KEY(ministry, person_id, start_date)
 );
 
 -- Interests (sidonnaisuudet)
 CREATE TABLE IF NOT EXISTS interests (
     id SERIAL PRIMARY KEY NOT NULL,
-    mp_id INT, 
+    person_id  INT REFERENCES persons(id), 
     category VARCHAR(200), 
     interest TEXT
 );
@@ -51,9 +50,9 @@ END $$;
 -- Votes (äänet)
 CREATE TABLE IF NOT EXISTS votes (
     ballot_id INT REFERENCES ballots(id),
-    mp_id INT REFERENCES members_of_parliament(id),
+    person_id INT REFERENCES persons(id),
     vote vote,
-    PRIMARY KEY(ballot_id, mp_id)
+    PRIMARY KEY(ballot_id, person_id)
 );
 
 
@@ -72,10 +71,10 @@ CREATE TABLE IF NOT EXISTS parliamentary_groups (
 -- mp_parliamentary_group_memberships
 CREATE TABLE IF NOT EXISTS mp_parliamentary_group_memberships (
     pg_id VARCHAR(100) REFERENCES parliamentary_groups(id),
-    mp_id INT REFERENCES members_of_parliament(id),
+    person_id INT REFERENCES persons(id),
     start_date DATE,
     end_date DATE,
-    PRIMARY KEY(pg_id, mp_id, start_date)
+    PRIMARY KEY(pg_id, person_id, start_date)
 );
 
 -- committees (valiokunnat)
@@ -85,12 +84,12 @@ CREATE TABLE IF NOT EXISTS committees (
 
 -- mp_committee_memberships
 CREATE TABLE IF NOT EXISTS mp_committee_memberships (
-    mp_id INT NOT NULL,
+    person_id INT NOT NULL,
     committee_name VARCHAR(200) NOT NULL REFERENCES committees(name),
     start_date DATE NOT NULL,
     end_date DATE,
     role VARCHAR(50) NOT NULL,
-    PRIMARY KEY(mp_id, committee_name, start_date, role)
+    PRIMARY KEY(person_id, committee_name, start_date, role)
 );
 
 -- sessions
@@ -111,7 +110,7 @@ CREATE TABLE IF NOT EXISTS agenda_items (
 -- speeches
 CREATE TABLE IF NOT EXISTS speeches (
     id VARCHAR(15) PRIMARY KEY NOT NULL,
-    mp_id INT NOT NULL REFERENCES members_of_parliament(id),
+    person_id INT NOT NULL REFERENCES persons(id),
     parliament_id VARCHAR (20) NOT NULL,
     start_time TIMESTAMP WITH TIME ZONE NOT NULL,
     speech TEXT NOT NULL,
@@ -144,9 +143,9 @@ CREATE TABLE IF NOT EXISTS proposals (
 -- proposal_signatures
 CREATE TABLE IF NOT EXISTS proposal_signatures (
     proposal_id VARCHAR(20) REFERENCES proposals(id),
-    mp_id INT REFERENCES members_of_parliament(id),
+    person_id INT REFERENCES persons(id),
     first BOOLEAN,
-    PRIMARY KEY(proposal_id, mp_id)
+    PRIMARY KEY(proposal_id, person_id)
 );
 
 
@@ -171,8 +170,8 @@ CREATE TABLE IF NOT EXISTS committee_budget_reports (
 -- committee_report_signatures
 CREATE TABLE IF NOT EXISTS committee_report_signatures (
     committee_report_id VARCHAR(20) REFERENCES committee_reports(id),
-    mp_id INT REFERENCES members_of_parliament(id),
-    PRIMARY KEY(committee_report_id, mp_id)
+    person_id INT REFERENCES persons(id),
+    PRIMARY KEY(committee_report_id, person_id)
 );
 
 -- objections
@@ -186,7 +185,7 @@ CREATE TABLE IF NOT EXISTS objections (
 -- objection_signatures
 CREATE TABLE IF NOT EXISTS objection_signatures (
     objection_id SERIAL REFERENCES objections(id),
-    mp_id INT REFERENCES members_of_parliament(id),
-    PRIMARY KEY(objection_id, mp_id)
+    person_id INT REFERENCES persons(id),
+    PRIMARY KEY(objection_id, person_id)
 );
 
