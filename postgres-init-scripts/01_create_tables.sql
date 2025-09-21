@@ -133,6 +133,7 @@ END $$;
 CREATE TABLE IF NOT EXISTS proposals (
     id VARCHAR(20) PRIMARY KEY NOT NULL,
     ptype proposal_type,
+    date DATE NOT NULL,
     title VARCHAR(1000),
     summary TEXT,
     reasoning TEXT,
@@ -153,6 +154,7 @@ CREATE TABLE IF NOT EXISTS proposal_signatures (
 CREATE TABLE IF NOT EXISTS committee_reports (
     id VARCHAR(20) PRIMARY KEY NOT NULL,
     proposal_id VARCHAR(20) NOT NULL,
+    date DATE NOT NULL,
     committee_name VARCHAR(200) NOT NULL REFERENCES committees(name),
     proposal_summary TEXT NOT NULL,
     opinion TEXT NOT NULL,

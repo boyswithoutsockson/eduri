@@ -4,7 +4,7 @@ import pandas as pd
 import psycopg2
 from lxml import etree
 from io import StringIO
-from XML_parsing_help_functions import id_parse, Nimeke_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Saados_parse, status_parse, Allekirjoittaja_parse
+from XML_parsing_help_functions import id_parse, date_parse, Nimeke_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Saados_parse, status_parse, Allekirjoittaja_parse
 
 # Paths
 mp_petition_tsv_path = os.path.join("data", "raw", "vaski", "PetitionaryMotion_fi.tsv")
@@ -68,6 +68,8 @@ def preprocess_data():
 
         eid = id_parse(mpp_root, NS)
 
+        date = date_parse(mpp_root, NS)
+
         proposal = mpp_root.find(".//eka:EduskuntaAloite", namespaces=NS)
         if proposal is None:                                                # Joskus oikean aloitteen lisäksi on tyhjä aloite samalla id:llä                         
             if len(mpp_df.loc[mpp_df['Eduskuntatunnus'] == eid]) > 1:       # Tarkistetaan että samalla id:llä löytyy toinenkin (oikea) aloite
@@ -81,6 +83,7 @@ def preprocess_data():
         mpp_records.append({
             "id": eid.lower(),
             "ptype": "mp_petition",
+            "date": date,
             "title": Nimeke_parse(proposal, NS),
             "summary": AsiaSisaltoKuvaus_parse(proposal, NS),
             "reasoning": Perustelu_parse(proposal, NS),
@@ -110,7 +113,7 @@ def import_data():
     with open(mp_petitions_csv, "r", encoding="utf-8") as f:
         cur.copy_expert(
             """
-            COPY proposals(id, ptype, title, summary, reasoning, law_changes, status)
+            COPY proposals(id, ptype, date, title, summary, reasoning, law_changes, status)
             FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
             """,
             f

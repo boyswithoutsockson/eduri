@@ -4,7 +4,7 @@ import pandas as pd
 import psycopg2
 from lxml import etree
 from io import StringIO
-from XML_parsing_help_functions import _txt, id_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Ponsi_parse, Saados_parse, Paatos_parse, Osallistuja_parse
+from XML_parsing_help_functions import _txt, id_parse, date_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Ponsi_parse, Saados_parse, Paatos_parse, Osallistuja_parse
 
 # Paths
 tsv_path = os.path.join("data", "raw", "vaski", "CommitteeReport_fi.tsv")
@@ -81,6 +81,8 @@ def preprocess_data():
 
         # --- committee_report id (eid) ---
         eid = id_parse(root, NS)
+
+        date = date_parse(root, NS)
 
         # --- proposal_id ---
         proposal_id = _txt(mietinto.find(".//asi:IdentifiointiOsa/asi:Vireilletulo/met1:EduskuntaTunnus", namespaces=NS)).lower()
@@ -163,6 +165,7 @@ def preprocess_data():
         cr_records.append({
             "id": eid.lower(),
             "proposal_id": proposal_id,
+            "date": date,
             "committee_name": committee_name,
             "proposal_summary": proposal_summary,
             "opinion": opinion,
@@ -218,7 +221,7 @@ def import_data():
     with open(committee_reports_csv, "r", encoding="utf-8") as f:
         cur.copy_expert(
             """
-            COPY committee_reports(id, proposal_id, committee_name, proposal_summary, opinion, reasoning, law_changes)
+            COPY committee_reports(id, proposal_id, date, committee_name, proposal_summary, opinion, reasoning, law_changes)
             FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
             """,
             f
