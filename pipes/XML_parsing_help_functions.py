@@ -109,8 +109,14 @@ def Perustelu_parse(root, NS, not_child_of=""):
 
     return reasoning
 
+def date_parse(root, NS):
+
+    metadata = root.find(".//jme:JulkaisuMetatieto", namespaces=NS)
+    date = metadata.get(f"{{{NS['met1']}}}laadintaPvm", "").strip()
+
+    return date
+
 def Nimeke_parse(root, NS):
-    
     title_nodes = root.xpath(
             f".//met:Nimeke//met1:NimekeTeksti",
             namespaces=NS

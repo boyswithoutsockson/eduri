@@ -4,7 +4,7 @@ import pandas as pd
 import psycopg2
 from lxml import etree
 from io import StringIO
-from XML_parsing_help_functions import id_parse, Nimeke_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Saados_parse, status_parse, Allekirjoittaja_parse
+from XML_parsing_help_functions import id_parse, date_parse, Nimeke_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Saados_parse, status_parse, Allekirjoittaja_parse
 
 # Paths
 gp_tsv_path = os.path.join("data", "raw", "vaski", "GovernmentProposal_fi.tsv")
@@ -74,6 +74,8 @@ def preprocess_data():
             else:                                                                       # oletetaan että suomenkielinen on tulossa/mennyt
                 raise Exception
 
+        date = date_parse(gp_root, NS)
+
         proposal = gp_root.find(".//he:HallituksenEsitys", namespaces=NS)
         if proposal is None:
             continue
@@ -98,6 +100,7 @@ def preprocess_data():
         gp_records.append({
                 "id": eid.lower(),
                 "ptype": "government",
+                "date": date,
                 "title": title,
                 "summary": summary,
                 "reasoning": reasoning,
@@ -129,7 +132,7 @@ def import_data():
     with open(government_proposals_csv, "r", encoding="utf-8") as f:
         cur.copy_expert(
             """
-            COPY proposals(id, ptype, title, summary, reasoning, law_changes, status)
+            COPY proposals(id, ptype, date, title, summary, reasoning, law_changes, status)
             FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
             """,
             f
