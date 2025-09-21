@@ -1,0 +1,39 @@
+---
+import Logo from "~src/icons/logo.svg";
+---
+
+<header>
+    <a href="/">
+        <Logo />
+        Eduri
+    </a>
+    <nav>
+        <ul>
+            <li>
+                <a href="/edustajat">Edustajat</a>
+            </li>
+            <li>
+                <a href="/esitykset">Esitykset</a>
+            </li>
+        </ul>
+    </nav>
+</header>
+
+<style>
+    header {
+        border-bottom: 1px solid var(--pico-muted-border-color);
+
+        display: flex;
+        justify-content: space-between;
+    }
+    header > a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3em;
+
+        font-size: 1.5rem;
+        font-weight: 500;
+        text-decoration: none;
+        color: unset;
+    }
+</style>

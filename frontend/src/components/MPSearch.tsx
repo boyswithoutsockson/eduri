@@ -51,7 +51,7 @@ export function Search({ initial }: Props) {
         const input = document.querySelector(
             "input[type='search']",
         ) as HTMLInputElement;
-        fetch("/data.json")
+        fetch("/edustajat/data.json")
             .then((resp) => resp.json())
             .then(addAll)
             .then(() => handleSearchChange(input.value));
@@ -163,7 +163,7 @@ function MemberListItem({ mp }: MLIProps) {
                     ) : null}
                     <br />
                     <a
-                        href={`/edustaja/${mp.first_name + "+" + mp.last_name || ""}`}
+                        href={`/edustajat/${mp.first_name + "+" + mp.last_name || ""}`}
                     >
                         open mp page
                     </a>
