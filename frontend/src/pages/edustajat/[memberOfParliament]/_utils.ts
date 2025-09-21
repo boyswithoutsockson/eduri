@@ -4,17 +4,23 @@ import { db } from "~src/database";
 export async function getAllMps() {
     return db
         .selectFrom("persons")
-        .leftJoin(
-            "mp_parliamentary_group_memberships",
-            "persons.id",
-            "mp_parliamentary_group_memberships.person_id",
+        .leftJoinLateral(
+            (eb) =>
+                eb
+                    .selectFrom("mp_parliamentary_group_memberships as mppm")
+                    .select("mppm.pg_id")
+                    .whereRef("mppm.person_id", "=", "persons.id")
+                    .orderBy("mppm.end_date", (ob) => ob.desc().nullsLast())
+                    .limit(1)
+                    .as("party"),
+            (join) => join.onTrue(),
         )
         .select([
             "full_name",
             "email",
             "occupation",
             "place_of_residence",
-            "mp_parliamentary_group_memberships.pg_id as party_id",
+            "party.pg_id as party_id",
         ])
         .selectAll()
         .execute();
