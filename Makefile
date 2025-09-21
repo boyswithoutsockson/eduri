@@ -3,6 +3,10 @@
 SHELL := /bin/bash
 .ONESHELL:
 
+# Parallelize execution based on available CPU cores
+NPROCS = $(shell grep -c 'processor' /proc/cpuinfo)
+MAKEFLAGS += -j$(NPROCS)
+
 # Data pipeline configs
 DB = data/.inserted
 PREPROCESSED = data/preprocessed
@@ -37,12 +41,16 @@ help: ## show help message
 # Default for `make` without any args
 all: help
 
+.PHONY: install
+install: install-pipes install-frontend  ## install project dependencies
+
 
 ####################################
 # Scripts for downloading raw data #
 ####################################
 
 data/dump.zip:
+	mkdir -p data
 	FILE_ID=1cQb23nkz-DAlo33cU96BnPjdnXU9MoFA
 	curl -L "https://drive.usercontent.google.com/download?id=$${FILE_ID}&confirm=true" --progress-bar \
 		-o $@
@@ -55,6 +63,7 @@ $(DATA_DUMP): data/dump.zip
 
 ELECTION_SEASONS = data/raw/kansanedustajat_vaalikausittain.csv
 $(ELECTION_SEASONS):
+	mkdir -p data/raw
 	FILE_ID=1bNQBZA6fxm3RYDSB7dT_D7fdYkEIUf_9
 	curl -L "https://drive.usercontent.google.com/download?id=$${FILE_ID}&confirm=true" --progress-bar \
 		-o $@
@@ -82,6 +91,13 @@ clean: ## deletes all raw data assets
 ##################################
 # Scripts for data preprocessing #
 ##################################
+
+PIPE_DEPS = .venv/CACHEDIR.TAG
+$(PIPE_DEPS): pyproject.toml uv.lock
+	uv sync
+
+.PHONY: install-pipes
+install-pipes: $(PIPE_DEPS)
 
 VASKI_DATA_DIR = data/raw/vaski
 VASKI_DATA = $(VASKI_DATA_DIR)/.parsed
@@ -141,7 +157,7 @@ $(DB)/votes: $(DB)/ballots $(DB)/mps
 
 
 .PHONY: database
-database: $(addprefix $(DB)/,$(PIPES))  ## runs all data pipelines into the database
+database: $(addprefix $(DB)/,$(PIPES)) ## runs all data pipelines into the database
 
 .PHONY: nuke
 nuke: ## resets all data in the database
@@ -149,16 +165,29 @@ nuke: ## resets all data in the database
 	PGPASSWORD=postgres psql -q -U postgres -h db postgres < postgres-init-scripts/01_create_tables.sql
 	rm -rf $(DB)
 
+.PHONY: nuke-database
+nuke-database:
+	$(MAKE) nuke
+	$(MAKE) database
+
 ###############################
 # Frontend management scripts #
 ###############################
 
-.PHONY: install
-install:
+FRONTEND_DEPS = frontend/node_modules/.package-lock.json
+$(FRONTEND_DEPS): frontend/package.json frontend/package-lock.json
 	cd frontend
 	npm install
+
+.PHONY: install-frontend
+install-frontend: $(FRONTEND_DEPS)
 
 .PHONY: frontend
 frontend:
 	cd frontend
 	npm run dev
+
+.PHONY: build
+build: install database
+	cd frontend
+	npm run build
