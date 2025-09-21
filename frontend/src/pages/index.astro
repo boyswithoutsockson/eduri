@@ -1,73 +1,53 @@
 ---
-import Layout from "~src/layouts/Layout.astro";
+import { Image } from "astro:assets";
 
-import { Search } from "~src/components/MPSearch";
-import { mpsWithPhotoUrl } from "~src/utils";
-import Logo from "~src/icons/logo.svg";
-import { mpData } from "~src/pages/data.json";
+import BaseLayout from "~src/layouts/BaseLayout.astro";
+import Parliament from "~src/icons/parliament.png";
+import Proposal from "~src/icons/proposal.png";
 
-const data = await mpData()
-    .where("mp_parliamentary_group_memberships.end_date", "is", null)
-    .orderBy("persons.last_name")
-    .execute();
-
-const mpsWithPhotoUrls = await mpsWithPhotoUrl(data);
+const iconSize = 130;
 ---
 
-<Layout>
-    <main>
-        <h1>
-            <Logo />
-            Eduri
-        </h1>
-        <p>Tähän sit kontsaa</p>
+<BaseLayout>
+    <h1>Eduri</h1>
+    <p>
+        Liirum laarum eduri on hyvä platta kantsii käyttää nopee. Selaa
+        edustajia tai esityksiä tai jotai.
+    </p>
+    <p>tähä sit kontsaa</p>
 
-        <Search client:load initial={mpsWithPhotoUrls} />
-    </main>
-</Layout>
+    <section>
+        <a href="/edustajat">
+            <Image alt="" height={iconSize} src={Parliament} width={iconSize} />
+            <h2>Edustajat</h2>
+        </a>
+        <a href="/esitykset">
+            <Image alt="" height={iconSize} src={Proposal} width={iconSize} />
+            <h2>Esitykset</h2>
+        </a>
+    </section>
+</BaseLayout>
 
-<style is:global>
-    svg {
+<style>
+    :global(main) {
+        display: flex;
+        flex-direction: column;
+    }
+    h1 {
+        align-self: center;
+        font-size: 3rem;
+    }
+    :global(h1 svg) {
         display: block;
-        --side: 84px;
+        --side: 124px;
         width: var(--side);
         height: var(--side);
-        margin-bottom: -0.2em;
     }
-    article {
-        --pico-card-box-shadow: initial;
+
+    section {
+        margin-block-start: 2rem;
         display: flex;
-        flex-direction: row;
-        gap: var(--pico-block-spacing-horizontal);
-    }
-    .missing {
-        height: 150px;
-        width: 100px;
-        background-color: #ccc;
-    }
-    ol {
-        padding-inline-start: unset;
-    }
-    li {
-        list-style: none;
-    }
-    img {
-        height: revert-layer;
-        object-fit: cover;
-    }
-    strong:has(+ .party) {
-        vertical-align: middle;
-    }
-    .party {
-        font-size: 0.9em;
-        font-weight: 450;
-        background-color: var(--background);
-        color: var(--text);
-        display: inline-block;
-        text-align: center;
-        vertical-align: middle;
-        margin-inline: 0.5em;
-        padding: 0em 0.4em;
-        border-radius: 0.125em;
+        gap: 8rem;
+        justify-content: center;
     }
 </style>

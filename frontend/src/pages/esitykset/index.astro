@@ -1,8 +1,7 @@
 ---
-import Layout from "~src/pages/esitykset/_layout.astro";
+import Layout from "~src/layouts/BaseLayout.astro";
 
 import { db } from "~src/database";
-import Logo from "~src/icons/logo.svg";
 import { sql } from "kysely";
 import type { Persons } from "~src/database.gen";
 import RoundPhoto from "~src/components/RoundPhoto.astro";
@@ -60,17 +59,13 @@ const data = await db
 ---
 
 <Layout>
-    <h1>
-        <Logo />
-        Eduri
-    </h1>
-    <h2>Esitykset</h2>
+    <h1>Esitykset</h1>
     <ul>
         {
             data.map((proposal) => (
                 <li>
                     <article>
-                        <h3>{proposal.title}</h3>
+                        <h2>{proposal.title}</h2>
                         <p>{proposal.summary}</p>
                         <p>allekirjoittaneet:</p>
                         <ul>
@@ -93,13 +88,10 @@ const data = await db
 </Layout>
 
 <style>
-    :global(svg) {
-        display: block;
-        --side: 84px;
-        width: var(--side);
-        height: var(--side);
-        margin-bottom: -0.2em;
+    h2 {
+        font-size: 1.25rem;
     }
+
     :global(main > ul) {
         padding-inline-start: unset;
     }

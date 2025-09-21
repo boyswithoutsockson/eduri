@@ -1,0 +1,62 @@
+---
+import Layout from "~src/layouts/BaseLayout.astro";
+
+import { Search } from "~src/components/MPSearch";
+import { mpsWithPhotoUrl } from "~src/utils";
+import { mpData } from "~src/pages/edustajat/data.json";
+
+const data = await mpData()
+    .where("mp_parliamentary_group_memberships.end_date", "is", null)
+    .orderBy("persons.last_name")
+    .execute();
+
+const mpsWithPhotoUrls = await mpsWithPhotoUrl(data);
+---
+
+<Layout>
+    <main>
+        <h1>Edustajat</h1>
+        <p>Tähän sit kontsaa</p>
+
+        <Search client:load initial={mpsWithPhotoUrls} />
+    </main>
+</Layout>
+
+<style is:global>
+    article {
+        --pico-card-box-shadow: initial;
+        display: flex;
+        flex-direction: row;
+        gap: var(--pico-block-spacing-horizontal);
+    }
+    .missing {
+        height: 150px;
+        width: 100px;
+        background-color: #ccc;
+    }
+    ol {
+        padding-inline-start: unset;
+    }
+    li {
+        list-style: none;
+    }
+    img {
+        height: revert-layer;
+        object-fit: cover;
+    }
+    strong:has(+ .party) {
+        vertical-align: middle;
+    }
+    .party {
+        font-size: 0.9em;
+        font-weight: 450;
+        background-color: var(--background);
+        color: var(--text);
+        display: inline-block;
+        text-align: center;
+        vertical-align: middle;
+        margin-inline: 0.5em;
+        padding: 0em 0.4em;
+        border-radius: 0.125em;
+    }
+</style>

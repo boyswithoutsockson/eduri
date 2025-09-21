@@ -30,7 +30,7 @@ const partyColor =
 const label = `${mp.first_name} ${mp.last_name} (${PARTY_ABBRS[mp.party_id as keyof typeof PARTY_ABBRS]})`;
 ---
 
-<a href={`/edustaja/${mp.first_name}+${mp.last_name}`}>
+<a href={`/edustajat/${mp.first_name}+${mp.last_name}`}>
     {
         filename && images[filename] ? (
             <Image

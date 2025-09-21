@@ -1,0 +1,60 @@
+---
+import type { MP } from "~src/pages/edustajat/[memberOfParliament]/_utils";
+import BaseLayout from "~src/layouts/BaseLayout.astro";
+import ProfilePhoto from "~src/components/ProfilePhoto.astro";
+
+interface Props {
+    mp: MP;
+}
+
+const { mp } = Astro.props;
+
+const currentPathBase = `edustaja/${mp?.first_name}+${mp?.last_name}`;
+const currentPath = Astro.url.pathname;
+const subpages = [
+    { name: "Yleistä", path: `/${currentPathBase}` },
+    { name: "Puheenvuorot", path: `/${currentPathBase}/puheenvuorot` },
+    { name: "Äänestykset", path: `/${currentPathBase}/aanestykset` },
+    { name: "Jäsenyydet", path: `/${currentPathBase}/jasenyydet` },
+];
+---
+
+<BaseLayout>
+    <section>
+        <ProfilePhoto mp={mp} />
+        <p>
+            <h1>{mp?.full_name}</h1>
+            {mp?.email}<br />
+            {mp?.party_id}<br />
+            {mp?.occupation}<br />
+            {mp?.place_of_residence}<br />
+        </p>
+    </section>
+
+    <nav>
+        <ul>
+            {
+                subpages.map((page) => (
+                    <li>
+                        <a
+                            class:list={{
+                                active: decodeURI(currentPath) === page.path,
+                            }}
+                            href={page.path}
+                        >
+                            {page.name}
+                        </a>
+                    </li>
+                ))
+            }
+        </ul>
+    </nav>
+
+    <slot />
+</BaseLayout>
+
+<style>
+    .active {
+        color: red;
+    }
+</style>
