@@ -4,64 +4,111 @@ import psycopg2
 from lxml import etree
 from io import StringIO
 
+NS = {
+    'asi': 'http://www.vn.fi/skeemat/asiakirjakooste/2010/04/27',
+    'asi1': 'http://www.vn.fi/skeemat/asiakirjaelementit/2010/04/27',
+    'met': 'http://www.vn.fi/skeemat/metatietokooste/2010/04/27',
+    'met1': 'http://www.vn.fi/skeemat/metatietoelementit/2010/04/27',
+    'org': 'http://www.vn.fi/skeemat/organisaatiokooste/2010/02/15',
+    'org1': 'http://www.vn.fi/skeemat/organisaatioelementit/2010/02/15',
+    'sis': 'http://www.vn.fi/skeemat/sisaltokooste/2010/04/27',
+    'sis1': 'http://www.vn.fi/skeemat/sisaltoelementit/2010/04/27',
+    'vml': 'http://www.eduskunta.fi/skeemat/mietinto/2011/01/04',
+    'vsk': 'http://www.eduskunta.fi/skeemat/vaskikooste/2011/01/04',
+    'vsk1': 'http://www.eduskunta.fi/skeemat/vaskielementit/2011/01/04',
+    'saa': 'http://www.vn.fi/skeemat/saadoskooste/2010/04/27',
+    'saa1': 'http://www.vn.fi/skeemat/saadoselementit/2010/04/27',
+    'vas': 'http://www.eduskunta.fi/skeemat/vastalause/2011/01/04',
+    'jme': 'http://www.eduskunta.fi/skeemat/julkaisusiirtokooste/2011/12/20',
+    'ns11': 'http://www.eduskunta.fi/skeemat/siirto/2011/09/07',
+    'ns4': 'http://www.eduskunta.fi/skeemat/siirtoelementit/2011/05/17',
+    's359': 'http://www.vn.fi/skeemat/metatietoelementit/2010/04/27',
+    's360': 'http://www.vn.fi/skeemat/metatietoelementit/2010/04/27',
+    'sii': 'http://www.eduskunta.fi/skeemat/siirtokooste/2011/05/17',
+    'sii1': 'http://www.eduskunta.fi/skeemat/siirtoelementit/2011/05/17',
+    'he': 'http://www.vn.fi/skeemat/he/2010/04/27',
+    'tau': 'http://www.vn.fi/skeemat/taulukkokooste/2010/04/27',
+    'mix': 'http://www.loc.gov/mix/v20',
+    'narc': 'http://www.narc.fi/sahke2/2010-09_vnk',
+    'xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+    'def': 'http://www.eduskunta.fi/skeemat/siirtokooste/2011/05/17'
+}
+
 def _txt(node):
     """Collapse all text from an element; return '' if node is None."""
     if node is None:
         return ""
+    elif node.tag == "{http://www.vn.fi/skeemat/taulukkokooste/2010/04/27}table":
+        return tau_to_md(node)
     return " ".join("".join(node.itertext()).split())
 
 def saados_to_md(saados, NS):
-            title_bits = []
-            stype = _txt(saados.find(".//saa:SaadostyyppiKooste", namespaces=NS))
-            sname = _txt(saados.find(".//saa:SaadosNimekeKooste", namespaces=NS))
-            num = _txt(saados.find(".//saa:LakiehdotusNumeroKooste", namespaces=NS))
-            if num: title_bits.append(num)
-            if stype: title_bits.append(stype)
-            if sname: title_bits.append(sname)
-            header = " ".join(title_bits).strip()
-            out = []
-            if header:
-                out.append(f"# {header}\n")
+    title_bits = []
+    stype = _txt(saados.find(".//saa:SaadostyyppiKooste", namespaces=NS))
+    sname = _txt(saados.find(".//saa:SaadosNimekeKooste", namespaces=NS))
+    num = _txt(saados.find(".//saa:LakiehdotusNumeroKooste", namespaces=NS))
+    if num: title_bits.append(num)
+    if stype: title_bits.append(stype)
+    if sname: title_bits.append(sname)
+    header = " ".join(title_bits).strip()
+    out = []
+    if header:
+        out.append(f"# {header}\n")
 
-            # Johtolause (preamble)
-            for jl in saados.findall(".//saa:Johtolause", namespaces=NS):
-                for p in jl.findall(".//saa:SaadosKappaleKooste", namespaces=NS):
-                    txt = _txt(p)
-                    if txt:
-                        out.append(txt)
+    # Johtolause (preamble)
+    for jl in saados.findall(".//saa:Johtolause", namespaces=NS):
+        for p in jl.findall(".//saa:SaadosKappaleKooste", namespaces=NS):
+            table_md = ""
+            for table in saados.findall(".//tau:table", NS):
+                table_md = tau_to_md(table)
+            txt = _txt(p) + table_md
+            if txt:
+                out.append(txt)
 
-            # Pykälät
-            for pyk in saados.findall(".//saa:Pykala", namespaces=NS):
-                pykno = _txt(pyk.find(".//saa:PykalaTunnusKooste", namespaces=NS))
-                ots = _txt(pyk.find(".//saa:SaadosOtsikkoKooste", namespaces=NS))
-                head = f"**{pykno} {ots}**".strip()
-                if head and head != "** **":
-                    out.append(head)
+    # Pykälät
+    for pyk in saados.findall(".//saa:Pykala", namespaces=NS):
+        pykno = _txt(pyk.find(".//saa:PykalaTunnusKooste", namespaces=NS))
+        ots = _txt(pyk.find(".//saa:SaadosOtsikkoKooste", namespaces=NS))
+        head = f"**{pykno} {ots}**".strip()
+        if head and head != "** **":
+            out.append(head)
 
-                for mom in pyk.findall(".//saa:MomenttiKooste", namespaces=NS):
-                    mtxt = _txt(mom)
-                    if mtxt:
-                        out.append(mtxt)
+        for mom in pyk.findall(".//saa:MomenttiKooste", namespaces=NS):
+            mtxt = _txt(mom)
+            if mtxt:
+                out.append(mtxt)
 
-                for km in pyk.findall(".//saa:KohdatMomentti", namespaces=NS):
-                    johd = _txt(km.find(".//saa:MomenttiJohdantoKooste", namespaces=NS))
-                    if johd:
-                        out.append(johd)
-                    for k in km.findall(".//saa:MomenttiKohtaKooste", namespaces=NS):
-                        kt = _txt(k)
-                        if kt:
-                            out.append(f"- {kt}")
+        for km in pyk.findall(".//saa:KohdatMomentti", namespaces=NS):
+            johd = _txt(km.find(".//saa:MomenttiJohdantoKooste", namespaces=NS))
+            if johd:
+                out.append(johd)
+                for table in saados.findall(".//tau:table", namespaces=NS):
+                    table_md = tau_to_md(table)
+                    out.append(table_md)
 
-            return "\n\n".join(out)
+            for k in km.findall(".//saa:MomenttiKohtaKooste", namespaces=NS):
+                kt = _txt(k)
+                if kt:
+                    out.append(f"- {kt}")
+                    for table in saados.findall(".//tau:table", namespaces=NS):
+                        table_md = tau_to_md(table)
+                        out.append(table_md)
 
-def tau_to_md(root, NS):
+    return "\n\n".join(out)
+
+def tau_to_md(root):
     
     rows = []
     for row in root.findall(".//tau:row", NS):
         entries = row.findall("tau:entry", NS)
         row_values = []
         for entry in entries:
-            kappale_list = entry.findall("sis:KappaleKooste", NS)
+            kappale_list = entry.xpath(
+            f".//sis:KappaleKooste | "
+            f".//saa:SaadosKappaleKooste | "
+            f".//sis1:LihavaTeksti",
+            namespaces=NS
+                )
             values = [k.text.strip() for k in kappale_list if k.text and k.text.strip()]
             if not values and entry.text and entry.text.strip():
                 values.append(entry.text.strip())
@@ -98,8 +145,9 @@ def Perustelu_parse(root, NS, not_child_of=""):
     reasoning_nodes = root.xpath(
             f".//asi:PerusteluOsa{filter}//sis1:OtsikkoTeksti | "
             f".//asi:PerusteluOsa{filter}//sis1:ValiotsikkoTeksti | "
-            f".//asi:PerusteluOsa{filter}//sis:KappaleKooste | "
-            f".//asi:PerusteluOsa{filter}//sis:SisennettyKappaleKooste",
+            f".//asi:PerusteluOsa{filter}//sis:KappaleKooste[not(ancestor::tau:table)] | "
+            f".//asi:PerusteluOsa{filter}//tau:table | "
+            f".//asi:PerusteluOsa{filter}//sis:SisennettyKappaleKooste[not(ancestor::tau:table)]",
             namespaces=NS
         )
     reasoning = "\n\n".join([_txt(n) for n in reasoning_nodes])
@@ -129,8 +177,10 @@ def AsiaSisaltoKuvaus_parse(root, NS, not_child_of=""):
         filter = ""
 
     summary_nodes = root.xpath(
-            f".//vsk:AsiaKuvaus//sis:KappaleKooste{filter} | "
-            f".//asi:SisaltoKuvaus//sis:KappaleKooste{filter}",
+            f".//vsk:AsiaKuvaus//sis:KappaleKooste[not(ancestor::tau:table)]{filter} | "
+            f".//asi:SisaltoKuvaus//sis:KappaleKooste[not(ancestor::tau:table)]{filter} | "
+            f".//asi:AsiaKuvaus//tau:table | "
+            f".//asi:SisaltoKuvaus//tau:table",
             namespaces=NS
         )
     summary = "\n\n".join([_txt(n) for n in summary_nodes])
@@ -141,10 +191,11 @@ def Ponsi_parse(root, NS):
     ponsi_nodes = root.xpath(
             f".//asi:PonsiOsa//sis1:OtsikkoTeksti | "
             f".//asi:PonsiOsa//asi1:JohdantoTeksti | "
-            f".//asi:PonsiOsa//sis:KappaleKooste | "
-            f".//asi:PonsiOsa//sis:SisennettyKappaleKooste |"
-            f".//asi:PonsiOsa//sis1:KappaleKooste |"
-            f".//asi:PonsiOsa//sis1:SisennettyKappaleKooste",
+            f".//asi:PonsiOsa//sis:KappaleKooste[not(ancestor::tau:table)] | "
+            f".//asi:PonsiOsa//sis:SisennettyKappaleKooste[not(ancestor::tau:table)] |"
+            f".//asi:PonsiOsa//sis1:KappaleKooste[not(ancestor::tau:table)] |"
+            f".//asi:PonsiOsa//sis1:SisennettyKappaleKooste[not(ancestor::tau:table)] |"
+            f".//asi:PonsiOsa//tau:table",
             namespaces=NS
         )
     ponsi = "\n\n".join([_txt(n) for n in ponsi_nodes])
@@ -156,19 +207,9 @@ def Saados_parse(root, NS):
     law_md_blocks = []
     for saados in root.findall(".//saa:SaadosOsa/saa:Saados", namespaces=NS):
         law_md = saados_to_md(saados, NS)
-
-        for table in saados.findall(".//tau:table", NS):
-            table_md = tau_to_md(table, NS)
-            print(table_md)
-            if table_md:
-                # Replace the XML <tau:table> with its Markdown representation
-                # naive approach: just append at the end of the block where it belongs
-                law_md += "\n\n" + table_md + "\n\n"
-
         if law_md:
             law_md_blocks.append(law_md)
 
-        
     law_changes = "\n\n---\n\n".join(law_md_blocks)
 
     return law_changes
@@ -201,8 +242,9 @@ def Paatos_parse(root, NS, not_child_of=""):
     op_nodes = root.xpath(
             f".//vsk:PaatosOsa//sis1:OtsikkoTeksti{filter} | "
             f".//vsk:PaatosOsa//asi1:JohdantoTeksti{filter} | "
-            f".//vsk:PaatosOsa//sis:KappaleKooste{filter} | "
-            f".//vsk:PaatosOsa//sis:SisennettyKappaleKooste{filter}",
+            f".//vsk:PaatosOsa//sis:KappaleKooste[not(ancestor::tau:table)]{filter} | "
+            f".//vsk:PaatosOsa//sis:SisennettyKappaleKooste[not(ancestor::tau:table)]{filter} |"
+            f".//asi:PaatosOsa//tau:table",
             namespaces=NS
         )
     opinion = "\n\n".join([_txt(n) for n in op_nodes])
@@ -243,7 +285,7 @@ def Allekirjoittaja_parse(root, NS, eid, cursor=None):
                 # Tänne menee sihteerit yms. jotka on joskus allekirjoittamassa esityksiä
                 continue
 
-        if signer.attrib.get(f"{{{NS['asi1']}}}allekirjoitusLuokitusKoodi") == "EnsimmainenAllekirjoittaja":     # Hallitusten esityksissä ei kai käytetä tätä systeemiä
+        if signer.attrib.get(f"{{{NS['asi1']}}}allekirjoitusLuokitusKoodi") == "EnsimmainenAllekirjoittaja":  # Hallitusten esityksissä ei kai käytetä tätä systeemiä
             first = 1                                                                                         # joten tää on käytännössä vielä testaamatta
         else:
             first = 0
