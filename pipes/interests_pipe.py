@@ -5,6 +5,8 @@ import psycopg2
 import xmltodict
 import pandas as pd
 
+from db import get_connection
+
 csv_path = 'data/preprocessed/interests.csv'
 
 def preprocess_data():
@@ -35,11 +37,7 @@ def preprocess_data():
         writer.writerows(rows)
 
 def import_data():
-    conn = psycopg2.connect(database="postgres",
-                            host="db",
-                            user="postgres",
-                            password="postgres",
-                            port="5432")
+    conn = get_connection()
     cursor = conn.cursor()
 
     with open(csv_path) as f:

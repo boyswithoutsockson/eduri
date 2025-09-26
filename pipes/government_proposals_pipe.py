@@ -5,6 +5,7 @@ import psycopg2
 from lxml import etree
 from io import StringIO
 from XML_parsing_help_functions import id_parse, date_parse, Nimeke_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Saados_parse, status_parse, Allekirjoittaja_parse
+from db import get_connection
 
 # Paths
 gp_tsv_path = os.path.join("data", "raw", "vaski", "GovernmentProposal_fi.tsv")
@@ -52,14 +53,7 @@ def preprocess_data():
     gp_records = []            # government_proposals rows
     sgn_records = []  
 
-    conn = psycopg2.connect(
-        database="postgres",
-        host="db",
-        user="postgres",
-        password="postgres",
-        port="5432"
-        )
-
+    conn = get_connection()
     cur = conn.cursor()          
 
     for gp_xml_str in gp_df.get("XmlData", []):
@@ -120,13 +114,7 @@ def preprocess_data():
 
 
 def import_data():
-    conn = psycopg2.connect(
-        database="postgres",
-        host="db",
-        user="postgres",
-        password="postgres",
-        port="5432"
-    )
+    conn = get_connection()
     cur = conn.cursor()
 
     with open(government_proposals_csv, "r", encoding="utf-8") as f:
