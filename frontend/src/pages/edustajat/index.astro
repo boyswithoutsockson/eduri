@@ -6,7 +6,7 @@ import { mpsWithPhotoUrl } from "~src/utils";
 import { mpData } from "~src/pages/edustajat/data.json";
 
 const data = await mpData()
-    .where("mp_parliamentary_group_memberships.end_date", "is", null)
+    .where("parliamentary_group.end_date", "is", null)
     .orderBy("persons.last_name")
     .execute();
 
