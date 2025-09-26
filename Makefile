@@ -80,7 +80,7 @@ $(MP_PHOTOS): frontend/src/assets/photos-2023-2026.zip
 	unzip -oq frontend/src/assets/photos-2023-2026.zip -d frontend/src/assets
 
 .PHONY: data
-data: $(DATA_DUMP) $(MP_PHOTOS) ## download and extract all raw data assets
+data: $(DATA_DUMP) $(MP_PHOTOS) $(ELECTION_SEASONS) ## download and extract all raw data assets
 
 .PHONY: clean
 clean: ## deletes all raw data assets
