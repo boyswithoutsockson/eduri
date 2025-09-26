@@ -1,3 +1,4 @@
+import type { InferResult } from "kysely";
 import { db } from "~src/database";
 import { mpsWithPhotoUrl } from "~src/utils";
 
@@ -5,10 +6,16 @@ import { mpsWithPhotoUrl } from "~src/utils";
 export function mpData() {
     return db
         .selectFrom("persons")
-        .leftJoin(
-            "mp_parliamentary_group_memberships",
-            "persons.id",
-            "mp_parliamentary_group_memberships.person_id",
+        .leftJoinLateral(
+            (eb) =>
+                eb
+                    .selectFrom("mp_parliamentary_group_memberships as mppm")
+                    .select(["mppm.pg_id", "mppm.end_date"])
+                    .whereRef("mppm.person_id", "=", "persons.id")
+                    .orderBy("mppm.end_date", (ob) => ob.desc().nullsLast())
+                    .limit(1)
+                    .as("parliamentary_group"),
+            (join) => join.onTrue(),
         )
         .leftJoin("ministers", (join) =>
             join
@@ -20,10 +27,15 @@ export function mpData() {
             "persons.first_name",
             "persons.last_name",
             "persons.photo",
-            "mp_parliamentary_group_memberships.pg_id as party_id",
+            "persons.email",
+            "persons.occupation",
+            "persons.place_of_residence",
+            "parliamentary_group.pg_id as party_id",
             "ministers.ministry",
         ]);
 }
+
+export type MP = InferResult<ReturnType<typeof mpData>>[0];
 
 /**
  * This function constructs a static `data.json` file that contains the
@@ -32,7 +44,7 @@ export function mpData() {
  * data whenever the user uses the search bar.
  */
 export async function GET() {
-    const data = await mpData().distinctOn("persons.id").execute();
+    const data = await mpData().execute();
 
     const mpsWithPhotoUrls = await mpsWithPhotoUrl(data);
 
