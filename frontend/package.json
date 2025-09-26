@@ -7,7 +7,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "codegen": "kysely-codegen --out-file ./src/database.gen.d.ts"
+    "codegen": "kysely-codegen --out-file ./src/database.gen.d.ts",
+    "deploy": "netlify deploy --no-build --alias=${SUBDOMAIN} --dir=dist"
   },
   "dependencies": {
     "@astrojs/preact": "^4.1.0",
@@ -16,6 +17,7 @@
     "kysely": "^0.28.2",
     "marked": "^16.2.1",
     "minisearch": "^7.1.2",
+    "netlify-cli": "^23.7.3",
     "pg": "^8.16.0",
     "preact": "^10.27.0",
     "react-minisearch": "^7.1.3"

@@ -162,8 +162,8 @@ database: $(addprefix $(DB)/,$(PIPES)) ## runs all data pipelines into the datab
 
 .PHONY: nuke
 nuke: ## resets all data in the database
-	PGPASSWORD=postgres psql -q -U postgres -h db postgres < DELETE_ALL_TABLES.sql
-	PGPASSWORD=postgres psql -q -U postgres -h db postgres < postgres-init-scripts/01_create_tables.sql
+	PGPASSWORD=postgres psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < DELETE_ALL_TABLES.sql
+	PGPASSWORD=postgres psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < postgres-init-scripts/01_create_tables.sql
 	rm -rf $(DB)
 
 .PHONY: nuke-database
@@ -188,7 +188,15 @@ frontend:
 	cd frontend
 	npm run dev
 
-.PHONY: build
-build: install database
+BUILD = frontend/dist/index.html
+$(BUILD): install database $(shell find frontend/src -type f)
 	cd frontend
 	npm run build
+
+.PHONY: build
+build: $(BUILD)
+
+.PHONY: deploy
+deploy:
+	cd frontend
+	npm run deploy
