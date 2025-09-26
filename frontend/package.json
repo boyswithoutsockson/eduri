@@ -12,7 +12,7 @@
   "dependencies": {
     "@astrojs/preact": "^4.1.0",
     "@daviddarnes/live-filter": "^1.1.0",
-    "astro": "^5.8.1",
+    "astro": "^5.14.0",
     "kysely": "^0.28.2",
     "marked": "^16.2.1",
     "minisearch": "^7.1.2",
