@@ -3,6 +3,8 @@ import pandas as pd
 import xmltodict
 import psycopg2
 
+from db import get_connection
+
 csv_path = 'data/preprocessed/committees.csv'
 
 def preprocess_data():
@@ -63,11 +65,7 @@ def preprocess_data():
     committee_df.to_csv(csv_path, index=False)
 
 def import_data():
-    conn = psycopg2.connect(database="postgres",
-                            host="db",
-                            user="postgres",
-                            password="postgres",
-                            port="5432")
+    conn = get_connection()
     cursor = conn.cursor()
     
     with open(csv_path) as f:

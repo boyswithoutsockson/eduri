@@ -5,6 +5,7 @@ import psycopg2
 from lxml import etree
 from io import StringIO
 from XML_parsing_help_functions import _txt, id_parse, date_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Ponsi_parse, Saados_parse, Paatos_parse, Osallistuja_parse
+from db import get_connection
 
 # Paths
 tsv_path = os.path.join("data", "raw", "vaski", "CommitteeReport_fi.tsv")
@@ -52,13 +53,7 @@ def _txt(node):
 
 def preprocess_data():
 
-    conn = psycopg2.connect(
-        database="postgres",
-        host="db",
-        user="postgres",
-        password="postgres",
-        port="5432"
-    )
+    conn = get_connection()
     cur = conn.cursor()
 
     os.makedirs(os.path.dirname(committee_reports_csv), exist_ok=True)
@@ -208,13 +203,7 @@ def preprocess_data():
     
 
 def import_data():
-    conn = psycopg2.connect(
-        database="postgres",
-        host="db",
-        user="postgres",
-        password="postgres",
-        port="5432"
-    )
+    conn = get_connection()
     cur = conn.cursor()
 
     # 1) committee_reports

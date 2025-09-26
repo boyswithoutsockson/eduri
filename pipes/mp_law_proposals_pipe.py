@@ -5,6 +5,7 @@ import psycopg2
 from lxml import etree
 from io import StringIO
 from XML_parsing_help_functions import id_parse, date_parse, Nimeke_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Saados_parse, status_parse, Allekirjoittaja_parse
+from db import get_connection
 
 # Paths
 mp_proposal_tsv_path = os.path.join("data", "raw", "vaski", "LegislativeMotion_fi.tsv")
@@ -52,14 +53,7 @@ def preprocess_data():
     mpp_records = []        
     sgn_records = []  
 
-    conn = psycopg2.connect(
-        database="postgres",
-        host="db",
-        user="postgres",
-        password="postgres",
-        port="5432"
-        )
-    
+    conn = get_connection()
     cur = conn.cursor()          
 
     for mpp_xml_str in mpp_df.get("XmlData", []):
@@ -103,13 +97,7 @@ def preprocess_data():
     pd.DataFrame(sgn_records).drop_duplicates().to_csv(mp_proposal_signatures_csv, index=False, encoding="utf-8")
 
 def import_data():
-    conn = psycopg2.connect(
-        database="postgres",
-        host="db",
-        user="postgres",
-        password="postgres",
-        port="5432"
-    )
+    conn = get_connection()
     cur = conn.cursor()
 
     with open(mp_proposals_csv, "r", encoding="utf-8") as f:

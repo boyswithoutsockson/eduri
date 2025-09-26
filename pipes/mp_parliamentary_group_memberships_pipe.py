@@ -3,6 +3,7 @@ from lxml import etree
 import csv
 import psycopg2
 from harmonize import harmonize_parliamentary_group
+from db import get_connection
 
 csv_path = 'data/preprocessed/mp_parliamentary_group_memberships.csv'
 
@@ -58,11 +59,7 @@ def preprocess_data():
 
 
 def import_data():
-    conn = psycopg2.connect(database="postgres",
-                            host="db",
-                            user="postgres",
-                            password="postgres",
-                            port="5432")
+    conn = get_connection()
     cursor = conn.cursor()
 
     with open(csv_path) as f:
