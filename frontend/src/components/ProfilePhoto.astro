@@ -6,14 +6,11 @@ import { Image } from "astro:assets";
 import type { ImageMetadata } from "astro";
 import ProfileIcon from "~src/icons/profile.svg";
 import type { LocalImageProps } from "astro:assets";
+import type { MP } from "~src/pages/edustajat/data.json";
 
 interface Props {
     imageProps?: Omit<Partial<LocalImageProps>, "src" | "alt">;
-    mp: {
-        full_name: string | null;
-        photo: string | null;
-        party_id: string | null;
-    };
+    mp: MP;
 }
 
 const { mp, imageProps } = Astro.props;
@@ -27,7 +24,7 @@ const images = import.meta.glob<{ default: ImageMetadata }>(
     {
         filename && images[filename] ? (
             <Image
-                alt={mp.full_name}
+                alt={mp.first_name + " " + mp.last_name}
                 height="150"
                 src={images[filename]()}
                 width="100"

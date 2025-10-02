@@ -1,5 +1,5 @@
 ---
-import type { MP } from "~src/pages/edustajat/[memberOfParliament]/_utils";
+import type { MP } from "~src/pages/edustajat/data.json";
 import BaseLayout from "~src/layouts/BaseLayout.astro";
 import ProfilePhoto from "~src/components/ProfilePhoto.astro";
 
@@ -9,7 +9,7 @@ interface Props {
 
 const { mp } = Astro.props;
 
-const currentPathBase = `edustaja/${mp?.first_name}+${mp?.last_name}`;
+const currentPathBase = `edustajat/${mp?.first_name}+${mp?.last_name}`;
 const currentPath = Astro.url.pathname;
 const subpages = [
     { name: "Yleistä", path: `/${currentPathBase}` },
@@ -23,7 +23,7 @@ const subpages = [
     <section>
         <ProfilePhoto mp={mp} />
         <p>
-            <h1>{mp?.full_name}</h1>
+            <h1>{mp?.first_name} {mp?.last_name}</h1>
             {mp?.email}<br />
             {mp?.party_id}<br />
             {mp?.occupation}<br />
