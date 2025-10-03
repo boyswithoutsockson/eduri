@@ -1,9 +1,7 @@
 ---
-import { Image } from "astro:assets";
-
 import BaseLayout from "~src/layouts/BaseLayout.astro";
-import Parliament from "~src/icons/parliament.png";
-import Proposal from "~src/icons/proposal.png";
+import Parliament from "~src/icons/parliament.svg";
+import Proposal from "~src/icons/proposal.svg";
 
 const iconSize = 130;
 ---
@@ -18,11 +16,11 @@ const iconSize = 130;
 
     <section>
         <a href="/edustajat">
-            <Image alt="" height={iconSize} src={Parliament} width={iconSize} />
+            <Parliament height={iconSize} width={iconSize} />
             <h2>Edustajat</h2>
         </a>
         <a href="/esitykset">
-            <Image alt="" height={iconSize} src={Proposal} width={iconSize} />
+            <Proposal height={iconSize} width={iconSize} />
             <h2>Esitykset</h2>
         </a>
     </section>
@@ -49,5 +47,11 @@ const iconSize = 130;
         display: flex;
         gap: 8rem;
         justify-content: center;
+    }
+
+    a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 </style>
