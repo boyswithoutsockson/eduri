@@ -42,6 +42,7 @@ export interface CommitteeBudgetReports {
 
 export interface CommitteeReports {
   committee_name: string;
+  date: Timestamp;
   id: string;
   law_changes: string | null;
   opinion: string;
@@ -126,6 +127,7 @@ export interface Persons {
 }
 
 export interface Proposals {
+  date: Timestamp;
   id: string;
   law_changes: string | null;
   ptype: ProposalType | null;
