@@ -1,0 +1,44 @@
+---
+import RoundPhoto from "~src/components/RoundPhoto.astro";
+import type { Proposal } from "~src/pages/esitykset/data.json";
+
+interface Props {
+    proposal: Proposal;
+}
+
+const { proposal } = Astro.props;
+---
+
+<ul>
+    {
+        proposal.signatures
+            .sort((a, b) => a.party_id.localeCompare(b.party_id))
+            .map((signature) => (
+                <li>
+                    <RoundPhoto mp={signature} />
+                </li>
+            ))
+    }
+</ul>
+
+<style>
+    ul {
+        --overlap: 24px;
+        padding-inline-start: unset;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        padding-inline-start: var(--overlap);
+    }
+    ul > li {
+        list-style: none;
+        margin-inline-start: calc(0px - var(--overlap));
+        transition:
+            margin 300ms,
+            transform 300ms;
+    }
+    ul > li:hover {
+        margin-inline-end: var(--overlap);
+        transform: scale(1.5);
+    }
+</style>

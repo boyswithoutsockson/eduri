@@ -1,0 +1,57 @@
+---
+// We inject markdown in multiple places in this file, it is safe trust me bro
+/* eslint-disable astro/no-set-html-directive */
+import { marked } from "marked";
+import ProposalSignatures from "~src/components/ProposalSignatures.astro";
+import Layout from "~src/layouts/BaseLayout.astro";
+import { proposalData, urlencodeProposalId } from "~src/pages/esitykset/_utils";
+
+export async function getStaticPaths() {
+    const data = await proposalData().execute();
+    return data.map((proposal) => ({
+        params: { proposal: urlencodeProposalId(proposal.id) },
+        props: { proposal },
+    }));
+}
+
+const { proposal } = Astro.props;
+---
+
+<Layout>
+    <h1>{proposal.title}</h1>
+
+    {
+        proposal.summary && (
+            <>
+                <h2>Yhteenveto</h2>
+                <Fragment set:html={marked(proposal.summary)} />
+            </>
+        )
+    }
+
+    {
+        proposal.reasoning && (
+            <>
+                <h2>Perustelut</h2>
+                <Fragment set:html={marked(proposal.reasoning)} />
+            </>
+        )
+    }
+    {
+        proposal.law_changes && (
+            <>
+                <h2>Lakimuutokset</h2>
+                <Fragment set:html={marked(proposal.law_changes)} />
+            </>
+        )
+    }
+
+    <h2>Allekirjoittaneet</h2>
+    <ProposalSignatures proposal={proposal} />
+</Layout>
+
+<style>
+    h2 {
+        font-size: 1.25rem;
+    }
+</style>
