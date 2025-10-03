@@ -1,4 +1,4 @@
-name: Deployment pipeline
+name: Database generation test
 on:
   workflow_dispatch:
   pull_request:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy website
+    name: Generate database
     runs-on: ubuntu-latest
     permissions:
       deployments: write
@@ -30,49 +30,6 @@ jobs:
           - 5432:5432
 
     steps:
-      ############################
-      # Create deployment status #
-      ############################
-      - name: Create GitHub Deployment
-        id: create-deployment
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const deployment = await github.rest.repos.createDeployment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: process.env.BRANCH_NAME,
-              environment: 'preview',
-              description: 'Auto-deployed preview',
-              transient_environment: true,
-              production_environment: false,
-              auto_merge: false,
-              required_contexts: []
-            });
-
-            const jobs = await github.rest.actions.listJobsForWorkflowRun({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: context.runId,
-            });
-            const log_url = jobs.data.jobs[0].html_url;
-
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: deployment.data.id,
-              state: 'in_progress',
-              description: 'Deployment in progress',
-              log_url: log_url,
-            });
-            core.setOutput('deployment_id', deployment.data.id);
-            core.setOutput('log_url', log_url);
-
-
-      ################
-      # Run pipeline #
-      ################
       - name: Check out repository code
         uses: actions/checkout@v5
 
@@ -98,59 +55,3 @@ jobs:
 
       - name: Populate database
         run: make database
-
-      - name: Build website
-        run: make build
-
-      - name: Deploy to Netlify
-        id: deploy
-        run: |
-          # Replace special characters with hyphens and convert to lowercase
-          export SUBDOMAIN=$(echo "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/^-//' | sed 's/-$//' | sed 's/--*/-/g')
-          
-          # Ensure subdomain is not empty and meets Netlify requirements
-          if [ -z "$SUBDOMAIN" ] || [ ${#SUBDOMAIN} -lt 3 ] || [ ${#SUBDOMAIN} -gt 37 ]; then
-            export SUBDOMAIN="preview-$(date +%s)"
-          fi
-          
-          OUTPUT=$(make deploy)
-          DRAFT_URL=$(echo "$OUTPUT" | grep "Deployed draft to" | awk '{print $5}')
-          echo "draft_url=$DRAFT_URL" >> $GITHUB_OUTPUT
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: eduri
-
-
-      ############################
-      # Update deployment status #
-      ############################
-      - name: Update deployment status to 'success'
-        if: success()
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: ${{ steps.create-deployment.outputs.deployment_id }},
-              state: 'success',
-              description: 'Deployment succeeded',
-              environment_url: '${{ steps.deploy.outputs.draft_url }}',
-              log_url: '${{ steps.create-deployment.outputs.log_url }}',
-            });
-
-      - name: Update deployment status to 'failure'
-        if: failure()
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: ${{ steps.create-deployment.outputs.deployment_id }},
-              state: 'failure',
-              description: 'Deployment failed',
-              log_url: '${{ steps.create-deployment.outputs.log_url }}',
-            });
