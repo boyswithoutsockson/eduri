@@ -13,13 +13,17 @@ CREATE TABLE IF NOT EXISTS persons (
     photo VARCHAR(100)
 );
 
+CREATE TABLE IF NOT EXISTS minister_positions (
+    title VARCHAR(100) PRIMARY KEY
+);
+
 CREATE TABLE IF NOT EXISTS ministers (
     person_id INT REFERENCES persons(id),
-    ministry VARCHAR(100), 
+    minister_position VARCHAR(100) REFERENCES minister_positions(title), 
     cabinet_id VARCHAR(50), 
     start_date DATE,
     end_date DATE,
-    PRIMARY KEY(ministry, person_id, start_date)
+    PRIMARY KEY(minister_position, person_id, start_date)
 );
 
 -- Interests (sidonnaisuudet)
