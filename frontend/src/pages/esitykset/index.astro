@@ -1,61 +1,10 @@
 ---
 import Layout from "~src/layouts/BaseLayout.astro";
 
-import { db } from "~src/database";
-import { sql } from "kysely";
-import type { Persons } from "~src/database.gen";
-import RoundPhoto from "~src/components/RoundPhoto.astro";
+import { proposalData, urlencodeProposalId } from "~src/pages/esitykset/_utils";
+import ProposalSignatures from "~src/components/ProposalSignatures.astro";
 
-type Signature = Pick<Persons, "id" | "first_name" | "last_name" | "photo"> & {
-    first: boolean;
-    party_id: string;
-};
-
-const data = await db
-    .selectFrom("proposals as p")
-    .select([
-        "p.id as id",
-        "p.title as title",
-        "p.ptype as proposer",
-        "p.status as status",
-        "p.summary as summary",
-        sql<Signature[]>`(
-        SELECT COALESCE(
-            jsonb_agg(
-                jsonb_build_object(
-                    'id', prs.id,
-                    'first_name', prs.first_name,
-                    'last_name', prs.last_name,
-                    'full_name', prs.full_name,
-                    'photo', prs.photo,
-                    'first', ps.first,
-                    'party_id', mppm.pg_id
-                ) ORDER BY (ps.first IS NOT TRUE), prs.last_name, prs.first_name
-            ),
-            '[]'::jsonb
-        )
-        FROM proposal_signatures ps
-        JOIN persons prs ON prs.id = ps.person_id
-        JOIN LATERAL (
-            SELECT mppm.pg_id
-            FROM mp_parliamentary_group_memberships AS mppm
-            WHERE mppm.person_id = prs.id
-            ORDER BY mppm.start_date DESC NULLS LAST, mppm.pg_id DESC
-            LIMIT 1
-        ) mppm ON TRUE
-        WHERE ps.proposal_id = p.id
-    )`.as("signatures"),
-    ])
-    .select((eb) =>
-        eb
-            .selectFrom("committee_reports as cr")
-            .select((ceb) => ceb.fn.count("cr.id").as("count"))
-            .whereRef("cr.proposal_id", "=", eb.ref("p.id"))
-            .as("committeeReportCount")
-    )
-    .orderBy("p.id", "desc")
-    .limit(20)
-    .execute();
+const data = await proposalData().limit(20).execute();
 ---
 
 <Layout>
@@ -68,17 +17,12 @@ const data = await db
                         <h2>{proposal.title}</h2>
                         <p>{proposal.summary}</p>
                         <p>allekirjoittaneet:</p>
-                        <ul>
-                            {proposal.signatures
-                                .sort((a, b) =>
-                                    a.party_id.localeCompare(b.party_id)
-                                )
-                                .map((signature) => (
-                                    <li>
-                                        <RoundPhoto mp={signature} />
-                                    </li>
-                                ))}
-                        </ul>
+                        <ProposalSignatures proposal={proposal} />
+                        <a
+                            href={`/esitykset/${urlencodeProposalId(proposal.id)}`}
+                        >
+                            Avaa esitys
+                        </a>
                     </article>
                     <hr />
                 </li>
@@ -104,24 +48,5 @@ const data = await db
         padding: 0;
         flex-direction: column;
         gap: var(--pico-block-spacing-horizontal);
-    }
-    article > ul {
-        --overlap: 24px;
-        padding-inline-start: unset;
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        padding-inline-start: var(--overlap);
-    }
-    article > ul > li {
-        list-style: none;
-        margin-inline-start: calc(0px - var(--overlap));
-        transition:
-            margin 300ms,
-            transform 300ms;
-    }
-    article > ul > li:hover {
-        margin-inline-end: var(--overlap);
-        transform: scale(1.5);
     }
 </style>
