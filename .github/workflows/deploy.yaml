@@ -99,6 +99,9 @@ jobs:
       - name: Populate database
         run: make database
 
+      - name: Clean data artifacts
+        run: rm -rf data
+
       - name: Build website
         run: make build
 
