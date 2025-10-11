@@ -24,7 +24,7 @@ type MP = {
     last_name: string | null;
     photo: string | null;
     party_id: string | null;
-    ministry: string | null;
+    minister_position: string | null;
 };
 
 interface Props {
@@ -155,10 +155,10 @@ function MemberListItem({ mp }: MLIProps) {
                         </span>
                     </span>
 
-                    {mp.ministry ? (
+                    {mp.minister_position ? (
                         <>
                             <br />
-                            {mp.ministry}
+                            {mp.minister_position}
                         </>
                     ) : null}
                     <br />

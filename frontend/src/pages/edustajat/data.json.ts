@@ -31,7 +31,7 @@ export function mpData() {
             "persons.occupation",
             "persons.place_of_residence",
             "parliamentary_group.pg_id as party_id",
-            "ministers.ministry",
+            "ministers.minister_position",
         ]);
 }
 
