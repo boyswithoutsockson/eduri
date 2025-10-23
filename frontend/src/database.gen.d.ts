@@ -188,6 +188,7 @@ export interface Votes {
     vote: Vote | null;
 }
 
+<<<<<<< HEAD
 export interface PGVoteCounts {
     pg_id: string;
     ballot_id: number;
@@ -196,6 +197,9 @@ export interface PGVoteCounts {
 }
 
 export interface PGModeVotes {
+=======
+export interface ModeVotes {
+>>>>>>> 36c4c07 (feat: :sparkles: Add initial views and temp tables)
     pg_id: string;
     ballot_id: number;
     mode_vote: Vote;
@@ -232,7 +236,11 @@ export interface DB {
     sessions: Sessions;
     speeches: Speeches;
     votes: Votes;
+<<<<<<< HEAD
     pg_vote_view: PGVoteCounts;
     pg_mode_vote_view: PGModeVotes;
+=======
+    mode_votes_view: ModeVotes;
+>>>>>>> 36c4c07 (feat: :sparkles: Add initial views and temp tables)
     contra_vote_scores_view: ContraVoteScores;
 }

@@ -17,10 +17,10 @@ SELECT
     pg_id,
     ballot_id,
     vote,
+(feat: :sparkles: Add initial views and temp tables)
     count
 FROM vote_counts
 ORDER BY pg_id, ballot_id, count DESC;
-
 
 -- Most popular vote by pg and ballot
 CREATE VIEW pg_mode_vote_view AS
@@ -54,3 +54,4 @@ SELECT
     CAST(SUM(CASE WHEN vote = mode_vote OR vote = 'absent' THEN 0 ELSE 1 END) AS FLOAT) / NULLIF(COUNT(vote), 0) AS contra_vote_score
 FROM pg_mode_and_person_vote
 GROUP BY person_id;
+
