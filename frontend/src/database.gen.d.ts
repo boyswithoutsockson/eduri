@@ -5,228 +5,381 @@
 
 import type { ColumnType } from "kysely";
 
-export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
-  ? ColumnType<S, I | undefined, U>
-  : ColumnType<T, T | undefined, T>;
+export type Generated<T> =
+    T extends ColumnType<infer S, infer I, infer U>
+        ? ColumnType<S, I | undefined, U>
+        : ColumnType<T, T | undefined, T>;
+export type Generated<T> =
+    T extends ColumnType<infer S, infer I, infer U>
+        ? ColumnType<S, I | undefined, U>
+        : ColumnType<T, T | undefined, T>;
 
-export type ProposalStatus = "cancelled" | "expired" | "open" | "passed" | "passed_changed" | "passed_urgent" | "rejected" | "resting";
+export type ProposalStatus =
+    | "cancelled"
+    | "expired"
+    | "open"
+    | "passed"
+    | "passed_changed"
+    | "passed_urgent"
+    | "rejected"
+    | "resting";
+export type ProposalStatus =
+    | "cancelled"
+    | "expired"
+    | "open"
+    | "passed"
+    | "passed_changed"
+    | "passed_urgent"
+    | "rejected"
+    | "resting";
 
-export type ProposalType = "citizen" | "government" | "mp_debate" | "mp_law" | "mp_petition";
+export type ProposalType =
+    | "citizen"
+    | "government"
+    | "mp_debate"
+    | "mp_law"
+    | "mp_petition";
+export type ProposalType =
+    | "citizen"
+    | "government"
+    | "mp_debate"
+    | "mp_law"
+    | "mp_petition";
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export type Vote = "absent" | "abstain" | "no" | "yes";
 
 export interface AgendaItems {
-  parliament_id: string;
-  record_assembly_code: string;
-  record_nro: number;
-  record_year: number;
-  title: string;
+    parliament_id: string;
+    record_assembly_code: string;
+    record_nro: number;
+    record_year: number;
+    title: string;
 }
 
 export interface Assemblies {
-  code: string | null;
-  name: string;
+    code: string | null;
+    name: string;
 }
 
 export interface Ballots {
-  id: number;
-  minutes_url: string | null;
-  parliament_id: string | null;
-  results_url: string | null;
-  session_item_title: string | null;
-  start_time: Timestamp | null;
-  title: string | null;
+    id: number;
+    minutes_url: string | null;
+    parliament_id: string | null;
+    results_url: string | null;
+    session_item_title: string | null;
+    start_time: Timestamp | null;
+    title: string | null;
+    id: number;
+    minutes_url: string | null;
+    parliament_id: string | null;
+    results_url: string | null;
+    session_item_title: string | null;
+    start_time: Timestamp | null;
+    title: string | null;
 }
 
 export interface CommitteeBudgetReports {
-  committee_name: string;
-  id: string;
-  proposal_id: string;
+    committee_name: string;
+    id: string;
+    proposal_id: string;
+    committee_name: string;
+    id: string;
+    proposal_id: string;
 }
 
 export interface CommitteeReports {
-  committee_name: string;
-  date: Timestamp;
-  id: string;
-  law_changes: string | null;
-  opinion: string;
-  proposal_id: string;
-  proposal_summary: string;
-  reasoning: string | null;
+    committee_name: string;
+    date: Timestamp;
+    id: string;
+    law_changes: string | null;
+    opinion: string;
+    proposal_id: string;
+    proposal_summary: string;
+    reasoning: string | null;
+    committee_name: string;
+    date: Timestamp;
+    id: string;
+    law_changes: string | null;
+    opinion: string;
+    proposal_id: string;
+    proposal_summary: string;
+    reasoning: string | null;
 }
 
 export interface CommitteeReportSignatures {
-  committee_report_id: string;
-  person_id: number;
+    committee_report_id: string;
+    person_id: number;
+    committee_report_id: string;
+    person_id: number;
+}
+
+export interface Committees {
+    name: string;
+    name: string;
 }
 
 export interface ElectionSeasons {
-  end_year: Timestamp;
-  start_year: Timestamp;
+    end_year: Timestamp;
+    start_year: Timestamp;
+    end_year: Timestamp;
+    start_year: Timestamp;
 }
 
 export interface Interests {
-  category: string | null;
-  id: Generated<number>;
-  interest: string | null;
-  person_id: number | null;
+    category: string | null;
+    id: Generated<number>;
+    interest: string | null;
+    person_id: number | null;
+    category: string | null;
+    id: Generated<number>;
+    interest: string | null;
+    person_id: number | null;
 }
 
 export interface Lobbies {
-  id: string;
-  industry: string | null;
-  name: string;
+    id: string;
+    industry: string | null;
+    name: string;
 }
 
 export interface LobbyActions {
-  contact_method: string | null;
-  id: Generated<number>;
-  lobby_id: string;
-  person_id: number;
-  term_id: number;
-  topic_id: number;
+    contact_method: string | null;
+    id: Generated<number>;
+    lobby_id: string;
+    person_id: number;
+    term_id: number;
+    topic_id: number;
 }
 
 export interface LobbyTerms {
-  end_date: Timestamp | null;
-  id: number;
-  start_date: Timestamp | null;
+    end_date: Timestamp | null;
+    id: number;
+    start_date: Timestamp | null;
 }
 
 export interface LobbyTopics {
-  id: number;
-  project: string | null;
-  topic: string;
+    id: number;
+    project: string | null;
+    topic: string;
 }
 
 export interface MinisterPositions {
-  title: string;
+    title: string;
+    title: string;
 }
 
 export interface Ministers {
-  cabinet_id: string | null;
-  end_date: Timestamp | null;
-  minister_position: string;
-  person_id: number;
-  start_date: Timestamp;
+    cabinet_id: string | null;
+    end_date: Timestamp | null;
+    minister_position: string;
+    person_id: number;
+    start_date: Timestamp;
+    cabinet_id: string | null;
+    end_date: Timestamp | null;
+    minister_position: string;
+    person_id: number;
+    start_date: Timestamp;
 }
 
 export interface MpCommitteeMemberships {
-  committee_name: string;
-  end_date: Timestamp | null;
-  person_id: number;
-  role: string;
-  start_date: Timestamp;
+    committee_name: string;
+    end_date: Timestamp | null;
+    person_id: number;
+    role: string;
+    start_date: Timestamp;
+    committee_name: string;
+    end_date: Timestamp | null;
+    person_id: number;
+    role: string;
+    start_date: Timestamp;
 }
 
 export interface MpParliamentaryGroupMemberships {
-  end_date: Timestamp | null;
-  person_id: number;
-  pg_id: string;
-  start_date: Timestamp;
+    end_date: Timestamp | null;
+    person_id: number;
+    pg_id: string;
+    start_date: Timestamp;
+    end_date: Timestamp | null;
+    person_id: number;
+    pg_id: string;
+    start_date: Timestamp;
 }
 
 export interface Objections {
-  committee_report_id: string | null;
-  id: Generated<number>;
-  motion: string | null;
-  reasoning: string | null;
+    committee_report_id: string | null;
+    id: Generated<number>;
+    motion: string | null;
+    reasoning: string | null;
+    committee_report_id: string | null;
+    id: Generated<number>;
+    motion: string | null;
+    reasoning: string | null;
 }
 
 export interface ObjectionSignatures {
-  objection_id: Generated<number>;
-  person_id: number;
+    objection_id: Generated<number>;
+    person_id: number;
+    objection_id: Generated<number>;
+    person_id: number;
 }
 
 export interface ParliamentaryGroups {
-  id: string;
-  name: string | null;
+    id: string;
+    name: string | null;
+    id: string;
+    name: string | null;
 }
 
 export interface Persons {
-  email: string | null;
-  first_name: string | null;
-  full_name: string | null;
-  id: number;
-  last_name: string | null;
-  occupation: string | null;
-  phone_number: string | null;
-  photo: string | null;
-  place_of_birth: string | null;
-  place_of_residence: string | null;
-  year_of_birth: number | null;
+    email: string | null;
+    first_name: string | null;
+    full_name: string | null;
+    id: number;
+    last_name: string | null;
+    occupation: string | null;
+    phone_number: string | null;
+    photo: string | null;
+    place_of_birth: string | null;
+    place_of_residence: string | null;
+    year_of_birth: number | null;
+    email: string | null;
+    first_name: string | null;
+    full_name: string | null;
+    id: number;
+    last_name: string | null;
+    occupation: string | null;
+    phone_number: string | null;
+    photo: string | null;
+    place_of_birth: string | null;
+    place_of_residence: string | null;
+    year_of_birth: number | null;
 }
 
 export interface Proposals {
-  date: Timestamp;
-  id: string;
-  law_changes: string | null;
-  ptype: ProposalType | null;
-  reasoning: string | null;
-  status: ProposalStatus;
-  summary: string | null;
-  title: string | null;
+    date: Timestamp;
+    id: string;
+    law_changes: string | null;
+    ptype: ProposalType | null;
+    reasoning: string | null;
+    status: ProposalStatus;
+    summary: string | null;
+    title: string | null;
+    date: Timestamp;
+    id: string;
+    law_changes: string | null;
+    ptype: ProposalType | null;
+    reasoning: string | null;
+    status: ProposalStatus;
+    summary: string | null;
+    title: string | null;
 }
 
 export interface ProposalSignatures {
-  first: boolean | null;
-  person_id: number;
-  proposal_id: string;
+    first: boolean | null;
+    person_id: number;
+    proposal_id: string;
+    first: boolean | null;
+    person_id: number;
+    proposal_id: string;
 }
 
 export interface Records {
-  assembly_code: string;
-  creation_date: Timestamp;
-  meeting_date: Timestamp;
-  nro: number;
-  year: number;
+    assembly_code: string;
+    creation_date: Timestamp;
+    meeting_date: Timestamp;
+    nro: number;
+    year: number;
 }
 
 export interface Speeches {
-  agenda_item_parliament_id: string | null;
-  id: string;
-  person_id: number;
-  record_assembly_code: string | null;
-  record_nro: number | null;
-  record_year: number | null;
-  response_to: string | null;
-  speech: string;
-  speech_type: string;
-  start_time: Timestamp;
+    agenda_item_parliament_id: string | null;
+    id: string;
+    person_id: number;
+    record_assembly_code: string | null;
+    record_nro: number | null;
+    record_year: number | null;
+    response_to: string | null;
+    speech: string;
+    speech_type: string;
+    start_time: Timestamp;
 }
 
 export interface Votes {
-  ballot_id: number;
-  person_id: number;
-  vote: Vote | null;
+    ballot_id: number;
+    person_id: number;
+    vote: Vote | null;
+    ballot_id: number;
+    person_id: number;
+    vote: Vote | null;
+}
+
+export interface PGVoteCounts {
+    pg_id: string;
+    ballot_id: number;
+    vote: Vote;
+    count: number;
+}
+
+export interface PGModeVotes {
+    pg_id: string;
+    ballot_id: number;
+    mode_vote: Vote;
+    count: number;
+}
+
+export interface ContraVoteScores {
+    person_id: number;
+    contra_vote_score: number;
+}
+
+export interface PGVoteCounts {
+    pg_id: string;
+    ballot_id: number;
+    vote: Vote;
+    count: number;
+}
+
+export interface PGModeVotes {
+    pg_id: string;
+    ballot_id: number;
+    mode_vote: Vote;
+    count: number;
+}
+
+export interface ContraVoteScores {
+    person_id: number;
+    contra_vote_score: number;
 }
 
 export interface DB {
-  agenda_items: AgendaItems;
-  assemblies: Assemblies;
-  ballots: Ballots;
-  committee_budget_reports: CommitteeBudgetReports;
-  committee_report_signatures: CommitteeReportSignatures;
-  committee_reports: CommitteeReports;
-  election_seasons: ElectionSeasons;
-  interests: Interests;
-  lobbies: Lobbies;
-  lobby_actions: LobbyActions;
-  lobby_terms: LobbyTerms;
-  lobby_topics: LobbyTopics;
-  minister_positions: MinisterPositions;
-  ministers: Ministers;
-  mp_committee_memberships: MpCommitteeMemberships;
-  mp_parliamentary_group_memberships: MpParliamentaryGroupMemberships;
-  objection_signatures: ObjectionSignatures;
-  objections: Objections;
-  parliamentary_groups: ParliamentaryGroups;
-  persons: Persons;
-  proposal_signatures: ProposalSignatures;
-  proposals: Proposals;
-  records: Records;
-  speeches: Speeches;
-  votes: Votes;
+    agenda_items: AgendaItems;
+    assemblies: Assemblies;
+    ballots: Ballots;
+    committee_budget_reports: CommitteeBudgetReports;
+    committee_report_signatures: CommitteeReportSignatures;
+    committee_reports: CommitteeReports;
+    election_seasons: ElectionSeasons;
+    interests: Interests;
+    lobbies: Lobbies;
+    lobby_actions: LobbyActions;
+    lobby_terms: LobbyTerms;
+    lobby_topics: LobbyTopics;
+    minister_positions: MinisterPositions;
+    ministers: Ministers;
+    mp_committee_memberships: MpCommitteeMemberships;
+    mp_parliamentary_group_memberships: MpParliamentaryGroupMemberships;
+    objection_signatures: ObjectionSignatures;
+    objections: Objections;
+    parliamentary_groups: ParliamentaryGroups;
+    persons: Persons;
+    proposal_signatures: ProposalSignatures;
+    proposals: Proposals;
+    records: Records;
+    speeches: Speeches;
+    votes: Votes;
+    pg_vote_view: PGVoteCounts;
+    pg_mode_vote_view: PGModeVotes;
+    contra_vote_scores_view: ContraVoteScores;
 }
