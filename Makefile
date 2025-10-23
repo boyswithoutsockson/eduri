@@ -162,6 +162,7 @@ $(DB)/votes: $(DB)/ballots $(DB)/mps
 
 .PHONY: database
 database: $(addprefix $(DB)/,$(PIPES)) ## runs all data pipelines into the database
+	PGPASSWORD=postgres psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < postgres-init-scripts/02_create_views.sql
 
 .PHONY: nuke
 nuke: ## resets all data in the database
