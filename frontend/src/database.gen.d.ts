@@ -84,16 +84,23 @@ export interface Interests {
     id: Generated<number>;
     interest: string | null;
     person_id: number | null;
+<<<<<<< HEAD
 }
 
 export interface MinisterPositions {
     title: string;
+=======
+>>>>>>> 64cb4ec (feat: :sparkles: Add initial views and temp tables)
 }
 
 export interface Ministers {
     cabinet_id: string | null;
     end_date: Timestamp | null;
+<<<<<<< HEAD
     minister_position: string;
+=======
+    ministry: string;
+>>>>>>> 64cb4ec (feat: :sparkles: Add initial views and temp tables)
     person_id: number;
     start_date: Timestamp;
 }
@@ -209,7 +216,10 @@ export interface DB {
     committees: Committees;
     election_seasons: ElectionSeasons;
     interests: Interests;
+<<<<<<< HEAD
     minister_positions: MinisterPositions;
+=======
+>>>>>>> 64cb4ec (feat: :sparkles: Add initial views and temp tables)
     ministers: Ministers;
     mp_committee_memberships: MpCommitteeMemberships;
     mp_parliamentary_group_memberships: MpParliamentaryGroupMemberships;
