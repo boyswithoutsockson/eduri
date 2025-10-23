@@ -1,4 +1,6 @@
 ---
+import { db } from "~src/database";
+import { groupBy } from "~src/utils";
 import type { MP } from "~src/pages/edustajat/data.json";
 import BaseLayout from "~src/layouts/BaseLayout.astro";
 import ProfilePhoto from "~src/components/ProfilePhoto.astro";
@@ -8,6 +10,66 @@ interface Props {
 }
 
 const { mp } = Astro.props;
+
+const votes = mp
+    ? await db
+          .selectFrom("persons")
+          .where("persons.id", "=", mp.id)
+          .leftJoin("votes", "persons.id", "votes.person_id")
+          .leftJoin("ballots", "ballot_id", "ballots.id")
+          .select(["votes.vote", "ballots.start_time"])
+          .execute()
+    : [];
+
+const groupedVoteDates = groupBy(
+    votes.filter((vote) => vote.vote !== "absent"),
+    (i) => i.start_time?.toISOString().split("T")[0] ?? ""
+);
+
+const groupedBallotDates = groupBy(
+    votes,
+    (i) => i.start_time?.toISOString().split("T")[0] ?? ""
+);
+
+const proposals = mp
+    ? await db
+          .selectFrom("proposal_signatures")
+          .where("proposal_signatures.person_id", "=", mp.id)
+          .leftJoin(
+              "proposals",
+              "proposals.id",
+              "proposal_signatures.proposal_id"
+          )
+          .select([
+              "proposals.id",
+              "proposals.ptype",
+              "proposal_signatures.first",
+          ])
+          .execute()
+    : [];
+
+const groupedProposals = groupBy(
+    proposals,
+    (i) => `${i.ptype ?? ""}_${i.first ? "first" : "notFirst"}`
+);
+
+const objections = mp
+    ? await db
+          .selectFrom("objection_signatures")
+          .where("objection_signatures.person_id", "=", mp.id)
+          .select("objection_signatures.objection_id")
+          .execute()
+    : [];
+
+const contraVoteScoreResult = mp
+    ? await db
+          .selectFrom("contra_vote_scores_view")
+          .where("contra_vote_scores_view.person_id", "=", mp.id)
+          .select("contra_vote_scores_view.contra_vote_score")
+          .executeTakeFirst()
+    : null;
+
+const contraVoteScore = contraVoteScoreResult?.contra_vote_score ?? null;
 
 const currentPathBase = `edustajat/${mp?.first_name}+${mp?.last_name}`;
 const currentPath = Astro.url.pathname;
@@ -28,6 +90,41 @@ const subpages = [
             {mp?.party_id}<br />
             {mp?.occupation}<br />
             {mp?.place_of_residence}<br />
+            Läsnäoloprosentti: {
+                (
+                    (Object.keys(groupedVoteDates).length /
+                        Object.keys(groupedBallotDates).length) *
+                    100
+                ).toFixed(0) ?? 0
+            }%<br />
+            Lakialoitteet
+            <ul>
+                <li>
+                    Tehty: {groupedProposals["mp_law_first"]?.length ?? 0}
+                    {
+                        groupedProposals["government_notFirst"]?.length > 0 &&
+                            ` (Hallituksessa: ${groupedProposals["government_notFirst"]?.length ?? 0})`
+                    }
+                </li>
+                <li>
+                    Allekirjoitettu: {
+                        groupedProposals["mp_law_notFirst"]?.length ?? 0
+                    }
+                </li>
+            </ul>
+            Toimenpidealoitteet
+            <ul>
+                <li>
+                    Tehty: {groupedProposals["mp_petition_first"]?.length ?? 0}
+                </li>
+                <li>
+                    Allekirjoitettu: {
+                        groupedProposals["mp_petition_notFirst"]?.length ?? 0
+                    }
+                </li>
+            </ul>
+            Vastalauseet: {objections?.length ?? 0}<br />
+            Kapinakerroin: {(contraVoteScore ?? 0).toFixed(2)}
         </p>
     </section>
 

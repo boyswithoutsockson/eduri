@@ -84,23 +84,16 @@ export interface Interests {
     id: Generated<number>;
     interest: string | null;
     person_id: number | null;
-<<<<<<< HEAD
 }
 
 export interface MinisterPositions {
     title: string;
-=======
->>>>>>> 64cb4ec (feat: :sparkles: Add initial views and temp tables)
 }
 
 export interface Ministers {
     cabinet_id: string | null;
     end_date: Timestamp | null;
-<<<<<<< HEAD
     minister_position: string;
-=======
-    ministry: string;
->>>>>>> 64cb4ec (feat: :sparkles: Add initial views and temp tables)
     person_id: number;
     start_date: Timestamp;
 }
@@ -188,7 +181,6 @@ export interface Votes {
     vote: Vote | null;
 }
 
-<<<<<<< HEAD
 export interface PGVoteCounts {
     pg_id: string;
     ballot_id: number;
@@ -197,9 +189,6 @@ export interface PGVoteCounts {
 }
 
 export interface PGModeVotes {
-=======
-export interface ModeVotes {
->>>>>>> 36c4c07 (feat: :sparkles: Add initial views and temp tables)
     pg_id: string;
     ballot_id: number;
     mode_vote: Vote;
@@ -220,10 +209,7 @@ export interface DB {
     committees: Committees;
     election_seasons: ElectionSeasons;
     interests: Interests;
-<<<<<<< HEAD
     minister_positions: MinisterPositions;
-=======
->>>>>>> 64cb4ec (feat: :sparkles: Add initial views and temp tables)
     ministers: Ministers;
     mp_committee_memberships: MpCommitteeMemberships;
     mp_parliamentary_group_memberships: MpParliamentaryGroupMemberships;
@@ -236,11 +222,7 @@ export interface DB {
     sessions: Sessions;
     speeches: Speeches;
     votes: Votes;
-<<<<<<< HEAD
     pg_vote_view: PGVoteCounts;
     pg_mode_vote_view: PGModeVotes;
-=======
-    mode_votes_view: ModeVotes;
->>>>>>> 36c4c07 (feat: :sparkles: Add initial views and temp tables)
     contra_vote_scores_view: ContraVoteScores;
 }
