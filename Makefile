@@ -181,8 +181,15 @@ search-index: insert-database
 	@echo "Building search index..."
 	PGPASSWORD=postgres PGOPTIONS='--client-min-messages=warning' psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < sql/proposal_search.sql
 
+.PHONY: views
+views: insert-database
+	@echo "Creating views..."
+	PGPASSWORD=postgres PGOPTIONS='--client-min-messages=warning' psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < sql/views.sql
+
 .PHONY: database
-database: search-index ## inserts all data into database and builds search indices
+database: ## inserts all data into database and builds search indices and views
+	$(MAKE) search-index   
+	$(MAKE) views
 
 .PHONY: nuke
 nuke: ## resets all data in the database
