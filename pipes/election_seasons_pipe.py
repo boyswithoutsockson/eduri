@@ -10,23 +10,19 @@ csv_path = 'data/preprocessed/election_seasons.csv'
 
 
 def preprocess_data():
-    with open(os.path.join("data", "raw", "kansanedustajat_vaalikausittain.csv"), "r") as f:
-        mop = pd.read_csv(f, sep=",")
+    with open(os.path.join("data", "raw", "election_seasons.tsv"), "r") as f:
+        seasons = pd.read_csv(f, sep="\t")
 
-    seasons = mop.Vaalikausi.unique()
-    seasons = [s.split("–") for s in seasons]
-    seasons = [{"start_year": f"{s[0].split(" ")[0]}-01-01", "end_year": f"{s[1].split(" ")[0]}-12-31"} for s in seasons]
-
-    seasons = pd.DataFrame(seasons)
+    seasons.rename(columns={'alkupvm': 'start_date', 'loppupvm': 'end_date', 'tunnus': 'id'}, inplace=True)
+    seasons = seasons.drop(['nimi', 'jarjestys', 'aktiivinen'], axis=1)
     seasons.to_csv(csv_path, index=False)
-
 
 def import_data():
     conn = get_connection()
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert("COPY election_seasons(start_year, end_year) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
+        cursor.copy_expert("COPY election_seasons(id, start_year, end_year) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
 
     conn.commit()
     cursor.close()
