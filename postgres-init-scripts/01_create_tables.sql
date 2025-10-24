@@ -59,13 +59,6 @@ CREATE TABLE IF NOT EXISTS votes (
     PRIMARY KEY(ballot_id, person_id)
 );
 
-
--- Committees (toimielin)
--- CREATE TABLE IF NOT EXISTS committees (
-    
--- );
-
-
 -- parliamentary_groups (puolueet)
 CREATE TABLE IF NOT EXISTS parliamentary_groups (
     id VARCHAR(100) PRIMARY KEY,
@@ -96,28 +89,52 @@ CREATE TABLE IF NOT EXISTS mp_committee_memberships (
     PRIMARY KEY(person_id, committee_name, start_date, role)
 );
 
+-- assemblies
+CREATE TABLE IF NOT EXISTS assemblies (
+    code VARCHAR(10) PRIMARY KEY NOT NULL,
+    name VARCHAR(50) NOT NULL
+);
+
 -- sessions
 
-CREATE TABLE IF NOT EXISTS sessions (
-    id VARCHAR(10) PRIMARY KEY NOT NULL,
-    date DATE NOT NULL
+CREATE TABLE IF NOT EXISTS records (
+    assembly_code VARCHAR(10) REFERENCES assemblies(code),
+    nro INT NOT NULL,
+    year INT NOT NULL,
+    meeting_date DATE NOT NULL,
+    creation_date DATE NOT NULL,
+    PRIMARY KEY(assembly_code, nro, year)
 );
 
 -- agenda items
 CREATE TABLE IF NOT EXISTS agenda_items (
-    id INT PRIMARY KEY NOT NULL,
-    parliament_id VARCHAR (20) NOT NULL,
-    session_id VARCHAR(15) REFERENCES sessions(id),
-    title TEXT NOT NULL
+    parliament_id VARCHAR (20),
+    record_assembly_code VARCHAR(10),
+    record_nro INT NOT NULL,
+    record_year INT NOT NULL,
+    title TEXT NOT NULL,
+    FOREIGN KEY(record_assembly_code, record_nro, record_year) REFERENCES records(assembly_code, nro, year),
+    PRIMARY KEY(parliament_id, record_assembly_code, record_nro, record_year)
 );
 
 -- speeches
 CREATE TABLE IF NOT EXISTS speeches (
     id VARCHAR(15) PRIMARY KEY NOT NULL,
     person_id INT NOT NULL REFERENCES persons(id),
-    parliament_id VARCHAR (20) NOT NULL,
+    record_assembly_code VARCHAR (10),
+    record_nro INT,
+    record_year INT,
+    agenda_item_parliament_id VARCHAR (20),
+    FOREIGN KEY (record_assembly_code,
+                 record_nro,
+                 record_year,
+                 agenda_item_parliament_id) REFERENCES agenda_items(record_assembly_code,
+                                                                    record_nro,
+                                                                    record_year,
+                                                                    parliament_id),
     start_time TIMESTAMP WITH TIME ZONE NOT NULL,
     speech TEXT NOT NULL,
+    speech_type CHAR(1) NOT NULL,
     response_to VARCHAR(15) REFERENCES speeches(id)
 );
 
