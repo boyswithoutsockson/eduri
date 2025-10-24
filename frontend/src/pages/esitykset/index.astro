@@ -1,32 +1,127 @@
 ---
+// We inject markdown in multiple places in this file, it is safe trust me bro
+/* eslint-disable astro/no-set-html-directive */
 import Layout from "~src/layouts/BaseLayout.astro";
 
 import { proposalData, urlencodeProposalId } from "~src/pages/esitykset/_utils";
 import ProposalSignatures from "~src/components/ProposalSignatures.astro";
+import type {
+    ProposalStatus,
+    ProposalType,
+    Timestamp,
+} from "~src/database.gen";
+import { sql } from "kysely";
+import { db } from "~src/database";
+import { marked } from "marked";
 
-const data = await proposalData().limit(20).execute();
+// Tell Astro that this page cannot be prerendered.
+export const prerender = false;
+
+const SEARCH_QUERYPARAM = "q";
+const PAGE_QUERYPARAM = "p";
+const PAGE_LIMIT = 10;
+
+const search = Astro.url.searchParams.get(SEARCH_QUERYPARAM);
+const page = Number(Astro.url.searchParams.get(PAGE_QUERYPARAM) ?? 0);
+
+// By default, on this page we display a list of proposals in chronological order.
+// However, if a search parameter exists in the URL, we skip the normal list of data,
+// and instead query the database for items matching the search terms.
+
+// This is the default result set
+const data = !search
+    ? await proposalData()
+          .limit(PAGE_LIMIT)
+          .offset(page * PAGE_LIMIT)
+          .execute()
+    : [];
+
+// Below we implement the search functionality.
+
+/** manually constructed based on `~/sql/proposal_search.sql` */
+type SearchResult = Partial<{
+    id: string;
+    ptype: ProposalType;
+    date: Timestamp;
+    title: string;
+    content_snippet: string;
+    status: ProposalStatus;
+    rank: number;
+    total_hits: number;
+}>;
+
+const { rows } = search
+    ? await sql<SearchResult>`SELECT * FROM search_proposals(${search}, ${PAGE_LIMIT}, ${page})`.execute(
+          db
+      )
+    : { rows: [] };
+
+// Postgres sometimes returns incomplete sentences. We add prefix or suffix "..."
+// in those cases to make the text cleaner.
+const results = rows.map((row) => {
+    let snippet = row.content_snippet ?? "";
+    if (/^[a-z]/.test(snippet)) snippet = "..." + snippet;
+    if (!/[.,!?;:]$/.test(snippet)) snippet += "...";
+    return { ...row, content_snippet: snippet };
+});
+const total = results[0]?.total_hits ?? 0;
+const pageMin = page * PAGE_LIMIT + 1;
+const pageMax = Math.min((page + 1) * PAGE_LIMIT, total);
 ---
 
 <Layout>
     <h1>Esitykset</h1>
+    <form role="search">
+        <input
+            id="search"
+            name={SEARCH_QUERYPARAM}
+            type="search"
+            value={search}
+        />
+        <button type="submit">Hae</button>
+    </form>
+    {
+        results.length > 0 && (
+            <p>
+                Näytetään {pageMin}–{pageMax}/{total} tuloksesta
+            </p>
+        )
+    }
     <ul>
         {
-            data.map((proposal) => (
-                <li>
-                    <article>
-                        <h2>{proposal.title}</h2>
-                        <p>{proposal.summary}</p>
-                        <p>allekirjoittaneet:</p>
-                        <ProposalSignatures proposal={proposal} />
-                        <a
-                            href={`/esitykset/${urlencodeProposalId(proposal.id)}`}
-                        >
-                            Avaa esitys
-                        </a>
-                    </article>
-                    <hr />
-                </li>
-            ))
+            results.length > 0
+                ? results.map((result) => (
+                      <li>
+                          <article>
+                              <h2 set:html={result.title} />
+                              <Fragment
+                                  set:html={marked(result.content_snippet!)}
+                              />
+                              <a
+                                  href={`/esitykset/${urlencodeProposalId(result.id!)}`}
+                              >
+                                  Avaa esitys
+                              </a>
+                          </article>
+                          <hr />
+                      </li>
+                  ))
+                : data.map((proposal) => (
+                      <li>
+                          <article>
+                              <h2>{proposal.title}</h2>
+                              <p>{proposal.summary}</p>
+                              <p>allekirjoittaneet:</p>
+                              <ProposalSignatures proposal={proposal} />
+                              <a
+                                  href={`/esitykset/${urlencodeProposalId(proposal.id)}`}
+                              >
+                                  Avaa esitys
+                              </a>
+                          </article>
+                          <hr />
+                      </li>
+                  ))
         }
     </ul>
 </Layout>
