@@ -210,9 +210,8 @@ CREATE TABLE IF NOT EXISTS objection_signatures (
 );
 
 CREATE TABLE IF NOT EXISTS election_seasons (
-    id VARCHAR(11) PRIMARY KEY,
-    start_year DATE,
-    end_year DATE,
+    start_date DATE,
+    end_date DATE,
     PRIMARY KEY(start_year, end_year)
 );
 
