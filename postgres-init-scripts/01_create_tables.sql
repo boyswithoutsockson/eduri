@@ -59,13 +59,6 @@ CREATE TABLE IF NOT EXISTS votes (
     PRIMARY KEY(ballot_id, person_id)
 );
 
-
--- Committees (toimielin)
--- CREATE TABLE IF NOT EXISTS committees (
-    
--- );
-
-
 -- parliamentary_groups (puolueet)
 CREATE TABLE IF NOT EXISTS parliamentary_groups (
     id VARCHAR(100) PRIMARY KEY,
@@ -81,15 +74,19 @@ CREATE TABLE IF NOT EXISTS mp_parliamentary_group_memberships (
     PRIMARY KEY(pg_id, person_id, start_date)
 );
 
--- committees (valiokunnat)
-CREATE TABLE IF NOT EXISTS committees (
-    name VARCHAR(200) PRIMARY KEY
+-- Different kinds of assemblies that gather within the parliament.
+-- Includes committees (valiokunta) and other groups such as 
+-- sectors (jaosto) as well as the general assembly 
+CREATE TABLE IF NOT EXISTS assemblies (
+    code VARCHAR(10) UNIQUE,
+    name VARCHAR(100) PRIMARY KEY NOT NULL
 );
+
 
 -- mp_committee_memberships
 CREATE TABLE IF NOT EXISTS mp_committee_memberships (
     person_id INT NOT NULL,
-    committee_name VARCHAR(200) NOT NULL REFERENCES committees(name),
+    committee_name VARCHAR(200) NOT NULL REFERENCES assemblies(name),
     start_date DATE NOT NULL,
     end_date DATE,
     role VARCHAR(50) NOT NULL,
@@ -97,27 +94,44 @@ CREATE TABLE IF NOT EXISTS mp_committee_memberships (
 );
 
 -- sessions
-
-CREATE TABLE IF NOT EXISTS sessions (
-    id VARCHAR(10) PRIMARY KEY NOT NULL,
-    date DATE NOT NULL
+CREATE TABLE IF NOT EXISTS records (
+    assembly_code VARCHAR(10) REFERENCES assemblies(code),
+    number INT NOT NULL,
+    year INT NOT NULL,
+    meeting_date DATE NOT NULL,
+    creation_date DATE NOT NULL,
+    PRIMARY KEY(assembly_code, number, year)
 );
 
 -- agenda items
 CREATE TABLE IF NOT EXISTS agenda_items (
     parliament_id VARCHAR (20),
-    session_id VARCHAR(15) REFERENCES sessions(id),
+    record_assembly_code VARCHAR(10),
+    record_number INT NOT NULL,
+    record_year INT NOT NULL,
     title TEXT NOT NULL,
-    PRIMARY KEY(parliament_id, session_id)
+    FOREIGN KEY(record_assembly_code, record_number, record_year) REFERENCES records(assembly_code, number, year),
+    PRIMARY KEY(parliament_id, record_assembly_code, record_number, record_year)
 );
 
 -- speeches
 CREATE TABLE IF NOT EXISTS speeches (
     id VARCHAR(15) PRIMARY KEY NOT NULL,
     person_id INT NOT NULL REFERENCES persons(id),
-    agenda_item_parliament_id VARCHAR (20) REFERENCES agenda_items(parliament_id),
+    record_assembly_code VARCHAR (10),
+    record_number INT,
+    record_year INT,
+    agenda_item_parliament_id VARCHAR (20),
+    FOREIGN KEY (record_assembly_code,
+                 record_number,
+                 record_year,
+                 agenda_item_parliament_id) REFERENCES agenda_items(record_assembly_code,
+                                                                    record_number,
+                                                                    record_year,
+                                                                    parliament_id),
     start_time TIMESTAMP WITH TIME ZONE NOT NULL,
     speech TEXT NOT NULL,
+    speech_type CHAR(1) NOT NULL,
     response_to VARCHAR(15) REFERENCES speeches(id)
 );
 
@@ -159,7 +173,7 @@ CREATE TABLE IF NOT EXISTS committee_reports (
     id VARCHAR(20) PRIMARY KEY NOT NULL,
     proposal_id VARCHAR(20) NOT NULL,
     date DATE NOT NULL,
-    committee_name VARCHAR(200) NOT NULL REFERENCES committees(name),
+    committee_name VARCHAR(200) NOT NULL REFERENCES assemblies(name),
     proposal_summary TEXT NOT NULL,
     opinion TEXT NOT NULL,
     reasoning TEXT,
@@ -170,7 +184,7 @@ CREATE TABLE IF NOT EXISTS committee_reports (
 CREATE TABLE IF NOT EXISTS committee_budget_reports (
     id VARCHAR(20) PRIMARY KEY NOT NULL,
     proposal_id VARCHAR(20) NOT NULL,
-    committee_name VARCHAR(200) NOT NULL REFERENCES committees(name)
+    committee_name VARCHAR(200) NOT NULL REFERENCES assemblies(name)
 );
 
 -- committee_report_signatures

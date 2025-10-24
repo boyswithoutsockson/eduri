@@ -1,39 +1,20 @@
 import os
 import pandas as pd
 import xmltodict
-import psycopg2
 
 from db import get_connection
 
-csv_path = 'data/preprocessed/committees.csv'
+assemblies_csv_path = os.path.join("data", "preprocessed", "assemblies.csv")
 
 def preprocess_data():
-    committees = {"Suuri valiokunta": "SuV",
-                    "Perustuslakivaliokunta": "PeV",
-                    "Ulkoasiainvaliokunta": "UaV",
-                    "Valtiovarainvaliokunta": "VaV",
-                    "Tarkastusvaliokunta": "TrV",
-                    "Hallintovaliokunta": "HaV",
-                    "Lakivaliokunta": "LaV",
-                    "Liikenne- ja viestintävaliokunta": "LiV",
-                    "Maa- ja metsätalousvaliokunta": "MmV",
-                    "Puolustusvaliokunta": "PuV",
-                    "Sivistysvaliokunta": "SiV",
-                    "Sosiaali- ja terveysvaliokunta": "StV",
-                    "Talousvaliokunta": "TaV",
-                    "Tiedusteluvalvontavaliokunta": "TiV",
-                    "Tulevaisuusvaliokunta": "TuV",
-                    "Työelämä- ja tasa-arvovaliokunta": "TyV",
-                    "Ympäristövaliokunta": "YmV"}
-
     earliest_retirement_date = "2000-01-01"
 
     with open(os.path.join("data", "raw", "MemberOfParliament.tsv"), "r") as f:
         MoP = pd.read_csv(f, sep="\t")
 
     xml_dicts = MoP.XmlDataFi.apply(xmltodict.parse)
-    committee_df = pd.DataFrame(columns=["committee_name"])
-    
+    committees = []
+
     for henkilo in xml_dicts:
         if henkilo['Henkilo']['KansanedustajuusPaattynytPvm']:
             retirement_date = "-".join(list(reversed((henkilo['Henkilo']['KansanedustajuusPaattynytPvm']).split("."))))
@@ -59,17 +40,47 @@ def preprocess_data():
         for committee in cur_committees + prev_committees:
             if committee['Nimi']:
                 if committee["@OnkoValiokunta"] == 'true':
-                    committee_df.loc[len(committee_df)] = committee["Nimi"]
+                    committees.append(committee["Nimi"])
     
-    committee_df = committee_df.drop_duplicates()
-    committee_df.to_csv(csv_path, index=False)
+    # Due to lack of proper API for assemblies and their respective abbreviations,
+    # These common committees that have records associated with them are hard coded
+    # to the procedure.
+    assemblies = [
+        {"code": 'HaV', "name": "Hallintovaliokunta"},
+        {"code": 'LaV', "name": "Lakivaliokunta"},
+        {"code": 'LiV', "name": "Liikenne- ja viestintävaliokunta"},
+        {"code": 'MmV', "name": "Maa- ja metsätalousvaliokunta"},
+        {"code": 'PeV', "name": "Perustuslakivaliokunta"},
+        {"code": 'PmN', "name": "Puhemiesneuvosto"},
+        {"code": 'EK', "name": "Eduskunnan täysistunto"},
+        {"code": 'PuV', "name": "Puolustusvaliokunta"},
+        {"code": 'SiV', "name": "Sivistysvaliokunta"},
+        {"code": 'StV', "name": "Sosiaali- ja terveysvaliokunta"},
+        {"code": 'SuV', "name": "Suuri valiokunta"},
+        {"code": 'TaV', "name": "Talousvaliokunta"},
+        {"code": 'TrV', "name": "Tarkastusvaliokunta"},
+        {"code": 'TuV', "name": "Tulevaisuusvaliokunta"},
+        {"code": 'TyV', "name": "Työelämä- ja tasa-arvovaliokunta"},
+        {"code": 'UaV', "name": "Ulkoasiainvaliokunta"},
+        {"code": 'VaV', "name": "Valtiovarainvaliokunta"},
+        {"code": 'YmV', "name": "Ympäristövaliokunta"},
+        {"code": 'SuVtJ', "name": "Suuren valiokunnan jaosto"},
+        {"code": 'TiV', "name": "Tiedusteluvalvontavaliokunta"}
+    ]
+    df_assemblies = pd.DataFrame(assemblies)
+    other_committees = [c for c in set(committees) if c not in df_assemblies.name.values]
+    other_committees = pd.DataFrame({
+        'name': other_committees,
+        'code': [None]*len(other_committees)})
+    df_assemblies = pd.concat([df_assemblies, other_committees])
+    df_assemblies.to_csv(assemblies_csv_path, index=False)
 
 def import_data():
     conn = get_connection()
     cursor = conn.cursor()
     
-    with open(csv_path) as f:
-        cursor.copy_expert("COPY committees FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
+    with open(assemblies_csv_path) as f:
+        cursor.copy_expert("COPY assemblies(code, name) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
     
     conn.commit()
     cursor.close()

@@ -24,7 +24,6 @@ PIPES := \
 	mp_parliamentary_group_memberships \
 	mps \
 	parliamentary_groups \
-	sessions \
 	speeches \
 	votes \
 	lobbies \
@@ -163,7 +162,6 @@ $(DB)/%: data/preprocessed/%.csv
 	touch $@
 
 # Prerequisites for inserting data into database
-$(DB)/agenda_items: $(DB)/sessions
 $(DB)/committee_reports: $(DB)/mps $(DB)/committees
 $(DB)/government_proposals: $(DB)/mps
 $(DB)/interests: $(DB)/mps
@@ -171,7 +169,7 @@ $(DB)/ministers: $(DB)/mps
 $(DB)/mp_committee_memberships: $(DB)/mps $(DB)/committees
 $(DB)/mp_law_proposals: $(DB)/mps
 $(DB)/mp_parliamentary_group_memberships: $(DB)/mps $(DB)/committees $(DB)/parliamentary_groups
-$(DB)/speeches: $(DB)/mps
+$(DB)/speeches: $(DB)/mps $(DB)/committees
 $(DB)/votes: $(DB)/ballots $(DB)/mps
 $(DB)/lobby_actions: $(DB)/mps $(DB)/lobby_terms
 
