@@ -44,6 +44,9 @@ all: help
 .PHONY: install
 install: install-pipes install-frontend  ## install project dependencies
 
+dbshell: ## connect to the current database
+	PGPASSWORD=postgres psql -q -U postgres -h $${DATABASE_HOST:-db} postgres
+
 
 ####################################
 # Scripts for downloading raw data #
