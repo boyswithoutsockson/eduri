@@ -18,10 +18,16 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 export type Vote = "absent" | "abstain" | "no" | "yes";
 
 export interface AgendaItems {
-  id: number;
   parliament_id: string;
-  session_id: string | null;
+  record_assembly_code: string;
+  record_nro: number;
+  record_year: number;
   title: string;
+}
+
+export interface Assemblies {
+  code: string;
+  name: string;
 }
 
 export interface Ballots {
@@ -147,17 +153,24 @@ export interface ProposalSignatures {
   proposal_id: string;
 }
 
-export interface Sessions {
-  date: Timestamp;
-  id: string;
+export interface Records {
+  assembly_code: string;
+  creation_date: Timestamp;
+  meeting_date: Timestamp;
+  nro: number;
+  year: number;
 }
 
 export interface Speeches {
+  agenda_item_parliament_id: string | null;
   id: string;
-  parliament_id: string;
   person_id: number;
+  record_assembly_code: string | null;
+  record_nro: number | null;
+  record_year: number | null;
   response_to: string | null;
   speech: string;
+  speech_type: string;
   start_time: Timestamp;
 }
 
@@ -169,6 +182,7 @@ export interface Votes {
 
 export interface DB {
   agenda_items: AgendaItems;
+  assemblies: Assemblies;
   ballots: Ballots;
   committee_budget_reports: CommitteeBudgetReports;
   committee_report_signatures: CommitteeReportSignatures;
@@ -186,7 +200,7 @@ export interface DB {
   persons: Persons;
   proposal_signatures: ProposalSignatures;
   proposals: Proposals;
-  sessions: Sessions;
+  records: Records;
   speeches: Speeches;
   votes: Votes;
 }

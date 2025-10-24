@@ -307,3 +307,7 @@ def id_parse(root, NS):
     eid = metadata.get(f"{{{NS['met1']}}}eduskuntaTunnus", "").strip()
 
     return eid
+
+
+def write_to_testi_txt(root):
+    with open("testi.txt", "w+") as f: f.write(etree.tostring(root, pretty_print=True).decode('utf-8'))

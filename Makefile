@@ -24,7 +24,6 @@ PIPES := \
 	mp_parliamentary_group_memberships \
 	mps \
 	parliamentary_groups \
-	sessions \
 	speeches \
 	votes
 
@@ -144,7 +143,6 @@ $(DB)/%: data/preprocessed/%.csv
 	touch $@
 
 # Prerequisites for inserting data into database
-$(DB)/agenda_items: $(DB)/sessions
 $(DB)/committee_reports: $(DB)/mps $(DB)/committees
 $(DB)/government_proposals: $(DB)/mps
 $(DB)/interests: $(DB)/mps
