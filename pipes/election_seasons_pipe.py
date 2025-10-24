@@ -13,8 +13,8 @@ def preprocess_data():
     with open(os.path.join("data", "raw", "election_seasons.tsv"), "r") as f:
         seasons = pd.read_csv(f, sep="\t")
 
-    seasons.rename(columns={'alkupvm': 'start_date', 'loppupvm': 'end_date', 'tunnus': 'id'}, inplace=True)
-    seasons = seasons.drop(['nimi', 'jarjestys', 'aktiivinen'], axis=1)
+    seasons.rename(columns={'alkupvm': 'start_date', 'loppupvm': 'end_date'}, inplace=True)
+    seasons = seasons.drop(['nimi', 'jarjestys', 'aktiivinen', 'tunnus'], axis=1)
     seasons.to_csv(csv_path, index=False)
 
 def import_data():
@@ -22,7 +22,7 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert("COPY election_seasons(id, start_year, end_year) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
+        cursor.copy_expert("COPY election_seasons(start_date, end_date) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
 
     conn.commit()
     cursor.close()
