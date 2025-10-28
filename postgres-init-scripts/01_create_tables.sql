@@ -199,5 +199,38 @@ CREATE TABLE IF NOT EXISTS election_seasons (
     start_year DATE,
     end_year DATE,
     PRIMARY KEY(start_year, end_year)
-)
+);
+
+-- lobbies
+CREATE TABLE IF NOT EXISTS lobbies (
+    id VARCHAR(20) PRIMARY KEY NOT NULL,
+    name VARCHAR(200) NOT NULL,
+    industry VARCHAR(200),
+    finnish BOOLEAN NOT NULL
+);
+
+-- lobby_topics
+CREATE TABLE IF NOT EXISTS lobby_topics (
+    id INT PRIMARY KEY NOT NULL,
+    topic VARCHAR(1000) NOT NULL,
+    project VARCHAR(20)
+);
+
+--lobby terms
+CREATE TABLE IF NOT EXISTS lobby_terms (
+    id INT PRIMARY KEY NOT NULL,
+    start_date DATE,
+    end_date DATE
+);
+
+-- lobby_actions
+CREATE TABLE IF NOT EXISTS lobby_actions (
+    id SERIAL PRIMARY KEY,
+    term_id INT NOT NULL REFERENCES lobby_terms(id),
+    lobby_id VARCHAR(20) NOT NULL REFERENCES lobbies(id),
+    person_id INT NOT NULL REFERENCES persons(id),
+    topic_id INT NOT NULL REFERENCES lobby_topics(id),
+    contact_method VARCHAR(50)
+);
+
 
