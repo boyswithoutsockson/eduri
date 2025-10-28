@@ -73,7 +73,7 @@ $(ELECTION_SEASONS):
 
 frontend/src/assets/photos-2023-2026.zip:
 	mkdir -p frontend/src/assets
-	FILE_ID=1K0ykFwVEdU-EmwSPC_p6Yx-S4Ko5Bylh
+	FILE_ID=1HTWfOz4u7OihmDENgB4deZSySpD8QBD8
 	curl -L "https://drive.usercontent.google.com/download?id=$${FILE_ID}&confirm=true" --progress-bar \
 		-o $@
 
