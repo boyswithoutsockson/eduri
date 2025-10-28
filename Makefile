@@ -27,7 +27,10 @@ PIPES := \
 	parliamentary_groups \
 	sessions \
 	speeches \
-	votes
+	votes \
+	lobbies \
+	lobby_terms \
+	lobby_actions
 
 
 ###################
@@ -64,6 +67,18 @@ $(DATA_DUMP): data/dump.zip
 	mkdir -p data/raw
 	unzip -oq data/dump.zip -d data/raw
 
+data/lobby_dump.zip:
+	mkdir -p data
+	FILE_ID=1sRIMPkbxr2PDmTnMOcCJAtp1pYC4p2sA
+	curl -L "https://drive.usercontent.google.com/download?id=$${FILE_ID}&confirm=true" --progress-bar \
+		-o $@
+
+LOBBY_DUMP = data/.unzippedlobby
+$(LOBBY_DUMP): data/lobby_dump.zip
+	@touch $@
+	mkdir -p data/raw
+	unzip -oq data/lobby_dump.zip -d data/raw
+
 ELECTION_SEASONS = data/raw/kansanedustajat_vaalikausittain.csv
 $(ELECTION_SEASONS):
 	mkdir -p data/raw
@@ -83,7 +98,7 @@ $(MP_PHOTOS): frontend/src/assets/photos-2023-2026.zip
 	unzip -oq frontend/src/assets/photos-2023-2026.zip -d frontend/src/assets
 
 .PHONY: data
-data: $(DATA_DUMP) $(MP_PHOTOS) $(ELECTION_SEASONS) ## download and extract all raw data assets
+data: $(DATA_DUMP) $(MP_PHOTOS) $(ELECTION_SEASONS) $(LOBBY_DUMP) ## download and extract all raw data assets
 
 .PHONY: clean
 clean: ## deletes all raw data assets
@@ -126,6 +141,7 @@ $(PREPROCESSED)/government_proposals.csv: $(DB)/mps
 $(PREPROCESSED)/mp_law_proposals.csv: $(DB)/mps
 $(PREPROCESSED)/mps.csv: $(MP_PHOTOS)
 $(PREPROCESSED)/mp_petition_proposals.csv: $(DB)/mps
+$(PREPROCESSED)/lobby_actions.csv: $(DB)/mps $(DB)/mp_parliamentary_group_memberships
 
 
 .PHONY: preprocess
@@ -158,6 +174,7 @@ $(DB)/mp_law_proposals: $(DB)/mps
 $(DB)/mp_parliamentary_group_memberships: $(DB)/mps $(DB)/committees $(DB)/parliamentary_groups
 $(DB)/speeches: $(DB)/mps
 $(DB)/votes: $(DB)/ballots $(DB)/mps
+$(DB)/lobby_actions: $(DB)/mps $(DB)/lobby_terms
 
 
 .PHONY: database
