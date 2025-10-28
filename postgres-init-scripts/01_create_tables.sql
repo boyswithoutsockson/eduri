@@ -205,8 +205,7 @@ CREATE TABLE IF NOT EXISTS election_seasons (
 CREATE TABLE IF NOT EXISTS lobbies (
     id VARCHAR(20) PRIMARY KEY NOT NULL,
     name VARCHAR(200) NOT NULL,
-    industry VARCHAR(200),
-    finnish BOOLEAN NOT NULL
+    industry VARCHAR(200)
 );
 
 -- lobby_topics
@@ -216,8 +215,8 @@ CREATE TABLE IF NOT EXISTS lobby_topics (
     project VARCHAR(20)
 );
 
---lobby terms
-CREATE TABLE IF NOT EXISTS lobby_terms (
+--lobby_terms (lobby reporting is done in half a year long terms)
+CREATE TABLE IF NOT EXISTS lobby_terms (    
     id INT PRIMARY KEY NOT NULL,
     start_date DATE,
     end_date DATE
