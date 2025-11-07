@@ -223,6 +223,7 @@ CREATE TABLE IF NOT EXISTS lobby_terms (
 );
 
 -- lobby_actions
+-- Lobby action expresses a communication between a lobby and an mp
 CREATE TABLE IF NOT EXISTS lobby_actions (
     id SERIAL PRIMARY KEY,
     term_id INT NOT NULL REFERENCES lobby_terms(id),
