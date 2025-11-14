@@ -1,5 +1,5 @@
 # Dockerfile for custom Postgres image with built-in init scripts
-FROM postgres:latest
+FROM postgres:18.1
 
 # Copy initialization scripts into the image
 COPY postgres-init-scripts/ /docker-entrypoint-initdb.d/
