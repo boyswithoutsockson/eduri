@@ -127,8 +127,9 @@ BEGIN
     total AS total_hits
   FROM proposals p
   WHERE p.search_vector @@ q_ts
-  ORDER BY rank DESC
-  LIMIT limit_rows;
+  ORDER BY rank DESC, date DESC
+  LIMIT limit_rows
+  OFFSET offset_rows;
 END;
 $$;
 

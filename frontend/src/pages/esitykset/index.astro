@@ -13,6 +13,7 @@ import type {
 import { sql } from "kysely";
 import { db } from "~src/database";
 import { marked } from "marked";
+import Pagination from "~src/components/Pagination.astro";
 
 // Tell Astro that this page cannot be prerendered.
 export const prerender = false;
@@ -22,7 +23,7 @@ const PAGE_QUERYPARAM = "p";
 const PAGE_LIMIT = 10;
 
 const search = Astro.url.searchParams.get(SEARCH_QUERYPARAM);
-const page = Number(Astro.url.searchParams.get(PAGE_QUERYPARAM) ?? 0);
+const page = Number(Astro.url.searchParams.get(PAGE_QUERYPARAM) ?? 1) - 1;
 
 // By default, on this page we display a list of proposals in chronological order.
 // However, if a search parameter exists in the URL, we skip the normal list of data,
@@ -51,7 +52,7 @@ type SearchResult = Partial<{
 }>;
 
 const { rows } = search
-    ? await sql<SearchResult>`SELECT * FROM search_proposals(${search}, ${PAGE_LIMIT}, ${page})`.execute(
+    ? await sql<SearchResult>`SELECT * FROM search_proposals(${search}, ${PAGE_LIMIT}, ${page * PAGE_LIMIT})`.execute(
           db
       )
     : { rows: [] };
@@ -64,9 +65,14 @@ const results = rows.map((row) => {
     if (!/[.,!?;:]$/.test(snippet)) snippet += "...";
     return { ...row, content_snippet: snippet };
 });
-const total = results[0]?.total_hits ?? 0;
-const pageMin = page * PAGE_LIMIT + 1;
-const pageMax = Math.min((page + 1) * PAGE_LIMIT, total);
+
+const total = search
+    ? (results[0]?.total_hits ?? 0)
+    : await db
+          .selectFrom("proposals")
+          .select(db.fn.countAll().as("count"))
+          .executeTakeFirstOrThrow()
+          .then((res) => Number(res.count));
 ---
 
 <Layout>
@@ -80,50 +86,51 @@ const pageMax = Math.min((page + 1) * PAGE_LIMIT, total);
         />
         <button type="submit">Hae</button>
     </form>
-    {
-        results.length > 0 && (
-            <p>
-                Näytetään {pageMin}–{pageMax}/{total} tuloksesta
-            </p>
-        )
-    }
-    <ul>
-        {
-            results.length > 0
-                ? results.map((result) => (
-                      <li>
-                          <article>
-                              <h2 set:html={result.title} />
-                              <Fragment
-                                  set:html={marked(result.content_snippet!)}
-                              />
-                              <a
-                                  href={`/esitykset/${urlencodeProposalId(result.id!)}`}
-                              >
-                                  Avaa esitys
-                              </a>
-                          </article>
-                          <hr />
-                      </li>
-                  ))
-                : data.map((proposal) => (
-                      <li>
-                          <article>
-                              <h2>{proposal.title}</h2>
-                              <p>{proposal.summary}</p>
-                              <p>allekirjoittaneet:</p>
-                              <ProposalSignatures proposal={proposal} />
-                              <a
-                                  href={`/esitykset/${urlencodeProposalId(proposal.id)}`}
-                              >
-                                  Avaa esitys
-                              </a>
-                          </article>
-                          <hr />
-                      </li>
-                  ))
-        }
-    </ul>
+
+    <Pagination
+        page={page + 1}
+        pageQueryParam={PAGE_QUERYPARAM}
+        pageSize={PAGE_LIMIT}
+        total={total}
+    >
+        <ul>
+            {
+                results.length > 0
+                    ? results.map((result) => (
+                          <li>
+                              <article>
+                                  <h2 set:html={result.title} />
+                                  <Fragment
+                                      set:html={marked(result.content_snippet!)}
+                                  />
+                                  <a
+                                      href={`/esitykset/${urlencodeProposalId(result.id!)}`}
+                                  >
+                                      Avaa esitys
+                                  </a>
+                              </article>
+                              <hr />
+                          </li>
+                      ))
+                    : data.map((proposal) => (
+                          <li>
+                              <article>
+                                  <h2>{proposal.title}</h2>
+                                  <p>{proposal.summary}</p>
+                                  <p>allekirjoittaneet:</p>
+                                  <ProposalSignatures proposal={proposal} />
+                                  <a
+                                      href={`/esitykset/${urlencodeProposalId(proposal.id)}`}
+                                  >
+                                      Avaa esitys
+                                  </a>
+                              </article>
+                              <hr />
+                          </li>
+                      ))
+            }
+        </ul>
+    </Pagination>
 </Layout>
 
 <style>
