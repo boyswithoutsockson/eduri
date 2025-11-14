@@ -65,6 +65,18 @@ $(DATA_DUMP): data/dump.zip
 	mkdir -p data/raw
 	unzip -oq data/dump.zip -d data/raw
 
+data/dumpV2.zip:
+	mkdir -p data
+	FILE_ID=1OPpRKqVkCrkd8wtltYXkTcZQ1sOsPZ2I
+	curl -L "https://drive.usercontent.google.com/download?id=$${FILE_ID}&confirm=true" --progress-bar \
+		-o $@
+
+DATA_DUMPV2 = data/.unzipped
+$(DATA_DUMPV2): data/dumpV2.zip
+	@touch $@
+	mkdir -p data/raw
+	unzip -oq data/dumpV2.zip -d data/raw
+
 data/lobby_dump.zip:
 	mkdir -p data
 	FILE_ID=1sRIMPkbxr2PDmTnMOcCJAtp1pYC4p2sA
@@ -76,13 +88,6 @@ $(LOBBY_DUMP): data/lobby_dump.zip
 	@touch $@
 	mkdir -p data/raw
 	unzip -oq data/lobby_dump.zip -d data/raw
-
-ELECTION_SEASONS = data/raw/kansanedustajat_vaalikausittain.csv
-$(ELECTION_SEASONS):
-	mkdir -p data/raw
-	FILE_ID=1bNQBZA6fxm3RYDSB7dT_D7fdYkEIUf_9
-	curl -L "https://drive.usercontent.google.com/download?id=$${FILE_ID}&confirm=true" --progress-bar \
-		-o $@
 
 frontend/src/assets/photos-2023-2026.zip:
 	mkdir -p frontend/src/assets
@@ -96,7 +101,7 @@ $(MP_PHOTOS): frontend/src/assets/photos-2023-2026.zip
 	unzip -oq frontend/src/assets/photos-2023-2026.zip -d frontend/src/assets
 
 .PHONY: data
-data: $(DATA_DUMP) $(MP_PHOTOS) $(ELECTION_SEASONS) $(LOBBY_DUMP) ## download and extract all raw data assets
+data: $(DATA_DUMP) $(DATA_DUMPV2) $(MP_PHOTOS) $(LOBBY_DUMP) ## download and extract all raw data assets
 
 .PHONY: clean
 clean: ## deletes all raw data assets
@@ -128,13 +133,13 @@ clean-vaski: ## removes vaski data
 	rm -rf $(VASKI_DATA_DIR)
 
 # Recipe for constructing all CSVs
-$(PREPROCESSED)/%.csv: pipes/%_pipe.py $(DATA_DUMP) $(VASKI_DATA)
+$(PREPROCESSED)/%.csv: pipes/%_pipe.py $(DATA_DUMP) $(DATA_DUMPV2) $(VASKI_DATA)
 	@echo "Preprocessing $*..."
 	mkdir -p $(PREPROCESSED)
 	uv run $< --preprocess-data
 
 # Prerequisites for preprocessing
-$(PREPROCESSED)/election_seasons.csv: $(ELECTION_SEASONS)
+$(PREPROCESSED)/election_seasons.csv: $(DATA_DUMPV2)
 $(PREPROCESSED)/government_proposals.csv: $(DB)/mps
 $(PREPROCESSED)/mp_law_proposals.csv: $(DB)/mps
 $(PREPROCESSED)/mps.csv: $(MP_PHOTOS)
