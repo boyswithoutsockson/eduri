@@ -1,40 +1,10 @@
 BEGIN;
 
--- add search_vector column
+-- add `search_vector` column
 ALTER TABLE proposals
   ADD COLUMN IF NOT EXISTS search_vector tsvector;
 
--- function to build a tsvector for one proposal
-CREATE OR REPLACE FUNCTION build_proposal_tsvector(p_proposal_id VARCHAR)
-RETURNS tsvector
-LANGUAGE plpgsql
-STABLE
-AS $$
-DECLARE
-  signer_names TEXT;
-  combined TEXT;
-BEGIN
-  SELECT COALESCE(string_agg(pers.first_name || ' ' || pers.last_name, ' '), '')
-    INTO signer_names
-  FROM proposal_signatures ps
-  JOIN persons pers ON pers.id = ps.person_id
-  WHERE ps.proposal_id = p_proposal_id;
-
-  SELECT
-    COALESCE(title,'') || ' ' ||
-    COALESCE(summary,'') || ' ' ||
-    COALESCE(reasoning,'') || ' ' ||
-    COALESCE(law_changes,'') || ' ' ||
-    signer_names
-  INTO combined
-  FROM proposals
-  WHERE id = p_proposal_id;
-
-  RETURN to_tsvector('finnish', COALESCE(combined, ''));
-END;
-$$;
-
--- function to refresh all proposals' search_vector efficiently
+-- function to refresh all proposals' `search_vector`s
 CREATE OR REPLACE FUNCTION refresh_all_proposals_search_vector()
 RETURNS INTEGER
 LANGUAGE plpgsql
@@ -133,7 +103,7 @@ BEGIN
 END;
 $$;
 
--- initialize/populate existing proposals' search_vector
+-- initialize/populate existing proposals' `search_vector`s
 SELECT refresh_all_proposals_search_vector();
 
 COMMIT;
