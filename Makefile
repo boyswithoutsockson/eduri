@@ -176,9 +176,16 @@ $(DB)/speeches: $(DB)/mps
 $(DB)/votes: $(DB)/ballots $(DB)/mps
 $(DB)/lobby_actions: $(DB)/mps $(DB)/lobby_terms
 
+.PHONY: insert-database
+insert-database: $(addprefix $(DB)/,$(PIPES)) ## runs all data pipelines into the database
+
+.PHONY: search-index
+search-index: insert-database
+	@echo "Building search index..."
+	PGPASSWORD=postgres PGOPTIONS='--client-min-messages=warning' psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < sql/proposal_search.sql
 
 .PHONY: database
-database: $(addprefix $(DB)/,$(PIPES)) ## runs all data pipelines into the database
+database: search-index ## inserts all data into database and builds search indices
 
 .PHONY: nuke
 nuke: ## resets all data in the database

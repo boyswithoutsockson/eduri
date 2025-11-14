@@ -24,6 +24,21 @@ export function groupBy<T, K extends keyof any>(
     );
 }
 
+export function range(start: number, end: number, step = 1) {
+    let output = [];
+
+    if (typeof end === "undefined") {
+        end = start;
+        start = 0;
+    }
+
+    for (let i = start; i < end; i += step) {
+        output.push(i);
+    }
+
+    return output;
+}
+
 /** We store our mp photos adjacent to our source files, but sometimes we
  * need the urls of the photos after they've been built into the output
  * `dist` folder, for example when retrieving individual mp data with search.

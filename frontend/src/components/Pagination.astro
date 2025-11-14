@@ -1,0 +1,94 @@
+---
+import { range } from "~src/utils";
+
+interface Props {
+    page: number;
+    pageSize: number;
+    total: number;
+    pageQueryParam: string;
+}
+
+const { page, pageSize, total, pageQueryParam: page_queryparam } = Astro.props;
+
+function urlForPage(page: number): string {
+    const searchParams = new URLSearchParams(Astro.url.searchParams);
+    searchParams.set(page_queryparam, `${page}`);
+    return `?${searchParams}`;
+}
+
+const pageMin = Math.min((page - 1) * pageSize + 1, total);
+const pageMax = Math.min(page * pageSize, total);
+
+const currentPage = page + 1;
+const firstPage = 1;
+const lastPage = Math.floor(total / pageSize) + 1;
+const previousPage = Math.max(currentPage - 1, 1);
+const nextPage = Math.min(currentPage + 1, lastPage);
+
+const pages = range(firstPage, lastPage + 1);
+---
+
+<p>
+    Näytetään {pageMin}–{pageMax}/{total} tuloksesta
+</p>
+
+<slot />
+
+<nav>
+    <h2 class="visually-hidden">Sivutus</h2>
+    <a
+        aria-disabled={previousPage === currentPage}
+        href={urlForPage(previousPage)}
+    >
+        Edellinen<span class="visually-hidden">sivu</span>
+    </a>
+
+    {
+        currentPage - 1 > firstPage && (
+            <>
+                <a href={urlForPage(firstPage)}>
+                    <span class="visually-hidden">Sivu</span>
+                    {firstPage}
+                </a>
+                {pages[currentPage - 3] !== firstPage && "..."}
+            </>
+        )
+    }
+
+    {
+        pages.slice(Math.max(currentPage - 2, 0), currentPage + 1).map((p) => (
+            <a aria-current={currentPage === p} href={urlForPage(p)}>
+                <span class="visually-hidden">Sivu</span>
+                {p}
+            </a>
+        ))
+    }
+
+    {
+        currentPage + 1 < lastPage && (
+            <>
+                {pages[currentPage + 1] !== lastPage && "..."}
+                <a href={urlForPage(lastPage)}>
+                    <span class="visually-hidden">Sivu</span>
+                    {lastPage}
+                </a>
+            </>
+        )
+    }
+
+    <a aria-disabled={nextPage === currentPage} href={urlForPage(nextPage)}>
+        Seuraava<span class="visually-hidden">sivu</span>
+    </a>
+</nav>
+
+<style>
+    nav {
+        justify-content: center;
+        gap: 3rem;
+        flex-wrap: wrap;
+    }
+    nav > a[aria-current="true"] {
+        font-weight: bold;
+        text-decoration: none;
+    }
+</style>
