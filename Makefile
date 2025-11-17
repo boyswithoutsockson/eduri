@@ -102,7 +102,6 @@ $(MP_PHOTOS): frontend/src/assets/photos-2023-2026.zip
 
 .PHONY: data
 data: $(DATA_DUMP) $(DATA_DUMPV2) $(MP_PHOTOS) $(LOBBY_DUMP) ## download and extract all raw data assets
-data: $(DATA_DUMP) $(DATA_DUMPV2) $(MP_PHOTOS) $(LOBBY_DUMP) ## download and extract all raw data assets
 
 .PHONY: clean
 clean: ## deletes all raw data assets
