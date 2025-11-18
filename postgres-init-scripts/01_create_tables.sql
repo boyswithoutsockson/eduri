@@ -1,4 +1,5 @@
--- Members of Parliament
+-- Persons
+-- Mainly members of parliament
 CREATE TABLE IF NOT EXISTS persons (
     id INT PRIMARY KEY NOT NULL,
     first_name VARCHAR(200),
@@ -10,23 +11,29 @@ CREATE TABLE IF NOT EXISTS persons (
     year_of_birth INT, 
     place_of_birth VARCHAR(200), 
     place_of_residence VARCHAR(200), 
-    photo VARCHAR(100)
+    photo VARCHAR(100)      -- stored as the name of the file (e.g. Zyskowicz-Ben-web-301.jpg)
 );
 
+-- Minister positions (ministerisalkku)
+-- Different possible minister positions (e.g. Valtiovarainministeri)
 CREATE TABLE IF NOT EXISTS minister_positions (
     title VARCHAR(100) PRIMARY KEY
 );
 
+-- Ministers (edustajan ministeriys)
+-- Junction table between persons and minister positions
+-- Expresses who has held what minister position at what time
 CREATE TABLE IF NOT EXISTS ministers (
     person_id INT REFERENCES persons(id),
     minister_position VARCHAR(100) REFERENCES minister_positions(title), 
-    cabinet_id VARCHAR(50), 
+    cabinet_id VARCHAR(50),     -- Cabinet (hallitus) served. E.g. Lipponen II
     start_date DATE,
     end_date DATE,
     PRIMARY KEY(minister_position, person_id, start_date)
 );
 
 -- Interests (sidonnaisuudet)
+-- Interest or affiliation of an MP. E.g. gifts, stock or other incomes.
 CREATE TABLE IF NOT EXISTS interests (
     id SERIAL PRIMARY KEY NOT NULL,
     person_id  INT REFERENCES persons(id), 
@@ -38,13 +45,14 @@ CREATE TABLE IF NOT EXISTS interests (
 CREATE TABLE IF NOT EXISTS ballots (
     id INT PRIMARY KEY NOT NULL,
     title VARCHAR(500),
-    session_item_title VARCHAR(2000),
+    session_item_title VARCHAR(2000),   -- (istunnon kohdan otsikko)
     start_time TIMESTAMP WITH TIME ZONE,
-    parliament_id VARCHAR(50),
-    minutes_url VARCHAR(200),
-    results_url VARCHAR(200)
-);
+    parliament_id VARCHAR(50),  
+    minutes_url VARCHAR(200),   -- end of an url leading to the minutes (pöytäkirja). E.g. /valtiopaivaasiakirjat/PTK+112/1996.
+    results_url VARCHAR(200)    -- same as above for ballot results
+);                              -- the root of the url is https://www.eduskunta.fi/FI/vaski
 
+-- vote data type
 DO $$ BEGIN  
     CREATE TYPE vote AS ENUM ('yes', 'no', 'abstain', 'absent');
 EXCEPTION
@@ -52,6 +60,7 @@ EXCEPTION
 END $$;
 
 -- Votes (äänet)
+-- Junction table between person and ballot to illustrate a single cast vote.
 CREATE TABLE IF NOT EXISTS votes (
     ballot_id INT REFERENCES ballots(id),
     person_id INT REFERENCES persons(id),
@@ -59,13 +68,13 @@ CREATE TABLE IF NOT EXISTS votes (
     PRIMARY KEY(ballot_id, person_id)
 );
 
--- parliamentary_groups (puolueet)
+-- Parliamentary groups (puolueet)
 CREATE TABLE IF NOT EXISTS parliamentary_groups (
     id VARCHAR(100) PRIMARY KEY,
     name VARCHAR(100)
 );
 
--- mp_parliamentary_group_memberships
+-- Mp parliamentary group memberships
 CREATE TABLE IF NOT EXISTS mp_parliamentary_group_memberships (
     pg_id VARCHAR(100) REFERENCES parliamentary_groups(id),
     person_id INT REFERENCES persons(id),
@@ -74,6 +83,7 @@ CREATE TABLE IF NOT EXISTS mp_parliamentary_group_memberships (
     PRIMARY KEY(pg_id, person_id, start_date)
 );
 
+-- Assemblies (kokoonpano)
 -- Different kinds of assemblies that gather within the parliament.
 -- Includes committees (valiokunta) and other groups such as 
 -- sectors (jaosto) as well as the general assembly 
@@ -83,7 +93,7 @@ CREATE TABLE IF NOT EXISTS assemblies (
 );
 
 
--- mp_committee_memberships
+-- Mp committee memberships
 CREATE TABLE IF NOT EXISTS mp_committee_memberships (
     person_id INT NOT NULL,
     committee_name VARCHAR(200) NOT NULL REFERENCES assemblies(name),
@@ -93,9 +103,10 @@ CREATE TABLE IF NOT EXISTS mp_committee_memberships (
     PRIMARY KEY(person_id, committee_name, start_date, role)
 );
 
--- sessions
+-- Records (pöytäkirjat)
+-- Expresses a record of an assembly (valiokunta, eduskunta jne.)
 CREATE TABLE IF NOT EXISTS records (
-    assembly_code VARCHAR(10) REFERENCES assemblies(code),
+    assembly_code VARCHAR(10) REFERENCES assemblies(code), -- code for the committee, for instance. E.g. "PuV" for Puolustusvaliokunta
     number INT NOT NULL,
     year INT NOT NULL,
     meeting_date DATE NOT NULL,
@@ -103,7 +114,8 @@ CREATE TABLE IF NOT EXISTS records (
     PRIMARY KEY(assembly_code, number, year)
 );
 
--- agenda items
+-- Agenda items (asiakohta)
+-- Item on a record
 CREATE TABLE IF NOT EXISTS agenda_items (
     parliament_id VARCHAR (20),
     record_assembly_code VARCHAR(10),
@@ -114,7 +126,7 @@ CREATE TABLE IF NOT EXISTS agenda_items (
     PRIMARY KEY(parliament_id, record_assembly_code, record_number, record_year)
 );
 
--- speeches
+-- Speeches
 CREATE TABLE IF NOT EXISTS speeches (
     id VARCHAR(15) PRIMARY KEY NOT NULL,
     person_id INT NOT NULL REFERENCES persons(id),
@@ -135,19 +147,21 @@ CREATE TABLE IF NOT EXISTS speeches (
     response_to VARCHAR(15) REFERENCES speeches(id)
 );
 
+-- data type for different types of proposals
 DO $$ BEGIN  
     CREATE TYPE proposal_type AS ENUM ('government', 'citizen', 'mp_law', 'mp_petition', 'mp_debate');
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;
 
+-- data type for different statuses of proposals
 DO $$ BEGIN  
     CREATE TYPE proposal_status AS ENUM ('open', 'expired', 'cancelled', 'rejected', 'resting', 'passed', 'passed_changed', 'passed_urgent');
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;
 
--- proposals
+-- Proposals (esitykset)
 CREATE TABLE IF NOT EXISTS proposals (
     id VARCHAR(20) PRIMARY KEY NOT NULL,
     ptype proposal_type,
@@ -159,16 +173,16 @@ CREATE TABLE IF NOT EXISTS proposals (
     status proposal_status NOT NULL
 );
 
--- proposal_signatures
+-- Proposal signatures (esitysten allekirjoitukset)
 CREATE TABLE IF NOT EXISTS proposal_signatures (
     proposal_id VARCHAR(20) REFERENCES proposals(id),
     person_id INT REFERENCES persons(id),
-    first BOOLEAN,
+    first BOOLEAN,      -- First signature denotes the creator of the proposal. Government proposals have no first signer.
     PRIMARY KEY(proposal_id, person_id)
 );
 
 
--- committee_reports
+-- Committee reports (valiokuntien lausunnot)
 CREATE TABLE IF NOT EXISTS committee_reports (
     id VARCHAR(20) PRIMARY KEY NOT NULL,
     proposal_id VARCHAR(20) NOT NULL,
@@ -180,21 +194,21 @@ CREATE TABLE IF NOT EXISTS committee_reports (
     law_changes TEXT
 );
 
--- committee_budget_reports
+-- Committee budget reports (valiokuntien lausunnot talousesityksiin)
 CREATE TABLE IF NOT EXISTS committee_budget_reports (
     id VARCHAR(20) PRIMARY KEY NOT NULL,
     proposal_id VARCHAR(20) NOT NULL,
     committee_name VARCHAR(200) NOT NULL REFERENCES assemblies(name)
 );
 
--- committee_report_signatures
+-- Committee report signatures (valiokuntien lausuntojen allekirjoitukset)
 CREATE TABLE IF NOT EXISTS committee_report_signatures (
     committee_report_id VARCHAR(20) REFERENCES committee_reports(id),
     person_id INT REFERENCES persons(id),
     PRIMARY KEY(committee_report_id, person_id)
 );
 
--- objections
+-- Objections (vastalauseet)
 CREATE TABLE IF NOT EXISTS objections (
     id SERIAL PRIMARY KEY,
     committee_report_id VARCHAR(20) REFERENCES committee_reports(id),
@@ -202,14 +216,14 @@ CREATE TABLE IF NOT EXISTS objections (
     motion TEXT
 );
 
--- objection_signatures
+-- Objection signatures (vastalauseiden allekirjoitusket)
 CREATE TABLE IF NOT EXISTS objection_signatures (
     objection_id SERIAL REFERENCES objections(id),
     person_id INT REFERENCES persons(id),
     PRIMARY KEY(objection_id, person_id)
 );
 
--- election_seasons
+-- Election seasons
 -- the active terms of parliaments, for example 
 -- for the parliament of 2019-2023: 2019-04-17, 2023-04-04
 CREATE TABLE IF NOT EXISTS election_seasons (
@@ -218,29 +232,32 @@ CREATE TABLE IF NOT EXISTS election_seasons (
     PRIMARY KEY(start_date, end_date)
 );
 
--- lobbies
+-- Lobbies (lobbaajat)
+-- Entities doing the lobbying. Companies or other communities.
 CREATE TABLE IF NOT EXISTS lobbies (
-    id VARCHAR(20) PRIMARY KEY NOT NULL,
+    id VARCHAR(20) PRIMARY KEY NOT NULL, -- Y-tunnus for Finnish entities
     name VARCHAR(200) NOT NULL,
     industry VARCHAR(200)
 );
 
--- lobby_topics
+-- Lobby topics
+-- Whenever a lobby is contacting someone, they have to state the relating topic.
 CREATE TABLE IF NOT EXISTS lobby_topics (
     id INT PRIMARY KEY NOT NULL,
     topic VARCHAR(1000) NOT NULL,
-    project VARCHAR(20)
+    project VARCHAR(20)     -- Sometimes topics are attached to a government project (hanke)
 );
 
---lobby_terms (lobby reporting is done in half a year long terms)
+-- Lobby terms 
+-- Lobby reporting is done in half a year long terms.
 CREATE TABLE IF NOT EXISTS lobby_terms (    
     id INT PRIMARY KEY NOT NULL,
     start_date DATE,
     end_date DATE
 );
 
--- lobby_actions
--- Lobby action expresses a communication between a lobby and an mp
+-- Lobby actions
+-- Lobby action expresses a communication instance between a lobby and a person
 CREATE TABLE IF NOT EXISTS lobby_actions (
     id SERIAL PRIMARY KEY,
     term_id INT NOT NULL REFERENCES lobby_terms(id),
