@@ -213,9 +213,8 @@ CREATE TABLE IF NOT EXISTS objection_signatures (
 -- the active terms of parliaments, for example 
 -- for the parliament of 2019-2023: 2019-04-17, 2023-04-04
 CREATE TABLE IF NOT EXISTS election_seasons (
-    start_date DATE,
-    end_date DATE,
-    PRIMARY KEY(start_date, end_date)
+    start_date DATE PRIMARY KEY,
+    end_date DATE
 );
 
 -- lobbies
