@@ -29,7 +29,8 @@ PIPES := \
 	topics \
 	lobbies \
 	lobby_terms \
-	lobby_actions
+	lobby_actions \
+	absences
 
 
 ###################
@@ -153,7 +154,7 @@ $(PREPROCESSED)/mp_law_proposals.csv: $(DB)/mps
 $(PREPROCESSED)/mps.csv: $(MP_PHOTOS)
 $(PREPROCESSED)/mp_petition_proposals.csv: $(DB)/mps
 $(PREPROCESSED)/lobby_actions.csv: $(DB)/mps $(DB)/mp_parliamentary_group_memberships
-
+$(PREPROCESSED)/absences.csv: $(DB)/speeches
 
 .PHONY: preprocess
 preprocess: $(addprefix $(PREPROCESSED)/,$(addsuffix .csv,$(PIPES)))
