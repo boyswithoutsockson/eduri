@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS ballots (
     session_item_title VARCHAR(2000),   -- (istunnon kohdan otsikko)
     start_time TIMESTAMP WITH TIME ZONE,
     parliament_id VARCHAR(50),  
-    minutes_url VARCHAR(200),   -- path name leading to the minutes (pöytäkirja). E.g. /valtiopaivaasiakirjat/PTK+112/1996.
+    minutes_url VARCHAR(200),   -- pathname leading to the minutes (pöytäkirja). E.g. /valtiopaivaasiakirjat/PTK+112/1996.
     results_url VARCHAR(200)    -- same as above for ballot results
 );                              -- the root is https://www.eduskunta.fi/FI/vaski
 
