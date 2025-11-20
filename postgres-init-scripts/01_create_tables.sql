@@ -48,9 +48,9 @@ CREATE TABLE IF NOT EXISTS ballots (
     session_item_title VARCHAR(2000),   -- (istunnon kohdan otsikko)
     start_time TIMESTAMP WITH TIME ZONE,
     parliament_id VARCHAR(50),  
-    minutes_url VARCHAR(200),   -- end of an url leading to the minutes (pöytäkirja). E.g. /valtiopaivaasiakirjat/PTK+112/1996.
+    minutes_url VARCHAR(200),   -- path name leading to the minutes (pöytäkirja). E.g. /valtiopaivaasiakirjat/PTK+112/1996.
     results_url VARCHAR(200)    -- same as above for ballot results
-);                              -- the root of the url is https://www.eduskunta.fi/FI/vaski
+);                              -- the root is https://www.eduskunta.fi/FI/vaski
 
 -- vote data type
 DO $$ BEGIN  
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS votes (
     PRIMARY KEY(ballot_id, person_id)
 );
 
--- Parliamentary groups (puolueet)
+-- Parliamentary groups (eduskuntaryhmät)
 CREATE TABLE IF NOT EXISTS parliamentary_groups (
     id VARCHAR(100) PRIMARY KEY,
     name VARCHAR(100)
@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS records (
     PRIMARY KEY(assembly_code, number, year)
 );
 
--- Agenda items (asiakohta)
+-- Agenda items (asiakohdat)
 -- Item on a record
 CREATE TABLE IF NOT EXISTS agenda_items (
     parliament_id VARCHAR (20),
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS agenda_items (
     PRIMARY KEY(parliament_id, record_assembly_code, record_number, record_year)
 );
 
--- Speeches
+-- Speeches (puhneenvuorot)
 CREATE TABLE IF NOT EXISTS speeches (
     id VARCHAR(15) PRIMARY KEY NOT NULL,
     person_id INT NOT NULL REFERENCES persons(id),
