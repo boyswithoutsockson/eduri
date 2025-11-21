@@ -14,12 +14,12 @@ import { sql } from "kysely";
 import { db } from "~src/database";
 import { marked } from "marked";
 import Pagination from "~src/components/Pagination.astro";
+import { PAGE_QUERYPARAM, SEARCH_QUERYPARAM } from "~src/constants";
+import SearchInput from "~src/components/SearchInput.astro";
 
 // Tell Astro that this page cannot be prerendered.
 export const prerender = false;
 
-const SEARCH_QUERYPARAM = "q";
-const PAGE_QUERYPARAM = "p";
 const PAGE_LIMIT = 10;
 
 const search = Astro.url.searchParams.get(SEARCH_QUERYPARAM);
@@ -77,24 +77,9 @@ const total = search
 
 <Layout>
     <h1>Esitykset</h1>
-    <form role="search">
-        <input
-            aria-label="Hae esityksiä..."
-            id="search"
-            name={SEARCH_QUERYPARAM}
-            placeholder="Hae esityksiä..."
-            type="search"
-            value={search}
-        />
-        <button type="submit">Hae</button>
-    </form>
+    <SearchInput label="Hae esityksiä..." />
 
-    <Pagination
-        page={page}
-        pageQueryParam={PAGE_QUERYPARAM}
-        pageSize={PAGE_LIMIT}
-        total={total}
-    >
+    <Pagination page={page} pageSize={PAGE_LIMIT} total={total}>
         <ul>
             {
                 results.length > 0
