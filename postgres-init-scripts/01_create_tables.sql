@@ -111,7 +111,25 @@ CREATE TABLE IF NOT EXISTS records (
     year INT NOT NULL,
     meeting_date DATE NOT NULL,
     creation_date DATE NOT NULL,
+    rollcall_id VARCHAR(20),        -- only for parliament general assemblies
     PRIMARY KEY(assembly_code, number, year)
+);
+
+-- Absences
+-- Absence of an assembly's member
+-- Identified by the meeting record
+CREATE TABLE IF NOT EXISTS absences (
+    id SERIAL PRIMARY KEY NOT NULL,
+    person_id INT NOT NULL REFERENCES persons(id),
+    record_assembly_code VARCHAR(10) NOT NULL,
+    record_number INT NOT NULL,
+    record_year INT NOT NULL,
+    FOREIGN KEY (record_assembly_code,
+                 record_number,
+                 record_year) REFERENCES records(assembly_code,
+                                                number,
+                                                year),
+    work_related BOOLEAN    -- True if the reason for absence was reported as work related
 );
 
 -- Agenda items (asiakohdat)

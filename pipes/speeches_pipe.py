@@ -2,7 +2,7 @@ import os.path
 import pandas as pd
 from lxml import etree
 from io import StringIO
-from XML_parsing_help_functions import date_parse
+from XML_parsing_help_functions import date_parse, rollcall_id_parse
 
 from db import get_connection
 
@@ -69,12 +69,19 @@ def preprocess_data():
             else:
                 raise IncompleteDecisionTreeException
 
+        # In case the meeting was a parliament plenary session, fetch the rollcall of the meeting
+        if p_type == "EK":
+            rollcall_id = rollcall_id_parse(root)
+        else:
+            rollcall_id = None
+
         records.append({
             "assembly_code": p_type,
             "number": p_number,
             "year": p_year,
             "meeting_date": kokous_pvm,
-            "creation_date": laadinta_pvm})
+            "creation_date": laadinta_pvm,
+            "rollcall_id": rollcall_id})
 
         # Find speeches
         asiakohdat = root.xpath(".//vsk:Asiakohta", namespaces=ns)
@@ -181,7 +188,7 @@ def import_data():
     cursor = conn.cursor()
 
     with open(records_csv_path) as f:
-        cursor.copy_expert("COPY records(assembly_code, number, year, meeting_date, creation_date) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
+        cursor.copy_expert("COPY records(assembly_code, number, year, meeting_date, creation_date, rollcall_id) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
 
     with open(agenda_items_csv_path) as f:
         cursor.copy_expert("COPY agenda_items(record_assembly_code, record_year, record_number, parliament_id, title) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)

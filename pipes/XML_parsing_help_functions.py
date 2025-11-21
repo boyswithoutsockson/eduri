@@ -229,6 +229,40 @@ def status_parse(handling_root, handling_xml_str, NS):
 
     return status
 
+def rollcall_id_parse(root):
+    
+    rollcall_id_node = root.xpath(
+            f".//vsk:MuuAsiakohta//vsk:KohtaAsiakirja[met1:AsiakirjatyyppiNimi[contains(., 'Nimenhuutoraportti')]]/@vsk1:hyperlinkkiKoodi",
+            namespaces=NS)
+    
+    if rollcall_id_node:
+        return rollcall_id_node[0]
+    else:
+        return
+
+def absentee_parse(root):
+
+    absentees = []
+
+    for absentee in root.xpath(".//met:Toimija/org:Henkilo", namespaces=NS):
+        person_id = int(absentee.get(f"{{{NS['met1']}}}muuTunnus"))
+        
+        # Collect all lisatieto texts
+        lisatiedot = absentee.xpath("org1:LisatietoTeksti/text()", namespaces=NS)
+        
+        # Flag True if "(e)" is among them (e = work related reason for absence)
+        work_related = "(e)" in lisatiedot
+
+        absentees.append({
+            "person_id": person_id,
+            "work_related": work_related
+        })
+
+    return absentees
+    
+
+
+
 def Paatos_parse(root, NS, not_child_of=""):
     if not_child_of:
         filter = f"[not(ancestor::{not_child_of})]"
