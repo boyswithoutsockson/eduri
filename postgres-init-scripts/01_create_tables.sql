@@ -181,6 +181,12 @@ CREATE TABLE IF NOT EXISTS proposal_signatures (
     PRIMARY KEY(proposal_id, person_id)
 );
 
+-- Topics (aiheet)
+-- Topic terms, that Vaski data uses to convey topics relevant to a proposal, report etc.
+CREATE TABLE IF NOT EXISTS topics (
+    topic_id VARCHAR(10) PRIMARY KEY NOT NULL, -- tail of the URI used as id in finto api and vaski (e.g. p040794)
+    term VARCHAR(200)
+);
 
 -- Committee reports (valiokuntien lausunnot)
 CREATE TABLE IF NOT EXISTS committee_reports (
