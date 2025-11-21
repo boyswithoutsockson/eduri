@@ -13,7 +13,7 @@ const { page, pageSize, total, pageQueryParam: page_queryparam } = Astro.props;
 function urlForPage(page: number): string {
     const searchParams = new URLSearchParams(Astro.url.searchParams);
     searchParams.set(page_queryparam, `${page}`);
-    return `?${searchParams}`;
+    return page === currentPage ? "" : `?${searchParams}`;
 }
 
 const pageMin = Math.min(page * pageSize + 1, total);
@@ -21,7 +21,7 @@ const pageMax = Math.min((page + 1) * pageSize, total);
 
 const currentPage = page + 1;
 const firstPage = 1;
-const lastPage = Math.floor(total / pageSize) + 1;
+const lastPage = Math.ceil(total / pageSize);
 const previousPage = Math.max(currentPage - 1, 1);
 const nextPage = Math.min(currentPage + 1, lastPage);
 
