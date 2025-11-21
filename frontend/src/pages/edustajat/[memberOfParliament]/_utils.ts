@@ -1,4 +1,4 @@
-import { mpData } from "~src/pages/edustajat/data.json";
+import { mpData } from "~src/pages/edustajat/_utils";
 
 /** Common static path generation function for all [membersOfParliament] subpages */
 export async function getMpStaticPaths() {
