@@ -1,0 +1,23 @@
+---
+import { SEARCH_QUERYPARAM } from "~src/constants";
+
+interface Props {
+    label: string;
+}
+
+const { label } = Astro.props;
+
+const search = Astro.url.searchParams.get(SEARCH_QUERYPARAM);
+---
+
+<form role="search">
+    <input
+        aria-label={label}
+        id="search"
+        name={SEARCH_QUERYPARAM}
+        placeholder={label}
+        type="search"
+        value={search}
+    />
+    <button type="submit">Hae</button>
+</form>

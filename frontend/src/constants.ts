@@ -1,3 +1,9 @@
+/** Used by search inputs for sending the search terms to the backend */
+export const SEARCH_QUERYPARAM = "q";
+
+/** Used by paginations for sending the current page to the backend */
+export const PAGE_QUERYPARAM = "p";
+
 /** Incomplete mapping from database `parties` table ids to colors from
  * https://fi.wikipedia.org/wiki/Luokka:Suomen_puolueiden_v%C3%A4rimallineet */
 export const PARTY_COLORS = {
