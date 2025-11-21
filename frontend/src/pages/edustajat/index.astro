@@ -6,12 +6,12 @@ import { sql } from "kysely";
 import Pagination from "~src/components/Pagination.astro";
 import MemberListItem from "~src/components/MemberListItem.astro";
 import { mpData, type MP } from "~src/pages/edustajat/_utils";
+import { PAGE_QUERYPARAM, SEARCH_QUERYPARAM } from "~src/constants";
+import SearchInput from "~src/components/SearchInput.astro";
 
 // Tell Astro that this page cannot be prerendered.
 export const prerender = false;
 
-const SEARCH_QUERYPARAM = "q";
-const PAGE_QUERYPARAM = "p";
 const PAGE_LIMIT = 20;
 
 const search = Astro.url.searchParams.get(SEARCH_QUERYPARAM);
@@ -50,24 +50,9 @@ const total =
 
 <Layout>
     <h1>Edustajat</h1>
-    <form role="search">
-        <input
-            aria-label="Hae kansanedustajia..."
-            id="search"
-            name={SEARCH_QUERYPARAM}
-            placeholder="Hae kansanedustajia..."
-            type="search"
-            value={search}
-        />
-        <button type="submit">Hae</button>
-    </form>
+    <SearchInput label="Hae kansanedustajia..." />
 
-    <Pagination
-        page={page}
-        pageQueryParam={PAGE_QUERYPARAM}
-        pageSize={PAGE_LIMIT}
-        total={total}
-    >
+    <Pagination page={page} pageSize={PAGE_LIMIT} total={total}>
         <ol>
             {
                 data.map((mp) => (
@@ -82,17 +67,6 @@ const total =
 </Layout>
 
 <style is:global>
-    article {
-        --pico-card-box-shadow: initial;
-        display: flex;
-        flex-direction: row;
-        gap: var(--pico-block-spacing-horizontal);
-    }
-    .missing {
-        height: 150px;
-        width: 100px;
-        background-color: #ccc;
-    }
     ol {
         padding-inline-start: unset;
     }

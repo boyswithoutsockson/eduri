@@ -1,18 +1,18 @@
 ---
+import { PAGE_QUERYPARAM } from "~src/constants";
 import { range } from "~src/utils";
 
 interface Props {
     page: number;
     pageSize: number;
     total: number;
-    pageQueryParam: string;
 }
 
-const { page, pageSize, total, pageQueryParam: page_queryparam } = Astro.props;
+const { page, pageSize, total } = Astro.props;
 
 function urlForPage(page: number): string {
     const searchParams = new URLSearchParams(Astro.url.searchParams);
-    searchParams.set(page_queryparam, `${page}`);
+    searchParams.set(PAGE_QUERYPARAM, `${page}`);
     return page === currentPage ? "" : `?${searchParams}`;
 }
 
