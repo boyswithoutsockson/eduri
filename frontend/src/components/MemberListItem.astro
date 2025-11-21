@@ -1,24 +1,59 @@
 ---
 import ProfilePhoto from "~src/components/ProfilePhoto.astro";
+import { PARTY_ABBRS, PARTY_COLORS } from "~src/constants";
+import { getContrastingColor } from "~src/utils";
 
 interface Props {
     mp: {
-        full_name: string | null;
+        first_name: string | null;
+        last_name: string | null;
         photo: string | null;
         party_id: string | null;
+        minister_position: string | null;
     };
 }
 
 const { mp } = Astro.props;
+
+const backgroundColor =
+    PARTY_COLORS[(mp.party_id ?? "") as keyof typeof PARTY_COLORS] ?? "#bbbbbb";
+const textColor = getContrastingColor(backgroundColor, true);
 ---
 
 <article>
     <ProfilePhoto mp={mp} />
     <p>
-        <strong>{mp.full_name}</strong>
-        {mp.party_id}
+        <span>
+            <strong>
+                {mp.first_name}
+                {mp.last_name}
+            </strong>
+            <span
+                class="party"
+                style={{
+                    "--background": backgroundColor,
+                    "--text": textColor,
+                }}
+            >
+                {
+                    PARTY_ABBRS[mp.party_id as keyof typeof PARTY_ABBRS] ||
+                        mp.party_id
+                }
+            </span>
+        </span>
+
+        {
+            mp.minister_position ? (
+                <>
+                    <br />
+                    {mp.minister_position}
+                </>
+            ) : null
+        }
         <br />
-        <a href={`/edustajat/${mp.full_name || ""}`}>open mp page</a>
+        <a href={`/edustajat/${mp.first_name + "+" + mp.last_name || ""}`}>
+            open mp page
+        </a>
     </p>
 </article>
 
@@ -27,5 +62,20 @@ const { mp } = Astro.props;
         display: flex;
         flex-direction: row;
         gap: var(--pico-block-spacing-horizontal);
+    }
+    strong:has(+ .party) {
+        vertical-align: middle;
+    }
+    .party {
+        font-size: 0.9em;
+        font-weight: 450;
+        background-color: var(--background);
+        color: var(--text);
+        display: inline-block;
+        text-align: center;
+        vertical-align: middle;
+        margin-inline: 0.5em;
+        padding: 0em 0.4em;
+        border-radius: 0.125em;
     }
 </style>
