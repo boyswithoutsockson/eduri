@@ -13,11 +13,17 @@ const { mp } = Astro.props;
 const speeches = mp
     ? await db
           .selectFrom("speeches")
+          .leftJoin(
+              "agenda_items",
+              "agenda_items.parliament_id",
+              "speeches.agenda_item_parliament_id"
+          )
           .where("speeches.person_id", "=", mp.id)
           .select([
               "speeches.id",
               "speeches.agenda_item_parliament_id",
               "speeches.speech",
+              "agenda_items.title",
           ])
           .orderBy("speeches.start_time", "desc")
           .execute()
@@ -32,7 +38,7 @@ const speeches = mp
                 speeches.map((s) => (
                     <li>
                         <article>
-                            <h3>{s.agenda_item_parliament_id}</h3>
+                            <h3>{s.title}</h3>
                             {/* eslint-disable-next-line astro/no-set-html-directive */}
                             <Fragment set:html={marked(s.speech)} />
 
