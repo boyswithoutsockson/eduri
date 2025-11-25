@@ -13,7 +13,7 @@ PREPROCESSED = data/preprocessed
 PIPES := \
 	ballots \
 	committee_reports \
-	committees \
+	assemblies \
 	election_seasons \
 	government_proposals \
 	interests \
@@ -26,6 +26,7 @@ PIPES := \
 	parliamentary_groups \
 	speeches \
 	votes \
+	topics \
 	lobbies \
 	lobby_terms \
 	lobby_actions \
@@ -101,8 +102,15 @@ $(MP_PHOTOS): frontend/src/assets/photos-2023-2026.zip
 	@touch $@
 	unzip -oq frontend/src/assets/photos-2023-2026.zip -d frontend/src/assets
 
+FINTO_TOPICS = data/raw/finto_topics.json
+$(FINTO_TOPICS): 
+	mkdir -p data/raw
+	FILE_ID=1k71ZzTHjhHq557tR5hihODf7nRSPzLg_
+	curl -L "https://drive.usercontent.google.com/download?id=$${FILE_ID}&confirm=true" --progress-bar \
+		-o $@
+
 .PHONY: data
-data: $(DATA_DUMP) $(DATA_DUMPV2) $(MP_PHOTOS) $(LOBBY_DUMP) ## download and extract all raw data assets
+data: $(DATA_DUMP) $(DATA_DUMPV2) $(MP_PHOTOS) $(LOBBY_DUMP) $(FINTO_TOPICS) ## download and extract all raw data assets
 
 .PHONY: clean
 clean: ## deletes all raw data assets
@@ -134,7 +142,7 @@ clean-vaski: ## removes vaski data
 	rm -rf $(VASKI_DATA_DIR)
 
 # Recipe for constructing all CSVs
-$(PREPROCESSED)/%.csv: pipes/%_pipe.py $(DATA_DUMP) $(DATA_DUMPV2) $(VASKI_DATA)
+$(PREPROCESSED)/%.csv: pipes/%_pipe.py $(DATA_DUMP) $(DATA_DUMPV2) $(LOBBY_DUMP) $(VASKI_DATA) $(FINTO_TOPICS)
 	@echo "Preprocessing $*..."
 	mkdir -p $(PREPROCESSED)
 	uv run $< --preprocess-data
@@ -168,16 +176,16 @@ $(DB)/%: data/preprocessed/%.csv
 	touch $@
 
 # Prerequisites for inserting data into database
-$(DB)/committee_reports: $(DB)/mps $(DB)/committees
+$(DB)/committee_reports: $(DB)/mps $(DB)/assemblies
 $(DB)/government_proposals: $(DB)/mps
 $(DB)/interests: $(DB)/mps
 $(DB)/ministers: $(DB)/mps
-$(DB)/mp_committee_memberships: $(DB)/mps $(DB)/committees
+$(DB)/mp_committee_memberships: $(DB)/mps $(DB)/assemblies
 $(DB)/mp_law_proposals: $(DB)/mps
-$(DB)/mp_parliamentary_group_memberships: $(DB)/mps $(DB)/committees $(DB)/parliamentary_groups
-$(DB)/speeches: $(DB)/mps $(DB)/committees
+$(DB)/mp_parliamentary_group_memberships: $(DB)/mps $(DB)/assemblies $(DB)/parliamentary_groups
+$(DB)/speeches: $(DB)/mps $(DB)/assemblies
 $(DB)/votes: $(DB)/ballots $(DB)/mps
-$(DB)/lobby_actions: $(DB)/mps $(DB)/lobby_terms
+$(DB)/lobby_actions: $(DB)/mps $(DB)/lobby_terms $(DB)/lobbies
 
 .PHONY: insert-database
 insert-database: $(addprefix $(DB)/,$(PIPES)) ## runs all data pipelines into the database
@@ -186,9 +194,17 @@ insert-database: $(addprefix $(DB)/,$(PIPES)) ## runs all data pipelines into th
 search-index: insert-database
 	@echo "Building search index..."
 	PGPASSWORD=postgres PGOPTIONS='--client-min-messages=warning' psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < sql/proposal_search.sql
+	PGPASSWORD=postgres PGOPTIONS='--client-min-messages=warning' psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < sql/person_search.sql
+
+.PHONY: views
+views: insert-database
+	@echo "Creating views..."
+	PGPASSWORD=postgres PGOPTIONS='--client-min-messages=warning' psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < sql/views.sql
 
 .PHONY: database
-database: search-index ## inserts all data into database and builds search indices
+database: ## inserts all data into database and builds search indices and views
+	$(MAKE) search-index   
+	$(MAKE) views
 
 .PHONY: nuke
 nuke: ## resets all data in the database

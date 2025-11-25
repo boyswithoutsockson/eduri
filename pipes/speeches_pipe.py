@@ -145,7 +145,7 @@ def preprocess_data():
                             speech.find(".//vsk1:TarkenneTeksti", namespaces=ns).text == "(vastauspuheenvuoro)":
                             response_to = root_id
                         else:
-                            response_to = None
+                            response_to = speech_id
                             root_id = speech_id
                         speeches_list.append({
                             "speech_id": speech_id,
