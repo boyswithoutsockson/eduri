@@ -41,7 +41,10 @@ def preprocess_data():
     df_tsv = pl.read_csv(os.path.join("data", "raw", "vaski", "RollCallReport_fi.tsv"), separator="\t")
 
     # Iterate over rollcall reports. In practice, iterates over meetings.
-    for xml_str, id in zip(df_tsv['XmlData'], df_tsv['Eduskuntatunnus']):
+    for df_row in df_tsv.iter_rows():
+        
+        xml_str = df_row[1]
+        id = df_row[4]
 
         # Two anomalies in the data
         if id in ["EDK-2016-AK-99126", "00000000-0000-0000-0000-000000000000"]: 
