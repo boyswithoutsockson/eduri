@@ -258,14 +258,6 @@ export interface Proposals {
     status: ProposalStatus;
     summary: string | null;
     title: string | null;
-    date: Timestamp;
-    id: string;
-    law_changes: string | null;
-    ptype: ProposalType | null;
-    reasoning: string | null;
-    status: ProposalStatus;
-    summary: string | null;
-    title: string | null;
 }
 
 export interface ProposalSignatures {
