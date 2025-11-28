@@ -10,18 +10,18 @@ export const getStaticPaths = getMpStaticPaths;
 
 const { mp } = Astro.props;
 
-const speeches = mp
-    ? await db
-          .selectFrom("speeches")
-          .where("speeches.person_id", "=", mp.id)
-          .select([
-              "speeches.id",
-              "speeches.agenda_item_parliament_id",
-              "speeches.speech",
-          ])
-          .orderBy("speeches.start_time", "desc")
-          .execute()
-    : [];
+const speeches = await db
+    .selectFrom("speeches")
+    .innerJoin(
+        "agenda_items",
+        "speeches.agenda_item_parliament_id",
+        "agenda_items.parliament_id"
+    )
+    .where("speeches.person_id", "=", mp.id)
+    .select(["speeches.id", "speeches.speech", "agenda_items.title"])
+    .distinctOn(["speeches.start_time"])
+    .orderBy("speeches.start_time", "desc")
+    .execute();
 ---
 
 <Layout mp={mp}>
@@ -32,7 +32,7 @@ const speeches = mp
                 speeches.map((s) => (
                     <li>
                         <article>
-                            <h3>{s.agenda_item_parliament_id}</h3>
+                            <h3>{s.title}</h3>
                             {/* eslint-disable-next-line astro/no-set-html-directive */}
                             <Fragment set:html={marked(s.speech)} />
 
