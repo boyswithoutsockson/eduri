@@ -1,0 +1,18 @@
+---
+import RoundPhoto from "~src/components/RoundPhoto.astro";
+
+type Speech = (
+    party_id: string,
+    photo: string;
+)
+
+<ul>
+    {speech<Speech>.responses
+        .sort((a, b) => a.party_id.localeCompare(b.party_id))
+        .map((response) => (
+            <li>
+                <RoundPhoto mp={response} />
+            </li>
+        ))}
+</ul>;
+---
