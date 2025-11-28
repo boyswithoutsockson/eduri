@@ -117,7 +117,7 @@ def preprocess_data():
                 for para in paragraphs:
                     text = para.text.strip() if para.text else ""
                     if text:
-                        body_parts.append(text)
+                        body_parts.append(f"{text}\n\n")
 
                 # Append puhemies interventions (separately)
                 interventions = speech.xpath(".//vsk:PuheenjohtajaRepliikki", namespaces=ns)
