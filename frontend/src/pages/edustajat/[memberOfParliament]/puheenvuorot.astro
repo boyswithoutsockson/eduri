@@ -37,6 +37,11 @@ const speeches = await db
                             <Fragment set:html={marked(s.speech)} />
 
                             <button id={`collapse-${s.id}`}>Lue lisää</button>
+                            <a
+                                href={`/asiakohdat/${s.title}/keskustelu#${s.id}`}
+                            >
+                                Asiakohdan keskustelu
+                            </a>
                         </article>
                     </li>
                 ))

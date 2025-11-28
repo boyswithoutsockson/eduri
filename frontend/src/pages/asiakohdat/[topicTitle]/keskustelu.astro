@@ -1,0 +1,178 @@
+---
+/* eslint-disable astro/no-set-html-directive */
+import { db } from "~src/database";
+import BaseLayout from "~src/layouts/BaseLayout.astro";
+import RoundPhoto from "~src/components/RoundPhoto.astro";
+import { marked } from "marked";
+
+export async function getStaticPaths() {
+    const data = await db
+        .selectFrom("agenda_items")
+        .select(["agenda_items.title", "agenda_items.parliament_id"])
+        .execute();
+    return data.map((topic) => ({
+        params: { topicTitle: topic.title },
+        props: { topic },
+    }));
+}
+
+const { topic } = Astro.props;
+const speeches = await db
+    .selectFrom("speeches")
+    .leftJoin("persons", "persons.id", "speeches.person_id")
+    .leftJoinLateral(
+        (eb) =>
+            eb
+                .selectFrom("mp_parliamentary_group_memberships as mppm")
+                .select(["mppm.pg_id", "mppm.end_date"])
+                .whereRef("mppm.person_id", "=", "persons.id")
+                .orderBy("mppm.end_date", (ob) => ob.desc().nullsLast())
+                .as("parliamentary_group"),
+        (join) => join.onTrue()
+    )
+    .select([
+        "speeches.speech",
+        "speeches.id",
+        "speeches.person_id",
+        "speeches.start_time",
+        "persons.first_name",
+        "persons.last_name",
+        "persons.photo",
+        "parliamentary_group.pg_id",
+        "speeches.response_to",
+    ])
+    .distinctOn("speeches.start_time") // suspected duplicates to be due to pg_id join
+    .where("speeches.agenda_item_parliament_id", "=", topic.parliament_id)
+    .orderBy("speeches.start_time", "asc")
+    .execute();
+
+type Speech = (typeof speeches)[number];
+
+type RootSpeech = Speech & {
+    responses: Speech[];
+};
+
+const rootSpeeches = speeches.reduce<RootSpeech[]>((prev, current) => {
+    if (current.response_to === current.id) {
+        return [...prev, { ...current, responses: [] }];
+    } else {
+        const target = prev.find((root) => root.id === current.response_to);
+        target?.responses.push(current);
+        return prev;
+    }
+}, []);
+---
+
+<BaseLayout>
+    <h1>{topic.title}</h1>
+    <ol>
+        {
+            rootSpeeches.map((speech) => (
+                <li id={`${speech.id}`}>
+                    <article>
+                        <h3>
+                            <RoundPhoto
+                                mp={{
+                                    first_name: speech.first_name,
+                                    last_name: speech.last_name,
+                                    party_id: speech.pg_id,
+                                    photo: speech.photo,
+                                }}
+                            />
+                            {speech.first_name} {speech.last_name} -{" "}
+                            {speech.start_time.toLocaleDateString("fi")}
+                        </h3>
+                        <Fragment set:html={marked(speech.speech)} />
+
+                        <button id={`collapse-${speech.id}`}>Lue lisää</button>
+                        {speech.responses.length > 0 && (
+                            <button id={`responses-${speech.id}`}>
+                                Näytä vastaukset ({speech.responses.length})
+                            </button>
+                        )}
+                    </article>
+                    <ol>
+                        {speech.responses.map((response) => (
+                            <li id={`${response.id}`}>
+                                <article>
+                                    <h4>
+                                        <RoundPhoto
+                                            mp={{
+                                                first_name: response.first_name,
+                                                last_name: response.last_name,
+                                                party_id: response.pg_id,
+                                                photo: response.photo,
+                                            }}
+                                        />
+                                        {response.first_name}{" "}
+                                        {response.last_name} -{" "}
+                                        {response.start_time.toLocaleDateString(
+                                            "fi"
+                                        )}
+                                    </h4>
+                                    <Fragment
+                                        set:html={marked(response.speech)}
+                                    />
+                                </article>
+                            </li>
+                        ))}
+                    </ol>
+                </li>
+            ))
+        }
+    </ol>
+</BaseLayout>
+
+<script>
+    const buttons = document.querySelectorAll("[id^='collapse']");
+
+    buttons.forEach((button) => {
+        button.addEventListener("click", () => {
+            const article = button.parentElement;
+            article?.classList.toggle("expanded");
+            button.textContent = article?.classList.contains("expanded")
+                ? "Lue vähemmän"
+                : "Lue lisää";
+        });
+    });
+
+    const buttonsResponses = document.querySelectorAll("[id^='responses']");
+
+    buttonsResponses.forEach((button) => {
+        const textC = button.textContent;
+        button.addEventListener("click", () => {
+            const responses = button.parentElement?.nextElementSibling;
+            responses?.classList.toggle("expanded");
+            button.textContent = responses?.classList.contains("expanded")
+                ? "Piilota vastaukset"
+                : textC;
+        });
+    });
+</script>
+
+<style>
+    :global(p) {
+        max-width: 70ch;
+    }
+    ol {
+        counter-reset: item;
+        list-style-type: none;
+    }
+
+    li:before {
+        content: counters(item, ".") ". ";
+        counter-increment: item;
+    }
+    :global(article p:not(:first-of-type)) {
+        display: none;
+    }
+    :global(article.expanded p) {
+        display: block;
+    }
+    :global(article + ol) {
+        display: none;
+    }
+    :global(ol.expanded) {
+        display: block;
+    }
+</style>
