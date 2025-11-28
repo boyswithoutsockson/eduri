@@ -174,7 +174,7 @@ END $$;
 
 -- data type for different statuses of proposals
 DO $$ BEGIN  
-    CREATE TYPE proposal_status AS ENUM ('open', 'expired', 'cancelled', 'rejected', 'resting', 'passed', 'passed_changed', 'passed_urgent');
+    CREATE TYPE proposal_status AS ENUM ('open', 'handled', 'expired', 'cancelled', 'rejected', 'resting', 'passed', 'passed_changed', 'passed_urgent');
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;

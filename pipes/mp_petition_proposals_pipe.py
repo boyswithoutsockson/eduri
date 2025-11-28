@@ -4,7 +4,7 @@ import pandas as pd
 import psycopg2
 from lxml import etree
 from io import StringIO
-from XML_parsing_help_functions import id_parse, date_parse, Nimeke_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Saados_parse, status_parse, Allekirjoittaja_parse
+from XML_parsing_help_functions import id_parse, date_parse, Nimeke_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Saados_parse, Allekirjoittaja_parse
 from db import get_connection
 
 # Paths
@@ -54,7 +54,14 @@ def preprocess_data():
     sgn_records = [] 
 
     conn = get_connection()
-    cur = conn.cursor()          
+    cur = conn.cursor()   
+
+    cur.execute("""
+                SELECT parliament_id 
+                FROM agenda_items""")
+
+    agenda_items = cur.fetchall()
+    handled_petitions = [petition[0] for petition in agenda_items if petition[0].startswith("tpa")]
 
     for mpp_xml_str in mpp_df.get("XmlData", []):
 
@@ -63,6 +70,11 @@ def preprocess_data():
         eid = id_parse(mpp_root, NS)
 
         date = date_parse(mpp_root, NS)
+
+        if eid.lower() in handled_petitions:
+            status = "handled"
+        else:
+            status = "open"
 
         proposal = mpp_root.find(".//eka:EduskuntaAloite", namespaces=NS)
         if proposal is None:                                                # Joskus oikean aloitteen lisäksi on tyhjä aloite samalla id:llä                         
@@ -82,14 +94,14 @@ def preprocess_data():
             "summary": AsiaSisaltoKuvaus_parse(proposal, NS),
             "reasoning": Perustelu_parse(proposal, NS),
             "law_changes": Saados_parse(proposal, NS),
-            "status": status_parse(handling_root, handling_xml_str, NS)
+            "status": status
             })
         
         sgn_records.extend(Allekirjoittaja_parse(proposal, NS, eid, cur))
     
     conn.commit()
     cur.close()
-    conn.close()
+    conn.close()  
 
     pd.DataFrame(mpp_records).to_csv(mp_petitions_csv, index=False, encoding="utf-8")
     pd.DataFrame(sgn_records).drop_duplicates().to_csv(mp_petition_signatures_csv, index=False, encoding="utf-8") 

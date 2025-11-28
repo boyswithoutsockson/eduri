@@ -18,15 +18,7 @@ export type ProposalStatus =
     | "cancelled"
     | "expired"
     | "open"
-    | "passed"
-    | "passed_changed"
-    | "passed_urgent"
-    | "rejected"
-    | "resting";
-export type ProposalStatus =
-    | "cancelled"
-    | "expired"
-    | "open"
+    | "handled"
     | "passed"
     | "passed_changed"
     | "passed_urgent"

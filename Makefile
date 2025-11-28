@@ -152,7 +152,7 @@ $(PREPROCESSED)/election_seasons.csv: $(DATA_DUMPV2)
 $(PREPROCESSED)/government_proposals.csv: $(DB)/mps
 $(PREPROCESSED)/mp_law_proposals.csv: $(DB)/mps
 $(PREPROCESSED)/mps.csv: $(MP_PHOTOS)
-$(PREPROCESSED)/mp_petition_proposals.csv: $(DB)/mps
+$(PREPROCESSED)/mp_petition_proposals.csv: $(DB)/mps $(DB)/speeches
 $(PREPROCESSED)/lobby_actions.csv: $(DB)/mps $(DB)/mp_parliamentary_group_memberships
 $(PREPROCESSED)/absences.csv: $(DB)/speeches
 
