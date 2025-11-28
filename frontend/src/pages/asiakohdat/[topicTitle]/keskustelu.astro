@@ -113,6 +113,9 @@ const rootSpeeches = speeches.reduce<RootSpeech[]>((prev, current) => {
                                     <Fragment
                                         set:html={marked(response.speech)}
                                     />
+                                    <button id={`collapse-${response.id}`}>
+                                        Lue lisää
+                                    </button>
                                 </article>
                             </li>
                         ))}
