@@ -32,7 +32,7 @@ def match_target_mp(target_ids):
                         last_name
                     FROM (public.mp_parliamentary_group_memberships
                     INNER JOIN public.persons ON persons.id = person_id)
-                    WHERE end_date = null OR end_date > '2024-01-01'    
+                    WHERE end_date is null OR end_date > '2024-01-01'    
                     ;""")       # Filter out people who have retired from the parliament before the implementation of avoimuusrekisteri
     
     df = pl.DataFrame(cursor.fetchall(), schema=["person_id", "first_name", "last_name"], orient="row")
