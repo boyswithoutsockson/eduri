@@ -34,3 +34,8 @@ export function mpData() {
 }
 
 export type MP = InferResult<ReturnType<typeof mpData>>[0];
+
+export type MPshort = Pick<
+    MP,
+    "id" | "first_name" | "last_name" | "photo" | "party_id"
+>;

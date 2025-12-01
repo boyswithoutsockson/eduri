@@ -24,6 +24,19 @@ export function groupBy<T, K extends keyof any>(
     );
 }
 
+export function uniqueBy<T>(
+    fieldSelector: (item: T) => string | number,
+): (element: T) => boolean {
+    const seen: Record<string | number, boolean> = {};
+    return (element: T) => {
+        const uniqueFieldValue = fieldSelector(element);
+
+        const isUnique = !(uniqueFieldValue in seen);
+        seen[uniqueFieldValue] = true;
+        return isUnique;
+    };
+}
+
 export function range(start: number, end: number, step = 1) {
     let output = [];
 

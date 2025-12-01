@@ -2,7 +2,7 @@
 // We inject markdown in multiple places in this file, it is safe trust me bro
 /* eslint-disable astro/no-set-html-directive */
 import { marked } from "marked";
-import ProposalSignatures from "~src/components/ProposalSignatures.astro";
+import MpRoundPhotoList from "~src/components/MpRoundPhotoList.astro";
 import Layout from "~src/layouts/BaseLayout.astro";
 import { proposalData, urlencodeProposalId } from "~src/pages/esitykset/_utils";
 
@@ -47,7 +47,7 @@ const { proposal } = Astro.props;
     }
 
     <h2>Allekirjoittaneet</h2>
-    <ProposalSignatures proposal={proposal} />
+    <MpRoundPhotoList mps={proposal.signatures} />
 </Layout>
 
 <style>

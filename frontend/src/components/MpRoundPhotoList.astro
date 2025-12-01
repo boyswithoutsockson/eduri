@@ -1,21 +1,21 @@
 ---
-import RoundPhoto from "~src/components/RoundPhoto.astro";
-import type { Proposal } from "~src/pages/esitykset/data.json";
+import MpRoundPhoto from "~src/components/MpRoundPhoto.astro";
+import type { MPshort } from "~src/pages/edustajat/_utils";
 
 interface Props {
-    proposal: Proposal;
+    mps: MPshort[];
 }
 
-const { proposal } = Astro.props;
+const { mps } = Astro.props;
 ---
 
 <ul>
     {
-        proposal.signatures
+        mps
             .sort((a, b) => a.party_id.localeCompare(b.party_id))
-            .map((signature) => (
+            .map((mp) => (
                 <li>
-                    <RoundPhoto mp={signature} />
+                    <MpRoundPhoto mp={mp} />
                 </li>
             ))
     }
