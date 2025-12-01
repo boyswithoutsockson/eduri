@@ -4,6 +4,7 @@ import { db } from "~src/database";
 import BaseLayout from "~src/layouts/BaseLayout.astro";
 import RoundPhoto from "~src/components/RoundPhoto.astro";
 import { marked } from "marked";
+import { SPEECH_TYPE_STYLES } from "~src/constants.ts";
 
 export async function getStaticPaths() {
     const data = await db
@@ -35,6 +36,7 @@ const speeches = await db
         "speeches.id",
         "speeches.person_id",
         "speeches.start_time",
+        "speeches.speech_type",
         "persons.first_name",
         "persons.last_name",
         "persons.photo",
@@ -83,13 +85,20 @@ const rootSpeeches = speeches.reduce<RootSpeech[]>((prev, current) => {
                             {speech.start_time.toLocaleDateString("fi")}
                         </h3>
                         <Fragment set:html={marked(speech.speech)} />
-
                         <button id={`collapse-${speech.id}`}>Lue lisää</button>
                         {speech.responses.length > 0 && (
                             <button id={`responses-${speech.id}`}>
                                 Näytä vastaukset ({speech.responses.length})
                             </button>
                         )}
+                        <span
+                            class:list={[
+                                "speech_type",
+                                SPEECH_TYPE_STYLES[speech.speech_type].style,
+                            ]}
+                        >
+                            {SPEECH_TYPE_STYLES[speech.speech_type].text}
+                        </span>
                     </article>
                     <ol>
                         {speech.responses.map((response) => (
@@ -177,5 +186,36 @@ const rootSpeeches = speeches.reduce<RootSpeech[]>((prev, current) => {
     }
     :global(ol.expanded) {
         display: block;
+    }
+    :global(.status) {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    :global(.E) {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+
+    :global(.V) {
+        background-color: #dcfce7;
+        color: #166534;
+    }
+
+    :global(.N) {
+        background-color: #898989; /* Green */
+        color: #2a2a2a;
+    }
+
+    :global(.R) {
+        background-color: #fee2e2; /* Red */
+        color: #991b1b;
+    }
+
+    :global(.T) {
+        background-color: #fee2e2; /* Red */
+        color: #991b1b;
     }
 </style>

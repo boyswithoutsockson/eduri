@@ -4,6 +4,7 @@ import { marked } from "marked";
 import { db } from "~src/database";
 import Layout from "~src/pages/edustajat/[memberOfParliament]/_layout.astro";
 import { getMpStaticPaths } from "~src/pages/edustajat/[memberOfParliament]/_utils";
+import { SPEECH_TYPE_STYLES } from "~src/constants.ts";
 
 /** List all items of data that need a page generated for them */
 export const getStaticPaths = getMpStaticPaths;
@@ -18,7 +19,12 @@ const speeches = await db
         "agenda_items.parliament_id"
     )
     .where("speeches.person_id", "=", mp.id)
-    .select(["speeches.id", "speeches.speech", "agenda_items.title"])
+    .select([
+        "speeches.id",
+        "speeches.speech",
+        "speeches.speech_type",
+        "agenda_items.title",
+    ])
     .distinctOn(["speeches.start_time"])
     .orderBy("speeches.start_time", "desc")
     .execute();
@@ -42,6 +48,14 @@ const speeches = await db
                             >
                                 Asiakohdan keskustelu
                             </a>
+                            <span
+                                class:list={[
+                                    "speech_type",
+                                    SPEECH_TYPE_STYLES[s.speech_type].style,
+                                ]}
+                            >
+                                {SPEECH_TYPE_STYLES[s.speech_type].text}
+                            </span>
                         </article>
                     </li>
                 ))
@@ -62,6 +76,37 @@ const speeches = await db
     }
     :global(article.expanded p) {
         display: block;
+    }
+    :global(.status) {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    :global(.E) {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+
+    :global(.V) {
+        background-color: #dcfce7;
+        color: #166534;
+    }
+
+    :global(.N) {
+        background-color: #898989; /* Green */
+        color: #2a2a2a;
+    }
+
+    :global(.R) {
+        background-color: #fee2e2; /* Red */
+        color: #991b1b;
+    }
+
+    :global(.T) {
+        background-color: #fee2e2; /* Red */
+        color: #991b1b;
     }
 </style>
 
