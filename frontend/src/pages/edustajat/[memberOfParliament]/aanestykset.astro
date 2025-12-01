@@ -20,14 +20,48 @@ const ballotVotes = mp
               "ballots.id",
               "ballots.title",
               "ballots.session_item_title",
-              "votes.vote",
               "ballots.minutes_url",
               "ballots.results_url",
+              "ballots.parliament_id",
+              "ballots.start_time",
+              "votes.vote",
           ])
           .orderBy("ballots.start_time", "desc")
           .$narrowType<{ vote: NotNull }>()
           .execute()
     : [];
+
+type BallotVote = typeof ballotVotes;
+
+type Ballot = {
+    id: string;
+    title: string;
+    session_item_title: string;
+    minutes_url: string;
+    results_url: string;
+    parliament_id: string;
+    start_time: Date;
+    vote: BallotVote;
+};
+
+type BallotBundle = {
+    ballots: Ballot[];
+    parliament_id: string;
+    start_time: Date;
+};
+
+const ballotBundles = ballotVotes.reduce<BallotBundle[]>((prev, current) => {
+    const target = prev.find(
+        (bundle) => bundle.parliament_id === current.parliament_id
+    );
+    target?.ballots.push(
+        current.map((bv: ballotVote) => {
+            id: bv.;
+            title: b;
+        })
+    );
+    return prev;
+}, []);
 ---
 
 <Layout mp={mp}>
