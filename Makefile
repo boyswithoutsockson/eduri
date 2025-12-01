@@ -30,7 +30,8 @@ PIPES := \
 	lobbies \
 	lobby_terms \
 	lobby_actions \
-	absences
+	absences \
+	promises
 
 
 ###################
@@ -109,8 +110,15 @@ $(FINTO_TOPICS):
 	curl -L "https://drive.usercontent.google.com/download?id=$${FILE_ID}&confirm=true" --progress-bar \
 		-o $@
 
+PROMISES_2023 = data/raw/promises_2023.json
+$(PROMISES_2023): 
+	mkdir -p data/raw
+	FILE_ID=1l0ME3kckgvH-xWPKj6sRIoHhk37NZjFh
+	curl -L "https://drive.usercontent.google.com/download?id=$${FILE_ID}&confirm=true" --progress-bar \
+		-o $@
+
 .PHONY: data
-data: $(DATA_DUMP) $(DATA_DUMPV2) $(MP_PHOTOS) $(LOBBY_DUMP) $(FINTO_TOPICS) ## download and extract all raw data assets
+data: $(DATA_DUMP) $(DATA_DUMPV2) $(MP_PHOTOS) $(LOBBY_DUMP) $(FINTO_TOPICS) $(PROMISES_2023) ## download and extract all raw data assets
 
 .PHONY: clean
 clean: ## deletes all raw data assets
@@ -142,7 +150,7 @@ clean-vaski: ## removes vaski data
 	rm -rf $(VASKI_DATA_DIR)
 
 # Recipe for constructing all CSVs
-$(PREPROCESSED)/%.csv: pipes/%_pipe.py $(DATA_DUMP) $(DATA_DUMPV2) $(LOBBY_DUMP) $(VASKI_DATA) $(FINTO_TOPICS)
+$(PREPROCESSED)/%.csv: pipes/%_pipe.py $(DATA_DUMP) $(DATA_DUMPV2) $(LOBBY_DUMP) $(VASKI_DATA) $(FINTO_TOPICS) $(PROMISES_2023)
 	@echo "Preprocessing $*..."
 	mkdir -p $(PREPROCESSED)
 	uv run $< --preprocess-data
@@ -155,6 +163,7 @@ $(PREPROCESSED)/mps.csv: $(MP_PHOTOS)
 $(PREPROCESSED)/mp_petition_proposals.csv: $(DB)/mps $(DB)/speeches
 $(PREPROCESSED)/lobby_actions.csv: $(DB)/mps $(DB)/mp_parliamentary_group_memberships
 $(PREPROCESSED)/absences.csv: $(DB)/speeches
+$(PREPROCESSED)/promises.csv: $(DB)/mps $(DB)/mp_parliamentary_group_memberships
 
 .PHONY: preprocess
 preprocess: $(addprefix $(PREPROCESSED)/,$(addsuffix .csv,$(PIPES)))

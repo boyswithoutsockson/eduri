@@ -299,6 +299,13 @@ export interface Votes {
     vote: Vote | null;
 }
 
+export interface Promises {
+    serial: number;
+    person_id: number;
+    promise: string;
+    election_year: number;
+}
+
 export interface PGVoteCounts {
     pg_id: string;
     ballot_id: number;
@@ -363,6 +370,7 @@ export interface DB {
     records: Records;
     speeches: Speeches;
     votes: Votes;
+    promises: Promises;
     pg_vote_view: PGVoteCounts;
     pg_mode_vote_view: PGModeVotes;
     contra_vote_scores_view: ContraVoteScores;
