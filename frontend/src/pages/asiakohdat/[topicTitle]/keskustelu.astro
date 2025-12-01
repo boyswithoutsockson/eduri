@@ -2,9 +2,11 @@
 /* eslint-disable astro/no-set-html-directive */
 import { db } from "~src/database";
 import BaseLayout from "~src/layouts/BaseLayout.astro";
-import RoundPhoto from "~src/components/RoundPhoto.astro";
+import MpRoundPhoto from "~src/components/MpRoundPhoto.astro";
+import MpRoundPhotoList from "~src/components/MpRoundPhotoList.astro";
 import { marked } from "marked";
 import { SPEECH_TYPE_STYLES } from "~src/constants.ts";
+import { uniqueBy } from "~src/utils";
 
 export async function getStaticPaths() {
     const data = await db
@@ -63,17 +65,28 @@ const rootSpeeches = speeches.reduce<RootSpeech[]>((prev, current) => {
         return prev;
     }
 }, []);
+
+const participants = speeches
+    .map((item) => ({
+        id: item.person_id, // unique key
+        first_name: item.first_name,
+        last_name: item.last_name,
+        photo: item.photo,
+        party_id: item.pg_id,
+    }))
+    .filter(uniqueBy((item) => item.id));
 ---
 
 <BaseLayout>
     <h1>{topic.title}</h1>
+    <MpRoundPhotoList mps={participants} />
     <ol>
         {
             rootSpeeches.map((speech) => (
                 <li id={`${speech.id}`}>
                     <article>
                         <h3>
-                            <RoundPhoto
+                            <MpRoundPhoto
                                 mp={{
                                     first_name: speech.first_name,
                                     last_name: speech.last_name,
@@ -105,7 +118,7 @@ const rootSpeeches = speeches.reduce<RootSpeech[]>((prev, current) => {
                             <li id={`${response.id}`}>
                                 <article>
                                     <h4>
-                                        <RoundPhoto
+                                        <MpRoundPhoto
                                             mp={{
                                                 first_name: response.first_name,
                                                 last_name: response.last_name,

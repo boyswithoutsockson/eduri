@@ -4,7 +4,7 @@
 import Layout from "~src/layouts/BaseLayout.astro";
 
 import { proposalData, urlencodeProposalId } from "~src/pages/esitykset/_utils";
-import ProposalSignatures from "~src/components/ProposalSignatures.astro";
+import MpRoundPhotoList from "~src/components/MpRoundPhotoList.astro";
 import type {
     ProposalStatus,
     ProposalType,
@@ -105,7 +105,7 @@ const total = search
                                   <h2>{proposal.title}</h2>
                                   <p>{proposal.summary}</p>
                                   <p>allekirjoittaneet:</p>
-                                  <ProposalSignatures proposal={proposal} />
+                                  <MpRoundPhotoList mps={proposal.signatures} />
                                   <a
                                       href={`/esitykset/${urlencodeProposalId(proposal.id)}`}
                                   >
