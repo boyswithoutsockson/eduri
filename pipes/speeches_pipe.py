@@ -117,7 +117,7 @@ def preprocess_data():
                 for para in paragraphs:
                     text = para.text.strip() if para.text else ""
                     if text:
-                        body_parts.append(f"{text}\n\n")
+                        body_parts.append(f"{text}")
 
                 # Append puhemies interventions (separately)
                 interventions = speech.xpath(".//vsk:PuheenjohtajaRepliikki", namespaces=ns)
@@ -127,6 +127,7 @@ def preprocess_data():
                     for para in chair_paragraphs:
                         ptext = para.text.strip() if para.text else ""
                         if chair_text and ptext:
+                            body_parts.remove(ptext) # Remove duplicate chair text
                             body_parts.append(f"**{chair_text}**: {ptext}")
 
                 full_text = "\n\n".join(body_parts)
