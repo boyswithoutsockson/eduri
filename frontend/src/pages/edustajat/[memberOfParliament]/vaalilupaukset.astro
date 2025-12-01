@@ -1,0 +1,25 @@
+---
+import { db } from "~src/database";
+import Layout from "~src/pages/edustajat/[memberOfParliament]/_layout.astro";
+import { getMpStaticPaths } from "~src/pages/edustajat/[memberOfParliament]/_utils";
+
+/** List all items of data that need a page generated for them */
+export const getStaticPaths = getMpStaticPaths;
+
+const { mp } = Astro.props;
+
+const promises = await db
+    .selectFrom("promises")
+    .where("promises.person_id", "=", mp.id)
+    .select("promises.promise")
+    .execute();
+---
+
+<Layout mp={mp}>
+    <section>
+        <h2>Vaalilupaukset</h2>
+        <ol>
+            {promises.map((promise) => <li>{promise.promise}</li>)}
+        </ol>
+    </section>
+</Layout>

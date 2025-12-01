@@ -290,4 +290,12 @@ CREATE TABLE IF NOT EXISTS lobby_actions (
     contact_method VARCHAR(50)
 );
 
+-- Promises
+-- Election promise from Yle Vaalikone
+CREATE TABLE IF NOT EXISTS promises (
+    id SERIAL PRIMARY KEY,
+    person_id INT NOT NULL REFERENCES persons(id),
+    promise VARCHAR(1000) NOT NULL,
+    election_year INT NOT NULL
+);
 
