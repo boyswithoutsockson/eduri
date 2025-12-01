@@ -48,3 +48,12 @@ export const PARTY_ABBRS = {
     vas: "Vas.",
     vihr: "Vihr.",
 };
+
+export const SPEECH_TYPE_STYLES = {
+    E: { style: "E", text: "Esittelypuheenvuoro" },
+    V: { style: "V", text: "Vastauspuheenvuoro" },
+    N: { style: "N", text: "Nopeatahtinen keskustelu" },
+    R: { style: "R", text: "Ryhmäpuheenvuoro" },
+    T: { style: "T", text: "" }, // varsinainen puheenvuoro, the default
+    " ": { style: " ", text: "" }, // Faults in the data
+};
