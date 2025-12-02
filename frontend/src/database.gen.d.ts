@@ -300,7 +300,7 @@ export interface Votes {
 }
 
 export interface Promises {
-    serial: number;
+    id: Generated<number>;
     person_id: number;
     promise: string;
     election_year: number;
