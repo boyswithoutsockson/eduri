@@ -290,6 +290,47 @@ CREATE TABLE IF NOT EXISTS lobby_actions (
     contact_method VARCHAR(50)
 );
 
+DO $$ BEGIN  
+    CREATE TYPE funder_type AS ENUM ('loan', 'person', 'company', 'party', 'party_union', 'other', 'forwarded');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Election fundings
+-- From Valtiontalouden tarkastusvirasto
+CREATE TABLE IF NOT EXISTS election_fundings (
+    id SERIAL PRIMARY KEY,
+    person_id INT NOT NULL REFERENCES persons(id),
+    election_year INT NOT NULL,
+    ftype funder_type NOT NULL,
+    funder_organization VARCHAR(200),
+    funder_company_id VARCHAR(20),
+    funder_first_name VARCHAR(100),
+    funder_last_name VARCHAR(100),
+    loan_title VARCHAR(200),
+    loan_schedule VARCHAR(200),
+    amount REAL NOT NULL
+);
+
+-- Election budgets
+-- Election budgets From Valtiontalouden tarkastusvirasto
+CREATE TABLE IF NOT EXISTS election_budgets (
+    person_id INT NOT NULL REFERENCES persons(id),
+    support_group VARCHAR(200),     -- Candidates often have organizations specifically for their campaign
+    election_year INT NOT NULL,
+    expenses_total REAL NOT NULL,
+    incomes_total REAL NOT NULL,
+    income_own REAL NOT NULL,       -- Different types of incomes
+    income_loan REAL NOT NULL,
+    income_person REAL NOT NULL,
+    income_company REAL NOT NULL,
+    income_party REAL NOT NULL,
+    income_party_union REAL NOT NULL,
+    income_forwarded REAL NOT NULL,
+    income_other REAL NOT NULL,
+    PRIMARY KEY(person_id, election_year)
+);
+
 -- Promises
 -- Election promise from Yle Vaalikone
 CREATE TABLE IF NOT EXISTS promises (

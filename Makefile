@@ -30,7 +30,9 @@ PIPES := \
 	lobbies \
 	lobby_terms \
 	lobby_actions \
-	absences \
+	absences  \
+	election_budgets \
+	election_fundings \
 	promises
 
 
@@ -110,6 +112,18 @@ $(FINTO_TOPICS):
 	curl -L "https://drive.usercontent.google.com/download?id=$${FILE_ID}&confirm=true" --progress-bar \
 		-o $@
 
+data/vtv_dump.zip:
+	mkdir -p data
+	FILE_ID=1KSHeJT6sOLFN9Jpv-iGXkqqv7wa7ML_Z
+	curl -L "https://drive.usercontent.google.com/download?id=$${FILE_ID}&confirm=true" --progress-bar \
+		-o $@
+
+VTV_DUMP = data/.unzippedvtv
+$(VTV_DUMP): data/vtv_dump.zip
+	@touch $@
+	mkdir -p data/raw
+	unzip -oq data/vtv_dump.zip -d data/raw
+
 PROMISES_2023 = data/raw/promises_2023.json
 $(PROMISES_2023): 
 	mkdir -p data/raw
@@ -118,7 +132,7 @@ $(PROMISES_2023):
 		-o $@
 
 .PHONY: data
-data: $(DATA_DUMP) $(DATA_DUMPV2) $(MP_PHOTOS) $(LOBBY_DUMP) $(FINTO_TOPICS) $(PROMISES_2023) ## download and extract all raw data assets
+data: $(DATA_DUMP) $(DATA_DUMPV2) $(MP_PHOTOS) $(LOBBY_DUMP) $(FINTO_TOPICS) $(VTV_DUMP) $(PROMISES_2023) ## download and extract all raw data assets
 
 .PHONY: clean
 clean: ## deletes all raw data assets
@@ -150,7 +164,7 @@ clean-vaski: ## removes vaski data
 	rm -rf $(VASKI_DATA_DIR)
 
 # Recipe for constructing all CSVs
-$(PREPROCESSED)/%.csv: pipes/%_pipe.py $(DATA_DUMP) $(DATA_DUMPV2) $(LOBBY_DUMP) $(VASKI_DATA) $(FINTO_TOPICS) $(PROMISES_2023)
+$(PREPROCESSED)/%.csv: pipes/%_pipe.py $(DATA_DUMP) $(DATA_DUMPV2) $(LOBBY_DUMP) $(VASKI_DATA) $(FINTO_TOPICS) $(VTV_DUMP) $(PROMISES_2023)
 	@echo "Preprocessing $*..."
 	mkdir -p $(PREPROCESSED)
 	uv run $< --preprocess-data
@@ -163,7 +177,9 @@ $(PREPROCESSED)/mps.csv: $(MP_PHOTOS)
 $(PREPROCESSED)/mp_petition_proposals.csv: $(DB)/mps $(DB)/speeches
 $(PREPROCESSED)/lobby_actions.csv: $(DB)/mps $(DB)/mp_parliamentary_group_memberships
 $(PREPROCESSED)/absences.csv: $(DB)/speeches
-$(PREPROCESSED)/promises.csv: $(DB)/mps $(DB)/mp_parliamentary_group_memberships
+$(PREPROCESSED)/election_fundings.csv: $(DB)/mp_parliamentary_group_memberships
+$(PREPROCESSED)/election_budgets.csv: $(DB)/mp_parliamentary_group_memberships
+$(PREPROCESSED)/promises.csv: $(DB)/mp_parliamentary_group_memberships
 
 .PHONY: preprocess
 preprocess: $(addprefix $(PREPROCESSED)/,$(addsuffix .csv,$(PIPES)))
@@ -211,8 +227,8 @@ views: insert-database
 	PGPASSWORD=postgres PGOPTIONS='--client-min-messages=warning' psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < sql/views.sql
 
 .PHONY: database
-database: ## inserts all data into database and builds search indices and views
-	$(MAKE) search-index   
+database: ## inserts all data into database and builds search indices and views 
+	$(MAKE) search-index
 	$(MAKE) views
 
 .PHONY: nuke
