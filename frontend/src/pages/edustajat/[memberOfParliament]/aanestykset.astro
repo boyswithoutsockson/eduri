@@ -33,61 +33,69 @@ const ballotVotes = mp
 
 type BallotVote = typeof ballotVotes;
 
-type Ballot = {
-    id: string;
-    title: string;
-    session_item_title: string;
-    minutes_url: string;
-    results_url: string;
-    parliament_id: string;
-    start_time: Date;
-    vote: BallotVote;
-};
-
 type BallotBundle = {
-    ballots: Ballot[];
+    ballots: BallotVote[];
     parliament_id: string;
     start_time: Date;
+    minutes_url: string;
+    session_item_title: string;
 };
 
-const ballotBundles = ballotVotes.reduce<BallotBundle[]>((prev, current) => {
-    const target = prev.find(
-        (bundle) => bundle.parliament_id === current.parliament_id
-    );
-    target?.ballots.push(
-        current.map((bv: ballotVote) => {
-            id: bv.;
-            title: b;
-        })
-    );
-    return prev;
-}, []);
+const ballotBundles = ballotVotes
+    .reduce<BallotBundle[]>((prev, current) => {
+        if (!prev.some((bv) => bv.parliament_id === current.parliament_id)) {
+            return [
+                ...prev,
+                {
+                    ballots: [current],
+                    parliament_id: current.parliament_id,
+                    start_time: current.start_time,
+                    minutes_url: current.minutes_url,
+                    session_item_title: current.session_item_title,
+                },
+            ];
+        } else {
+            const target = prev.find(
+                (bundle) => bundle.parliament_id === current.parliament_id
+            );
+            target?.ballots.push(current);
+            return prev;
+        }
+    }, [])
+    .sort((a: BallotBundle, b: BallotBundle) => b.start_time - a.start_time);
 ---
 
 <Layout mp={mp}>
     <section>
         <h2>Äänestykset</h2>
-        <div class="ballot-votes">
+        <ul class="ballot-votes">
             {
-                ballotVotes.map((bv) => (
-                    <div class="ballot-vote">
-                        <strong>{bv.title}</strong> |
-                        <a href={`${PARLIAMENT_BASE_URL}${bv.minutes_url}`}>
+                ballotBundles.map((bb: BallotBundle) => (
+                    <li id={`${bb.parliament_id}`}>
+                        <h3>{bb.session_item_title}</h3>
+                        <a href={`${PARLIAMENT_BASE_URL}${bb.minutes_url}`}>
                             Pöytäkirja
                         </a>{" "}
-                        |
-                        <a href={`${PARLIAMENT_BASE_URL}${bv.results_url}`}>
-                            Äänestystulos
-                        </a>
-                        <br />
-                        {bv.session_item_title}
-                        <br />
-                        Ääni:
-                        <span class:list={bv.vote}>{VOTE_MAP[bv.vote]}</span>
-                    </div>
+                        <ul>
+                            {bb.ballots.map((bv: BallotVote) => (
+                                <li id={`${bv.id}`}>
+                                    <strong>{bv.title}</strong> |
+                                    <a
+                                        href={`${PARLIAMENT_BASE_URL}${bv.results_url}`}
+                                    >
+                                        Äänestystulos
+                                    </a>
+                                    Ääni:
+                                    <span class:list={bv.vote}>
+                                        {VOTE_MAP[bv.vote]}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </li>
                 ))
             }
-        </div>
+        </ul>
     </section>
 </Layout>
 
@@ -132,5 +140,9 @@ const ballotBundles = ballotVotes.reduce<BallotBundle[]>((prev, current) => {
         border-radius: 4px;
         padding: 0.1rem 0.5rem;
         color: black;
+    }
+
+    ul > li {
+        list-style: none;
     }
 </style>
