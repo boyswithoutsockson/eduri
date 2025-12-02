@@ -194,6 +194,19 @@ const rootSpeeches = speeches.reduce<RootSpeech[]>((prev, current) => {
         font-weight: bold;
     }
 
+    :global(article + ol:has(li:target)) {
+        display: block;
+    }
+    :global(article + ol:has(li:target):not(.expanded) li:not(:target)) {
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        height: 1px;
+        overflow: hidden;
+        position: absolute;
+        white-space: nowrap;
+        width: 1px;
+    }
+
     :global(.E) {
         background-color: #fef3c7;
         color: #92400e;
