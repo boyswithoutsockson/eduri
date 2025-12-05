@@ -1,10 +1,13 @@
 ---
 // We inject markdown in multiple places in this file, it is safe trust me bro
 /* eslint-disable astro/no-set-html-directive */
+import type { NotNull } from "kysely";
+import { db } from "~src/database";
 import { marked } from "marked";
 import MpRoundPhotoList from "~src/components/MpRoundPhotoList.astro";
 import Layout from "~src/layouts/BaseLayout.astro";
 import { proposalData, urlencodeProposalId } from "~src/pages/esitykset/_utils";
+import { PARLIAMENT_BASE_URL } from "~src/utils";
 
 export async function getStaticPaths() {
     const data = await proposalData().execute();
@@ -15,10 +18,26 @@ export async function getStaticPaths() {
 }
 
 const { proposal } = Astro.props;
+
+const ballots = await db
+    .selectFrom("ballots")
+    .where("ballots.parliament_id", "=", proposal.id)
+    .select([
+        "ballots.id",
+        "ballots.title",
+        "ballots.session_item_title",
+        "ballots.minutes_url",
+        "ballots.results_url",
+    ])
+    .orderBy("ballots.start_time", "desc")
+    .execute();
+
+type Ballot = typeof ballots;
 ---
 
 <Layout>
-    <h1>{proposal.title}</h1>
+    <h1 id="top">{proposal.title}</h1>
+    <h2>{proposal.id}</h2>
     <article>
         <h2 id="contents">Sisältö</h2>
         <ul>
@@ -43,46 +62,71 @@ const { proposal } = Astro.props;
                     </li>
                 )
             }
+            {
+                ballots && (
+                    <li>
+                        <a href="#ballots">Äänestykset</a>
+                    </li>
+                )
+            }
         </ul>
     </article>
 
-    {
-        proposal.summary && (
-            <article>
+    <article>
+        {
+            proposal.summary && (
                 <>
                     <h2 id="summary">Yhteenveto</h2>
                     <Fragment set:html={marked(proposal.summary)} />
-                    <a href="#contents">Ylös</a>
+                    <a href="#top">Ylös</a>
                 </>
-            </article>
-        )
-    }
+            )
+        }
 
-    {
-        proposal.reasoning && (
-            <article>
+        {
+            proposal.reasoning && (
                 <>
                     <h2 id="reasoning">Perustelut</h2>
                     <Fragment set:html={marked(proposal.reasoning)} />
-                    <a href="#contents">Ylös</a>
+                    <a href="#top">Ylös</a>
                 </>
-            </article>
-        )
-    }
-    {
-        proposal.law_changes && (
-            <article>
+            )
+        }
+        {
+            proposal.law_changes && (
                 <>
                     <h2 id="lawchanges">Lakimuutokset</h2>
                     <Fragment set:html={marked(proposal.law_changes)} />
-                    <a href="#contents">Ylös</a>
+                    <a href="#top">Ylös</a>
                 </>
+            )
+        }
+
+        <h2>Allekirjoittaneet</h2>
+        <MpRoundPhotoList mps={proposal.signatures} />
+    </article>
+    {
+        ballots && (
+            <article>
+                <h2 id="ballots">Äänestykset</h2>
+                <ul>
+                    {ballots.map((b: Ballot) => (
+                        <li>
+                            {b.title}
+                            <a href={`${PARLIAMENT_BASE_URL}${b.minutes_url}`}>
+                                Pöytäkirja
+                            </a>{" "}
+                            |
+                            <a href={`${PARLIAMENT_BASE_URL}${b.results_url}`}>
+                                Äänestystulos
+                            </a>
+                        </li>
+                    ))}
+                </ul>
+                <a href="#top">Ylös</a>
             </article>
         )
     }
-
-    <h2>Allekirjoittaneet</h2>
-    <MpRoundPhotoList mps={proposal.signatures} />
 </Layout>
 
 <style>
