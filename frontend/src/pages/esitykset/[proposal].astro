@@ -19,30 +19,65 @@ const { proposal } = Astro.props;
 
 <Layout>
     <h1>{proposal.title}</h1>
+    <article>
+        <h2 id="contents">Sisältö</h2>
+        <ul>
+            {
+                proposal.summary && (
+                    <li>
+                        <a href="#summary">Yhteenveto</a>
+                    </li>
+                )
+            }
+            {
+                proposal.reasoning && (
+                    <li>
+                        <a href="#reasoning">Perustelut</a>
+                    </li>
+                )
+            }
+            {
+                proposal.law_changes && (
+                    <li>
+                        <a href="#lawchanges">Lakimuutokset</a>
+                    </li>
+                )
+            }
+        </ul>
+    </article>
 
     {
         proposal.summary && (
-            <>
-                <h2>Yhteenveto</h2>
-                <Fragment set:html={marked(proposal.summary)} />
-            </>
+            <article>
+                <>
+                    <h2 id="summary">Yhteenveto</h2>
+                    <Fragment set:html={marked(proposal.summary)} />
+                    <a href="#contents">Ylös</a>
+                </>
+            </article>
         )
     }
 
     {
         proposal.reasoning && (
-            <>
-                <h2>Perustelut</h2>
-                <Fragment set:html={marked(proposal.reasoning)} />
-            </>
+            <article>
+                <>
+                    <h2 id="reasoning">Perustelut</h2>
+                    <Fragment set:html={marked(proposal.reasoning)} />
+                    <a href="#contents">Ylös</a>
+                </>
+            </article>
         )
     }
     {
         proposal.law_changes && (
-            <>
-                <h2>Lakimuutokset</h2>
-                <Fragment set:html={marked(proposal.law_changes)} />
-            </>
+            <article>
+                <>
+                    <h2 id="lawchanges">Lakimuutokset</h2>
+                    <Fragment set:html={marked(proposal.law_changes)} />
+                    <a href="#contents">Ylös</a>
+                </>
+            </article>
         )
     }
 
