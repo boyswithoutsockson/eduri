@@ -4,12 +4,13 @@ import pandas as pd
 import psycopg2
 from lxml import etree
 from io import StringIO
-from XML_parsing_help_functions import id_parse, date_parse, Nimeke_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Saados_parse, status_parse, Allekirjoittaja_parse
+from XML_parsing_help_functions import id_parse, date_parse, Nimeke_parse, AsiaSisaltoKuvaus_parse, parse_reasoning_chapters, Saados_parse, status_parse, Allekirjoittaja_parse
 from db import get_connection
 
 # Paths
 gp_tsv_path = os.path.join("data", "raw", "vaski", "GovernmentProposal_fi.tsv")
 government_proposals_csv = os.path.join("data", "preprocessed", "government_proposals.csv")
+government_proposal_reasonings_csv = os.path.join("data", "preprocessed", "government_proposal_reasonings.csv")
 government_proposal_signatures_csv = os.path.join("data", "preprocessed", "government_proposal_signatures.csv")
 handling_tsv_path = os.path.join("data", "raw", "vaski", "KasittelytiedotValtiopaivaasia_fi.tsv")
 
@@ -51,7 +52,8 @@ def preprocess_data():
     handling_df = pd.read_csv(handling_tsv_path, sep="\t")
 
     gp_records = []            # government_proposals rows
-    sgn_records = []  
+    sgn_records = []
+    reasoning_chapters = []
 
     conn = get_connection()
     cur = conn.cursor()          
@@ -81,7 +83,7 @@ def preprocess_data():
         summary = AsiaSisaltoKuvaus_parse(proposal, NS)
 
         # REASONING
-        reasoning = Perustelu_parse(proposal, NS)
+        reasoning_chapters += parse_reasoning_chapters(proposal, NS, proposal_id=eid.lower())
 
         # LAW_CHANGES
         law_changes = Saados_parse(proposal, NS)
@@ -97,7 +99,6 @@ def preprocess_data():
                 "date": date,
                 "title": title,
                 "summary": summary,
-                "reasoning": reasoning,
                 "law_changes": law_changes,
                 "status": status
             })
@@ -111,6 +112,7 @@ def preprocess_data():
 
     pd.DataFrame(gp_records).to_csv(government_proposals_csv, index=False, encoding="utf-8")
     pd.DataFrame(sgn_records).to_csv(government_proposal_signatures_csv, index=False, encoding="utf-8")
+    pd.DataFrame(reasoning_chapters).to_csv(government_proposal_reasonings_csv, index=False, encoding="utf-8")
 
 
 def import_data():
@@ -120,7 +122,16 @@ def import_data():
     with open(government_proposals_csv, "r", encoding="utf-8") as f:
         cur.copy_expert(
             """
-            COPY proposals(id, ptype, date, title, summary, reasoning, law_changes, status)
+            COPY proposals(id, ptype, date, title, summary, law_changes, status)
+            FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
+            """,
+            f
+        )
+    
+    with open(government_proposal_reasonings_csv, "r", encoding="utf-8") as f:
+        cur.copy_expert(
+            """
+            COPY proposal_reasoning(proposal_id, title, position, content)
             FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
             """,
             f

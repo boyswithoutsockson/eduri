@@ -186,9 +186,15 @@ CREATE TABLE IF NOT EXISTS proposals (
     date DATE NOT NULL,
     title VARCHAR(1000),
     summary TEXT,
-    reasoning TEXT,
     law_changes TEXT,
     status proposal_status NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS proposal_reasoning (
+    proposal_id VARCHAR(20) REFERENCES proposals(id),
+    title TEXT,
+    content TEXT,
+    position INT
 );
 
 -- Proposal signatures (esitysten allekirjoitukset)

@@ -20,6 +20,13 @@ BEGIN
     JOIN persons ON persons.id = ps.person_id
     GROUP BY ps.proposal_id
   ),
+  pr_reasoning AS (
+    SELECT
+      pr.proposal_id,
+      string_agg(CONCAT(pr.title, ' ', pr.content), ' ') AS reasoning
+    FROM proposal_reasoning pr
+    GROUP BY pr.proposal_id
+  ),
   built AS (
     SELECT
       pr.id,
@@ -27,12 +34,13 @@ BEGIN
         'finnish',
         COALESCE(pr.title, '') || ' ' ||
         COALESCE(pr.summary, '') || ' ' ||
-        COALESCE(pr.reasoning, '') || ' ' ||
+        COALESCE(pr_r.reasoning, '') || ' ' ||
         COALESCE(pr.law_changes, '') || ' ' ||
         COALESCE(sa.signer_names, '')
       ) AS vect
     FROM proposals pr
-    LEFT JOIN signer_agg sa ON sa.proposal_id = pr.id
+    LEFT JOIN signer_agg sa ON (sa.proposal_id = pr.id)
+    LEFT JOIN pr_reasoning pr_r ON pr_r.proposal_id = pr.id
   )
   UPDATE proposals p
   SET search_vector = b.vect
@@ -76,6 +84,12 @@ BEGIN
   SELECT COUNT(*) INTO total FROM proposals p WHERE p.search_vector @@ q_ts;
 
   RETURN QUERY
+  WITH pr_reasoning as (
+    SELECT
+      pr.proposal_id,
+      string_agg(CONCAT(pr.title, ' ', pr.content), ' ') as reasoning
+    FROM proposal_reasoning pr
+    GROUP BY pr.proposal_id)
   SELECT
     p.id,
     p.ptype,
@@ -85,8 +99,8 @@ BEGIN
     CASE
       WHEN to_tsvector('finnish', COALESCE(p.summary, '')) @@ q_ts
         THEN ts_headline('finnish', p.summary, q_ts, hl_opts)
-      WHEN to_tsvector('finnish', COALESCE(p.reasoning, '')) @@ q_ts
-        THEN ts_headline('finnish', p.reasoning, q_ts, hl_opts)
+      WHEN to_tsvector('finnish', COALESCE(pr_r.reasoning, '')) @@ q_ts
+        THEN ts_headline('finnish', pr_r.reasoning, q_ts, hl_opts)
       WHEN to_tsvector('finnish', COALESCE(p.law_changes, '')) @@ q_ts
         THEN ts_headline('finnish', p.law_changes, q_ts, hl_opts)
       ELSE p.summary
@@ -96,6 +110,7 @@ BEGIN
     (ts_rank_cd(p.search_vector, q_ts))::double precision AS rank,
     total AS total_hits
   FROM proposals p
+  LEFT JOIN pr_reasoning pr_r ON pr_r.proposal_id = p.id
   WHERE p.search_vector @@ q_ts
   ORDER BY rank DESC, date DESC
   LIMIT limit_rows

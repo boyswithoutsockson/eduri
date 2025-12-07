@@ -36,7 +36,6 @@ const proposals = await db
     .where("proposal_signatures.first", "is", true)
     .select([
         "proposals.title",
-        "proposals.reasoning",
         "proposals.summary",
         "proposals.id",
         "proposal_signatures.first",

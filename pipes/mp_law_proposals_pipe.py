@@ -4,12 +4,13 @@ import pandas as pd
 import psycopg2
 from lxml import etree
 from io import StringIO
-from XML_parsing_help_functions import id_parse, date_parse, Nimeke_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Saados_parse, status_parse, Allekirjoittaja_parse
+from XML_parsing_help_functions import id_parse, date_parse, Nimeke_parse, AsiaSisaltoKuvaus_parse, parse_reasoning_chapters, Saados_parse, status_parse, Allekirjoittaja_parse
 from db import get_connection
 
 # Paths
 mp_proposal_tsv_path = os.path.join("data", "raw", "vaski", "LegislativeMotion_fi.tsv")
 mp_proposals_csv = os.path.join("data", "preprocessed", "mp_law_proposals.csv")
+law_proposal_reasonings_csv = os.path.join("data", "preprocessed", "law_proposal_reasonings.csv")
 mp_proposal_signatures_csv = os.path.join("data", "preprocessed", "mp_law_proposal_signatures.csv")
 handling_tsv_path = os.path.join("data", "raw", "vaski", "KasittelytiedotValtiopaivaasia_fi.tsv")
 
@@ -51,7 +52,8 @@ def preprocess_data():
     handling_df = pd.read_csv(handling_tsv_path, sep="\t")
 
     mpp_records = []        
-    sgn_records = []  
+    sgn_records = []
+    reasonings = []
 
     conn = get_connection()
     cur = conn.cursor()          
@@ -82,17 +84,20 @@ def preprocess_data():
             "date": date,
             "title": Nimeke_parse(proposal, NS),
             "summary": AsiaSisaltoKuvaus_parse(proposal, NS),
-            "reasoning": Perustelu_parse(proposal, NS),
             "law_changes": Saados_parse(proposal, NS),
             "status": status_parse(handling_root, handling_xml_str, NS)
             })
         
         sgn_records.extend(Allekirjoittaja_parse(proposal, NS, eid, cur))
-    
+        reasonings += parse_reasoning_chapters(proposal, NS, eid.lower())
+
+
     conn.commit()
     cur.close()
     conn.close()
 
+
+    pd.DataFrame(reasonings).to_csv(law_proposal_reasonings_csv, index=False, encoding="utf-8")
     pd.DataFrame(mpp_records).to_csv(mp_proposals_csv, index=False, encoding="utf-8")
     pd.DataFrame(sgn_records).drop_duplicates().to_csv(mp_proposal_signatures_csv, index=False, encoding="utf-8")
 
@@ -103,7 +108,16 @@ def import_data():
     with open(mp_proposals_csv, "r", encoding="utf-8") as f:
         cur.copy_expert(
             """
-            COPY proposals(id, ptype, date, title, summary, reasoning, law_changes, status)
+            COPY proposals(id, ptype, date, title, summary, law_changes, status)
+            FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
+            """,
+            f
+        )
+
+    with open(law_proposal_reasonings_csv, "r", encoding="utf-8") as f:
+        cur.copy_expert(
+            """
+            COPY proposal_reasoning(proposal_id, title, position, content)
             FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
             """,
             f

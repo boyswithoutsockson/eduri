@@ -16,7 +16,6 @@ export function proposalData() {
             "p.ptype as proposer",
             "p.status as status",
             "p.summary as summary",
-            "p.reasoning as reasoning",
             "p.law_changes as law_changes",
             "p.date as date",
             sql<Signature[]>`(
