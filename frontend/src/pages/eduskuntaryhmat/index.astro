@@ -1,0 +1,39 @@
+---
+import { db } from "~src/database";
+import BaseLayout from "~src/layouts/BaseLayout.astro";
+
+const active_pgs = await db
+    .selectFrom("parliamentary_groups as pg")
+    .leftJoin(
+        "mp_parliamentary_group_memberships as mpgm",
+        "pg.id",
+        "mpgm.pg_id"
+    )
+    .select(["name", "id"])
+    .where("end_date", "is", null)
+    .distinct()
+    .execute();
+---
+
+<BaseLayout>
+    <h1>Eduskuntaryhmät</h1>
+
+    <ol>
+        {
+            active_pgs.map((pg) => (
+                <li>
+                    <a href={`/eduskuntaryhmat/${pg.id}`}>{pg.name}</a>
+                </li>
+            ))
+        }
+    </ol>
+</BaseLayout>
+
+<style is:global>
+    ol {
+        padding-inline-start: unset;
+    }
+    li {
+        list-style: none;
+    }
+</style>
