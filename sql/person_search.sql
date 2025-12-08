@@ -60,7 +60,12 @@ CREATE INDEX IF NOT EXISTS persons_search_idx
   ON persons USING GIN (search_vector);
 
 -- convenience search function for persons
-CREATE OR REPLACE FUNCTION search_persons(q TEXT, limit_rows INT DEFAULT 50, offset_rows INT DEFAULT 0)
+CREATE OR REPLACE FUNCTION search_persons(
+  q TEXT,
+  limit_rows INT DEFAULT 50,
+  offset_rows INT DEFAULT 0,
+  party_id_filter VARCHAR DEFAULT NULL
+)
 RETURNS TABLE (
   id INT,
   first_name TEXT,
@@ -137,9 +142,10 @@ BEGIN
     FROM persons p
     LEFT JOIN latest_pg lp ON lp.person_id = p.id
     LEFT JOIN latest_minister lm ON lm.person_id = p.id
-    WHERE p.search_vector @@ q_ts
+    WHERE (p.search_vector @@ q_ts
       OR p.first_name ILIKE '%' || q || '%'
-      OR p.last_name ILIKE '%' || q || '%'
+      OR p.last_name ILIKE '%' || q || '%')
+      AND (party_id_filter IS NULL OR lp.pg_id = party_id_filter)
   )
   SELECT
     candidate_matches.id,
