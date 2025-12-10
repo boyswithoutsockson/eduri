@@ -4,12 +4,13 @@ import pandas as pd
 import psycopg2
 from lxml import etree
 from io import StringIO
-from XML_parsing_help_functions import id_parse, date_parse, Nimeke_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Saados_parse, Allekirjoittaja_parse
+from XML_parsing_help_functions import id_parse, date_parse, Nimeke_parse, AsiaSisaltoKuvaus_parse, parse_reasoning_chapters, Saados_parse, Allekirjoittaja_parse
 from db import get_connection
 
 # Paths
 mp_petition_tsv_path = os.path.join("data", "raw", "vaski", "PetitionaryMotion_fi.tsv")
 mp_petitions_csv = os.path.join("data", "preprocessed", "mp_petition_proposals.csv")
+mp_petition_proposal_reasonings_csv = os.path.join("data", "preprocessed", "mp_petition_proposal_reasonings.csv")
 mp_petition_signatures_csv = os.path.join("data", "preprocessed", "mp_petition_proposal_signatures.csv")
 handling_tsv_path = os.path.join("data", "raw", "vaski", "KasittelytiedotValtiopaivaasia_fi.tsv")
 
@@ -62,6 +63,7 @@ def preprocess_data():
 
     agenda_items = cur.fetchall()
     handled_petitions = [petition[0] for petition in agenda_items if petition[0].startswith("tpa")]
+    reasonings = []
 
     for mpp_xml_str in mpp_df.get("XmlData", []):
 
@@ -83,28 +85,28 @@ def preprocess_data():
             else:
                 raise Exception
 
-        handling_xml_str = handling_df.loc[handling_df['Eduskuntatunnus'] == eid].get("XmlData", "").tolist()[0] 
-        handling_root = etree.parse(StringIO(handling_xml_str)).getroot()
-
         mpp_records.append({
             "id": eid.lower(),
             "ptype": "mp_petition",
             "date": date,
             "title": Nimeke_parse(proposal, NS),
             "summary": AsiaSisaltoKuvaus_parse(proposal, NS),
-            "reasoning": Perustelu_parse(proposal, NS),
             "law_changes": Saados_parse(proposal, NS),
             "status": status
             })
         
         sgn_records.extend(Allekirjoittaja_parse(proposal, NS, eid, cur))
-    
+        reasonings += parse_reasoning_chapters(proposal, NS, eid.lower())
+
+
     conn.commit()
     cur.close()
     conn.close()  
 
     pd.DataFrame(mpp_records).to_csv(mp_petitions_csv, index=False, encoding="utf-8")
     pd.DataFrame(sgn_records).drop_duplicates().to_csv(mp_petition_signatures_csv, index=False, encoding="utf-8") 
+    pd.DataFrame(reasonings).to_csv(mp_petition_proposal_reasonings_csv, index=False, encoding="utf-8") 
+
 
 def import_data():
     conn = get_connection()
@@ -113,7 +115,16 @@ def import_data():
     with open(mp_petitions_csv, "r", encoding="utf-8") as f:
         cur.copy_expert(
             """
-            COPY proposals(id, ptype, date, title, summary, reasoning, law_changes, status)
+            COPY proposals(id, ptype, date, title, summary, law_changes, status)
+            FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
+            """,
+            f
+        )
+
+    with open(mp_petition_proposal_reasonings_csv, "r", encoding="utf-8") as f:
+        cur.copy_expert(
+            """
+            COPY proposal_reasoning(proposal_id, title, position, content)
             FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
             """,
             f

@@ -150,6 +150,41 @@ def Perustelu_parse(root, NS, not_child_of=""):
 
     return reasoning
 
+def parse_reasoning_chapters(root, NS, proposal_id, not_child_of=""):
+    if not_child_of:
+        filter = f"[not(ancestor::{not_child_of})]"
+    else:
+        filter = ""
+
+    reasoning_nodes = root.xpath(
+            f".//asi:PerusteluOsa{filter}//sis1:OtsikkoTeksti | "
+            f".//asi:PerusteluOsa{filter}//sis1:ValiotsikkoTeksti | "
+            f".//asi:PerusteluOsa{filter}//sis:KappaleKooste[not(ancestor::tau:table)] | "
+            f".//asi:PerusteluOsa{filter}//tau:table | "
+            f".//asi:PerusteluOsa{filter}//sis:SisennettyKappaleKooste[not(ancestor::tau:table)]",
+            namespaces=NS
+        )
+    pos = 0
+    output = []
+    reasoning = None
+    for node in reasoning_nodes:
+        if "OtsikkoTeksti" in node.tag:
+            if reasoning is not None:
+                if reasoning['title'] != "" and reasoning['content'] != "":
+                    output.append(reasoning)
+                    pos += 1
+            reasoning = {
+                'proposal_id': proposal_id,
+                'title': node.text,
+                'position': pos,
+                'content': ''
+            }
+        else:
+            reasoning['content'] += "\n\n" + _txt(node)
+    output.append(reasoning)
+
+    return output
+
 def date_parse(root, NS):
 
     metadata = root.find(".//jme:JulkaisuMetatieto", namespaces=NS)
