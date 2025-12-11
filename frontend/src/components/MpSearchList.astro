@@ -1,0 +1,57 @@
+---
+import MemberListItem from "~src/components/MemberListItem.astro";
+import Pagination from "~src/components/Pagination.astro";
+import SearchInput from "~src/components/SearchInput.astro";
+import { PAGE_LIMIT } from "~src/constants";
+import { db } from "~src/database";
+import type { MP } from "~src/pages/edustajat/_utils";
+
+export type MPSearch = MP & { total_hits?: number };
+
+interface Props {
+    data: MPSearch[];
+    pg_id: string | null;
+    page: number;
+}
+const { data, pg_id, page } = Astro.props;
+const total =
+    data[0]?.total_hits ??
+    (await db
+        .selectFrom("persons")
+        .leftJoin(
+            "mp_parliamentary_group_memberships",
+            "persons.id",
+            "mp_parliamentary_group_memberships.person_id"
+        )
+        .where("mp_parliamentary_group_memberships.end_date", "is", null)
+        .$if(pg_id !== null, (qb) =>
+            qb.where("mp_parliamentary_group_memberships.pg_id", "=", pg_id)
+        )
+        .select(db.fn.countAll().as("count"))
+        .executeTakeFirstOrThrow()
+        .then((res) => Number(res.count))) ??
+    0;
+---
+
+<SearchInput label="Hae kansanedustajia..." />
+<Pagination page={page} pageSize={PAGE_LIMIT} total={total}>
+    <ol>
+        {
+            data.map((mp) => (
+                <li>
+                    <MemberListItem mp={mp} />
+                    <hr />
+                </li>
+            ))
+        }
+    </ol>
+</Pagination>
+
+<style is:global>
+    ol {
+        padding-inline-start: unset;
+    }
+    li {
+        list-style: none;
+    }
+</style>
