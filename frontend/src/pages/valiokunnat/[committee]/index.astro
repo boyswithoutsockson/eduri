@@ -2,38 +2,42 @@
 import { committeeData } from "./_utils";
 import { db } from "~src/database";
 import BaseLayout from "~src/layouts/BaseLayout.astro";
-import MpRoundPhoto  from "~src/components/MpRoundPhoto.astro";
+import MpRoundPhoto from "~src/components/MpRoundPhoto.astro";
 
 export const getStaticPaths = committeeData;
 
 const { committee } = Astro.props;
 
-const committee_members = committee 
+const committee_members = committee
     ? await db
-        .selectFrom("mp_committee_memberships")
-        .where("mp_committee_memberships.committee_name", "=", committee.name)
-        .leftJoin("persons", "mp_committee_memberships.person_id", "persons.id")
-        .leftJoinLateral(
-        (eb) =>
-            eb
-                .selectFrom("mp_parliamentary_group_memberships as mppm")
-                .select(["mppm.pg_id", "mppm.end_date"])
-                .whereRef("mppm.person_id", "=", "persons.id")
-                .orderBy("mppm.end_date", (ob) => ob.desc().nullsLast())
-                .as("parliamentary_group"),
-        (join) => join.onTrue()
-    )
-        .select([
-            "persons.first_name",
-            "persons.last_name",
-            "persons.photo",
-            "parliamentary_group.pg_id",
-            "mp_committee_memberships.start_date",
-            "mp_committee_memberships.end_date",
-            "mp_committee_memberships.role",
-        ])
-        .limit(5)
-        .execute()
+          .selectFrom("mp_committee_memberships")
+          .where("mp_committee_memberships.committee_name", "=", committee.name)
+          .leftJoin(
+              "persons",
+              "mp_committee_memberships.person_id",
+              "persons.id"
+          )
+          .leftJoinLateral(
+              (eb) =>
+                  eb
+                      .selectFrom("mp_parliamentary_group_memberships as mppm")
+                      .select(["mppm.pg_id", "mppm.end_date"])
+                      .whereRef("mppm.person_id", "=", "persons.id")
+                      .orderBy("mppm.end_date", (ob) => ob.desc().nullsLast())
+                      .as("parliamentary_group"),
+              (join) => join.onTrue()
+          )
+          .select([
+              "persons.first_name",
+              "persons.last_name",
+              "persons.photo",
+              "parliamentary_group.pg_id",
+              "mp_committee_memberships.start_date",
+              "mp_committee_memberships.end_date",
+              "mp_committee_memberships.role",
+          ])
+          .limit(5)
+          .execute()
     : [];
 ---
 
@@ -44,22 +48,18 @@ const committee_members = committee
         <section>
             <h2>Jäsenet</h2>
             <div class="boardContainer">
-                <div class = "boardGroup">
-
-                    <div class="boardTable"></div>
-                    {
-                        committee_members.map((member) => (
-                            <MpRoundPhoto
-                                mp={{
-                                    first_name: member.first_name,
-                                    last_name: member.last_name,
-                                    photo: member.photo,
-                                    party_id: member.pg_id,
-                                }}
-                            />
-                        ))
-                    }
-                </div>
+                {
+                    committee_members.map((member) => (
+                        <MpRoundPhoto
+                            mp={{
+                                first_name: member.first_name,
+                                last_name: member.last_name,
+                                photo: member.photo,
+                                party_id: member.pg_id,
+                            }}
+                        />
+                    ))
+                }
             </div>
         </section>
     </section>
@@ -68,20 +68,7 @@ const committee_members = committee
 <style>
     .boardContainer {
         display: flex;
-        justify-content: center;
-
-    }
-
-    .boardGroup {
-        width: max-content;
-    }
-
-    .boardTable {
-        width: 100px;
-        height: 200px;
-        border: 2px solid gray;
-        border-radius: 10px;
-        padding: 10px;
-        margin: 10px;
+        justify-content: space-between;
+        flex-wrap: wrap;
     }
 </style>
