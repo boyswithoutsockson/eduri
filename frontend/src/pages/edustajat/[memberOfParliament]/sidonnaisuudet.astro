@@ -1,0 +1,42 @@
+---
+import { db } from "~src/database";
+import { groupBy } from "~src/utils";
+import Layout from "~src/pages/edustajat/[memberOfParliament]/_layout.astro";
+import { getMpStaticPaths } from "~src/pages/edustajat/[memberOfParliament]/_utils";
+
+export const getStaticPaths = getMpStaticPaths;
+
+const { mp } = Astro.props;
+
+const interests = mp
+    ? await db
+          .selectFrom("interests")
+          .where("interests.person_id", "=", mp.id)
+          .where("interests.category", "not in", [
+              "Hallinto- ja luottamustehtävät yksityisissä yrityksissä, yhteisöissä sekä julkisyhteisöissä",
+              "Valtion, kunnan ja muiden julkisyhteisöjen virat",
+          ])
+          .select(["interests.category", "interests.interest"])
+          .execute()
+    : [];
+
+const groupedInterests = groupBy(interests, (i) => i.category ?? "");
+---
+
+<Layout mp={mp}>
+    <section>
+        <h2>Sidonnaisuudet</h2>
+        {
+            Object.entries(groupedInterests).map(([group, interests]) => (
+                <section>
+                    <strong>{group}</strong>
+                    <ul>
+                        {interests.map((int) => (
+                            <li>{int.interest}</li>
+                        ))}
+                    </ul>
+                </section>
+            ))
+        }
+    </section>
+</Layout>
