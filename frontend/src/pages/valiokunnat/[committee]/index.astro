@@ -50,14 +50,17 @@ const committee_members = committee
             <div class="boardContainer">
                 {
                     committee_members.map((member) => (
-                        <MpRoundPhoto
-                            mp={{
-                                first_name: member.first_name,
-                                last_name: member.last_name,
-                                photo: member.photo,
-                                party_id: member.pg_id,
-                            }}
-                        />
+                        <div>
+                            <h4>{member.role}</h4>
+                            <MpRoundPhoto
+                                mp={{
+                                    first_name: member.first_name,
+                                    last_name: member.last_name,
+                                    photo: member.photo,
+                                    party_id: member.pg_id,
+                                }}
+                            />
+                        </div>
                     ))
                 }
             </div>
