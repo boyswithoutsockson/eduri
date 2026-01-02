@@ -40,5 +40,33 @@ export async function getMPsMasterObjectList() {
             "mp_committee_memberships.role",
         ])
         .execute();
-    return data;
+
+    // Group rows by person and build a `committees` object:
+    const grouped = new Map<number, any>();
+    for (const row of data) {
+        const id = row.id;
+        if (!grouped.has(id)) {
+            // copy person fields (exclude committee-specific fields)
+            const { committee_name, start_date, end_date, role, ...person } =
+                row;
+            grouped.set(id, {
+                ...person,
+                committees: {}, // will become { [committeeName]: Array<{ start_date, end_date, role }> }
+            });
+        }
+
+        const personEntry = grouped.get(id);
+        const cname = row.committee_name;
+        if (cname) {
+            if (!personEntry.committees[cname])
+                personEntry.committees[cname] = [];
+            personEntry.committees[cname].push({
+                start_date: row.start_date,
+                end_date: row.end_date,
+                role: row.role,
+            });
+        }
+    }
+
+    return Array.from(grouped.values());
 }
