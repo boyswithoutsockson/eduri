@@ -174,7 +174,7 @@ END $$;
 
 -- data type for different statuses of proposals
 DO $$ BEGIN  
-    CREATE TYPE proposal_status AS ENUM ('open', 'handled', 'expired', 'cancelled', 'rejected', 'resting', 'passed', 'passed_changed', 'passed_urgent');
+    CREATE TYPE handling_status AS ENUM ('open', 'handled', 'expired', 'cancelled', 'rejected', 'resting', 'passed', 'passed_changed', 'passed_urgent');
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;
@@ -188,7 +188,7 @@ CREATE TABLE IF NOT EXISTS proposals (
     summary TEXT,
     reasoning TEXT,
     law_changes TEXT,
-    status proposal_status NOT NULL
+    status handling_status NOT NULL
 );
 
 -- Proposal signatures (esitysten allekirjoitukset)
