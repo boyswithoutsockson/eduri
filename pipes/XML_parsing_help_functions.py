@@ -154,7 +154,16 @@ def Perustelu_parse(root, NS, not_child_of=""):
         f".//asi:PerusteluOsa{filter}//sis:SisennettyKappaleKooste[not(ancestor::tau:table)]",
         namespaces=NS,
     )
-    reasoning = "\n\n".join([_txt(n) for n in reasoning_nodes])
+    reasoning = "\n\n".join(
+        [
+            ("## " + _txt(n))
+            if ("OtsikkoTeksti" in n.tag)
+            else ("### " + _txt(n))
+            if ("ValiotsikkoTeksti" in n.tag)
+            else _txt(n)
+            for n in reasoning_nodes
+        ]
+    )
 
     return reasoning
 
