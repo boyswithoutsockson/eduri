@@ -1,0 +1,695 @@
+---
+import type { MP } from "~src/pages/edustajat/_utils";
+
+// MPStats.astro
+interface Props {
+    mp: MP;
+    stats: {
+        attendance: {
+            total: number;
+            present: number;
+            attendanceRate: number | null;
+        };
+        contra: { contra_vote_score: number | null };
+        breakdown: {
+            yes: number;
+            no: number;
+            abstain: number;
+            absent: number;
+            total: number;
+        };
+        monthlyTrend: Array<{
+            month: string;
+            present_count: number;
+            total_count: number;
+            present_rate: number | null;
+        }>;
+        ministers: {
+            total_days: number;
+            timeline: Array<{
+                position: string;
+                cabinet: string;
+                start_date: Date;
+                end_date: Date;
+            }>;
+        };
+    };
+}
+
+const { stats } = Astro.props;
+
+const attendanceRatePct =
+    stats.attendance?.attendanceRate == null
+        ? null
+        : Math.round(stats.attendance.attendanceRate * 100);
+
+const passRatePct =
+    stats.proposals?.pass_rate == null
+        ? null
+        : Math.round(stats.proposals.pass_rate * 100);
+---
+
+<article aria-labelledby="mp-name" class="article">
+    <main>
+        <section aria-label="Primary statistics" class="grid">
+            <!-- Attendance card -->
+            <div aria-labelledby="attendance-title" class="card" role="region">
+                <h3 id="attendance-title">Attendance</h3>
+                <div class="kv" title="Present / Total">
+                    <div>
+                        <div class="value">
+                            {stats.attendance?.present ?? 0}
+                        </div>
+                        <div class="small">Present</div>
+                    </div>
+                    <div>
+                        <div class="value">{stats.attendance?.total ?? 0}</div>
+                        <div class="small">Total votes</div>
+                    </div>
+                    <div style="margin-left:auto; text-align:right;">
+                        <div class="value">
+                            {
+                                attendanceRatePct === null
+                                    ? "—"
+                                    : `${attendanceRatePct}%`
+                            }
+                        </div>
+                        <div class="small">Attendance rate</div>
+                    </div>
+                </div>
+
+                <div
+                    aria-hidden="true"
+                    class="progress"
+                    style="margin-top:10px;"
+                >
+                    <i
+                        id="attendance-bar"
+                        style={`width:${attendanceRatePct === null ? 0 : attendanceRatePct}%`}
+                    >
+                    </i>
+                </div>
+            </div>
+
+            <!-- Maverick / Contra score -->
+            <div aria-labelledby="contra-title" class="card" role="region">
+                <h3 id="contra-title">Independence (Contra score)</h3>
+                <div class="kv">
+                    <div>
+                        <div class="value">
+                            {
+                                stats.contra?.contra_vote_score == null
+                                    ? "—"
+                                    : stats.contra.contra_vote_score.toFixed(3)
+                            }
+                        </div>
+                        <div class="small">Contra vote score (0–1)</div>
+                    </div>
+                    <div style="margin-left:auto; width:45%;">
+                        <div aria-hidden="true" class="meter">
+                            <i
+                                id="contra-bar"
+                                style={`width:${(stats.contra?.contra_vote_score ?? 0) * 100}%`}
+                            >
+                            </i>
+                        </div>
+                        <div
+                            class="small"
+                            style="text-align:right; margin-top:6px;"
+                        >
+                            Higher = more often against group
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vote breakdown -->
+            <div aria-labelledby="breakdown-title" class="card" role="region">
+                <h3 id="breakdown-title">Vote breakdown</h3>
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <div style="flex:1">
+                        <div class="breakdown-row">
+                            <div style="width:72px; font-weight:600;">Yes</div>
+                            <div
+                                class="bar"
+                                data-value={(stats.breakdown?.yes ?? 0) /
+                                    Math.max(1, stats.breakdown?.total ?? 1)}
+                            >
+                                <i
+                                    style={`width:${Math.round(((stats.breakdown?.yes ?? 0) / Math.max(1, stats.breakdown?.total ?? 1)) * 100)}% ; background: linear-gradient(90deg,#10b981,#059669)`}
+                                >
+                                </i>
+                            </div>
+                            <div class="bar-label label muted">
+                                {stats.breakdown?.yes ?? 0}
+                            </div>
+                        </div>
+
+                        <div class="breakdown-row">
+                            <div style="width:72px; font-weight:600;">No</div>
+                            <div
+                                class="bar"
+                                data-value={(stats.breakdown?.no ?? 0) /
+                                    Math.max(1, stats.breakdown?.total ?? 1)}
+                            >
+                                <i
+                                    style={`width:${Math.round(((stats.breakdown?.no ?? 0) / Math.max(1, stats.breakdown?.total ?? 1)) * 100)}% ; background: linear-gradient(90deg,#ef4444,#dc2626)`}
+                                >
+                                </i>
+                            </div>
+                            <div class="bar-label label muted">
+                                {stats.breakdown?.no ?? 0}
+                            </div>
+                        </div>
+
+                        <div class="breakdown-row">
+                            <div style="width:72px; font-weight:600;">
+                                Abstain
+                            </div>
+                            <div
+                                class="bar"
+                                data-value={(stats.breakdown?.abstain ?? 0) /
+                                    Math.max(1, stats.breakdown?.total ?? 1)}
+                            >
+                                <i
+                                    style={`width:${Math.round(((stats.breakdown?.abstain ?? 0) / Math.max(1, stats.breakdown?.total ?? 1)) * 100)}% ; background: linear-gradient(90deg,#f59e0b,#d97706)`}
+                                >
+                                </i>
+                            </div>
+                            <div class="bar-label label muted">
+                                {stats.breakdown?.abstain ?? 0}
+                            </div>
+                        </div>
+
+                        <div class="breakdown-row">
+                            <div style="width:72px; font-weight:600;">
+                                Absent
+                            </div>
+                            <div
+                                class="bar"
+                                data-value={(stats.breakdown?.absent ?? 0) /
+                                    Math.max(1, stats.breakdown?.total ?? 1)}
+                            >
+                                <i
+                                    style={`width:${Math.round(((stats.breakdown?.absent ?? 0) / Math.max(1, stats.breakdown?.total ?? 1)) * 100)}% ; background: linear-gradient(90deg,#9ca3af,#6b7280)`}
+                                >
+                                </i>
+                            </div>
+                            <div class="bar-label label muted">
+                                {stats.breakdown?.absent ?? 0}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        style="width:120px; text-align:center; border-left:1px dashed rgba(0,0,0,0.06); padding-left:12px;"
+                    >
+                        <div style="font-weight:700; font-size:1.05rem;">
+                            {stats.breakdown?.total ?? 0}
+                        </div>
+                        <div class="small">Total votes</div>
+                        <div style="height:10px;"></div>
+                        <div class="small">Visual shows relative share</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monthly attendance sparkline -->
+            <div aria-labelledby="trend-title" class="card" role="region">
+                <h3 id="trend-title">Monthly attendance trend</h3>
+                <div>
+                    <svg
+                        aria-label="Attendance sparkline"
+                        data-values={JSON.stringify(
+                            stats.monthlyTrend?.map(
+                                (r) => r.present_rate ?? 0
+                            ) ?? []
+                        )}
+                        height="36"
+                        id="attendance-sparkline"
+                        role="img"
+                        style="display:block; margin-top:6px;"
+                        viewBox="0 0 120 36"
+                        width="100%"
+                    >
+                    </svg>
+                    <p class="small" style="margin-top:8px;">
+                        Each point = % of ballots the MP was present that month
+                    </p>
+                </div>
+            </div>
+
+            <!-- Ministerial career -->
+            <div aria-labelledby="min-title" class="card" role="region">
+                <h3 id="min-title">Ministerial career</h3>
+                <div class="kv">
+                    <div>
+                        <div class="value">
+                            {stats.ministers?.total_days ?? 0}
+                        </div>
+                        <div class="small">Total minister days</div>
+                    </div>
+                </div>
+
+                <div
+                    aria-hidden={!stats.ministers?.timeline?.length}
+                    class="timeline"
+                    style="margin-top:8px;"
+                >
+                    {
+                        stats.ministers?.timeline?.length ? (
+                            stats.ministers.timeline.map((item) => (
+                                <div
+                                    class="item"
+                                    title={`${item.position} — ${item.cabinet}`}
+                                >
+                                    <div style="flex:1;">
+                                        <div style="font-weight:600;">
+                                            {item.position}
+                                        </div>
+                                        <div class="small">{item.cabinet}</div>
+                                    </div>
+                                    <div style="text-align:right; min-width:90px;">
+                                        <div class="small">
+                                            {item.start_date.toLocaleDateString(
+                                                "fi"
+                                            )}
+                                            {item.end_date
+                                                ? ` — ${item.end_date.toLocaleDateString("fi")}`
+                                                : " — present"}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div class="small">No ministerial records</div>
+                        )
+                    }
+                </div>
+            </div>
+
+            <!-- Proposals authored -->
+            <div aria-labelledby="prop-title" class="card" role="region">
+                <h3 id="prop-title">Legislative activity</h3>
+                <div class="kv">
+                    <div>
+                        <div class="value">
+                            {stats.proposals?.authored ?? 0}
+                        </div>
+                        <div class="small">Proposals authored</div>
+                    </div>
+                    <div style="margin-left:auto; text-align:right;">
+                        <div class="value">{stats.proposals?.passed ?? 0}</div>
+                        <div class="small">Passed</div>
+                    </div>
+                </div>
+
+                <div style="margin-top:10px;">
+                    <div class="small">Success rate</div>
+                    <div aria-hidden="true" class="progress">
+                        <i
+                            id="pass-bar"
+                            style={`width:${passRatePct === null ? 0 : passRatePct}% ; background: linear-gradient(90deg,#06b6d4,#0891b2)`}
+                        >
+                        </i>
+                    </div>
+                    <div
+                        class="small"
+                        style="text-align:right; margin-top:6px;"
+                    >
+                        {passRatePct === null ? "—" : `${passRatePct}%`}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top committees & lobby -->
+            <div aria-labelledby="comm-title" class="card" role="region">
+                <h3 id="comm-title">Top committees (speeches)</h3>
+                <ul aria-live="polite" class="dense-list">
+                    {
+                        (stats.top_committees ?? []).length ? (
+                            stats.top_committees.map((c) => (
+                                <li>
+                                    <>
+                                        <span>{c.committee}</span>
+                                        <strong class="small">
+                                            {c.speech_count}
+                                        </strong>
+                                    </>
+                                </li>
+                            ))
+                        ) : (
+                            <li class="small">No committee speech data</li>
+                        )
+                    }
+                </ul>
+            </div>
+
+            <div aria-labelledby="lobby-title" class="card" role="region">
+                <h3 id="lobby-title">Lobby contacts</h3>
+                <div class="kv">
+                    <div>
+                        <div class="value">
+                            {stats.lobby?.total_contacts ?? 0}
+                        </div>
+                        <div class="small">Recorded contacts</div>
+                    </div>
+                    <div style="margin-left:auto;">
+                        <div class="small">Top lobbies</div>
+                        <div style="margin-top:6px;">
+                            <ul class="dense-list">
+                                {
+                                    (stats.lobby?.top_lobbies ?? []).length ? (
+                                        stats.lobby.top_lobbies.map((l) => (
+                                            <li>
+                                                {l.lobby_id}
+                                                <span class="small">
+                                                    {l.contacts}
+                                                </span>
+                                            </li>
+                                        ))
+                                    ) : (
+                                        <li class="small">No lobby contacts</li>
+                                    )
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer style="margin-top:14px;">
+            <p class="note">
+                Data snapshot. Numbers come from the local database tables
+                (votes, ballots, ministers, proposals, speeches, lobby_actions).
+            </p>
+        </footer>
+    </main>
+</article>
+
+<style>
+    :root {
+        --card-gap: 12px;
+        --card-radius: 10px;
+        --muted: #666;
+        --accent: #0b6ef6;
+        --bg: #fff;
+        --card-bg: #f8fafc;
+        --text: #111;
+        --success: #16a34a;
+        --danger: #dc2626;
+        --neutral: #9ca3af;
+    }
+    .article {
+        font-family:
+            system-ui,
+            -apple-system,
+            "Segoe UI",
+            Roboto,
+            "Helvetica Neue",
+            Arial;
+        color: var(--text);
+        padding: 18px;
+        max-width: 980px;
+        margin: 0 auto;
+    }
+    .header {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 18px;
+    }
+    .avatar {
+        width: 84px;
+        height: 84px;
+        border-radius: 8px;
+        object-fit: cover;
+        background: linear-gradient(135deg, #eef2ff, #f0f9ff);
+        display: inline-block;
+        flex: 0 0 84px;
+    }
+    .title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin: 0;
+    }
+    .subtitle {
+        color: var(--muted);
+        font-size: 0.92rem;
+        margin-top: 4px;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--card-gap);
+        margin-top: 12px;
+    }
+    @media (max-width: 720px) {
+        .grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .card {
+        background: var(--card-bg);
+        border-radius: var(--card-radius);
+        padding: 12px;
+        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+        min-height: 72px;
+    }
+    .card h3 {
+        margin: 0 0 8px 0;
+        font-size: 0.95rem;
+    }
+    .kv {
+        display: flex;
+        gap: 12px;
+        align-items: baseline;
+    }
+    .kv .value {
+        font-weight: 700;
+        font-size: 1.15rem;
+    }
+    .kv .muted {
+        color: var(--muted);
+        font-size: 0.9rem;
+    }
+
+    .progress {
+        width: 100%;
+        height: 10px;
+        background: linear-gradient(90deg, #eef2ff, #f3f4f6);
+        border-radius: 999px;
+        overflow: hidden;
+        margin-top: 8px;
+    }
+    .progress > i {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), #0583d8);
+        width: 0%;
+        transition: width 0.5s ease;
+    }
+
+    /* small bars for vote breakdown */
+    .breakdown-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+    .bar {
+        height: 10px;
+        background: #e6eefc;
+        border-radius: 999px;
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+    }
+    .bar > i {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 0;
+    }
+    .bar .label {
+        width: 62px;
+        margin-left: 8px;
+        font-size: 0.86rem;
+        color: var(--muted);
+        text-align: right;
+    }
+
+    /* simple timeline */
+    .timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 0.92rem;
+    }
+    .timeline .item {
+        background: #fff;
+        padding: 8px;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: center;
+        font-size: 0.9rem;
+    }
+    .small {
+        font-size: 0.85rem;
+        color: var(--muted);
+    }
+
+    /* lists */
+    .dense-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .dense-list li {
+        background: #fff;
+        padding: 8px;
+        border-radius: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* meter visual for contra score */
+    .meter {
+        width: 100%;
+        height: 12px;
+        background: #eef2f0;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+    .meter > i {
+        display: block;
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #f97316, #ef4444);
+        transition: width 0.45s ease;
+    }
+
+    /* footer tiny note */
+    .note {
+        font-size: 0.82rem;
+        color: var(--muted);
+        margin-top: 8px;
+    }
+</style>
+
+<script is:inline type="module">
+    /*
+  Tiny client script to render the sparkline.
+  It runs in the browser and expects an SVG with id "attendance-sparkline" and JSON array in data-values.
+  This is intentionally small and dependency-free.
+*/
+    function drawSparkline(svgEl, values) {
+        if (!svgEl || !values || values.length === 0) return;
+        // clamp values 0..1
+        const vals = values.map((v) =>
+            v == null || isNaN(v) ? 0 : Math.max(0, Math.min(1, v))
+        );
+        const W = 120,
+            H = 36; // viewBox units - matches svg viewBox above
+        const pad = 4;
+        const n = vals.length;
+        const step = n === 1 ? 0 : (W - pad * 2) / (n - 1);
+        const points = vals.map((v, i) => {
+            const x = pad + i * step;
+            const y = pad + (1 - v) * (H - pad * 2);
+            return [x, y];
+        });
+
+        // build path
+        let d = "";
+        points.forEach((p, i) => {
+            d += i === 0 ? `M ${p[0]} ${p[1]}` : ` L ${p[0]} ${p[1]}`;
+        });
+
+        // clear old
+        svgEl.innerHTML = "";
+        // grid (subtle)
+        const ns = "http://www.w3.org/2000/svg";
+        const gGrid = document.createElementNS(ns, "g");
+        gGrid.setAttribute("opacity", "0.06");
+        for (let i = 0; i < 4; i++) {
+            const ly = pad + i * ((H - pad * 2) / 3);
+            const line = document.createElementNS(ns, "line");
+            line.setAttribute("x1", "0");
+            line.setAttribute("x2", String(W));
+            line.setAttribute("y1", String(ly));
+            line.setAttribute("y2", String(ly));
+            line.setAttribute("stroke", "#000");
+            line.setAttribute("stroke-width", "0.5");
+            gGrid.appendChild(line);
+        }
+        svgEl.appendChild(gGrid);
+
+        // area fill
+        const area = document.createElementNS(ns, "path");
+        const last = points[points.length - 1];
+        const first = points[0];
+        const areaD = d + ` L ${last[0]} ${H - pad} L ${first[0]} ${H - pad} Z`;
+        area.setAttribute("d", areaD);
+        area.setAttribute("fill", "rgba(11,110,246,0.12)");
+        area.setAttribute("stroke", "none");
+        svgEl.appendChild(area);
+
+        // stroke path
+        const path = document.createElementNS(ns, "path");
+        path.setAttribute("d", d);
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", "#0b6ef6");
+        path.setAttribute("stroke-width", "1.6");
+        path.setAttribute("stroke-linecap", "round");
+        path.setAttribute("stroke-linejoin", "round");
+        svgEl.appendChild(path);
+
+        // points
+        points.forEach((p) => {
+            const c = document.createElementNS(ns, "circle");
+            c.setAttribute("cx", String(p[0]));
+            c.setAttribute("cy", String(p[1]));
+            c.setAttribute("r", "1.4");
+            c.setAttribute("fill", "#0b6ef6");
+            svgEl.appendChild(c);
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        try {
+            const svg = document.getElementById("attendance-sparkline");
+            if (svg) {
+                const raw = svg.getAttribute("data-values") || "[]";
+                const vals = JSON.parse(raw);
+                drawSparkline(svg, vals);
+            }
+            // animate bars (simple CSS width is already set inline but ensure JS sets final widths)
+            const attendanceBar = document.getElementById("attendance-bar");
+            const contraBar = document.getElementById("contra-bar");
+            const passBar = document.getElementById("pass-bar");
+            [attendanceBar, contraBar, passBar].forEach((el) => {
+                if (!el) return;
+                // keep current inline width, reapply to trigger transition if needed
+                const w = el.style.width || "0%";
+                el.style.width = "0%";
+                requestAnimationFrame(() => {
+                    el.style.width = w;
+                });
+            });
+        } catch (e) {
+            // silent fail — UI still usable
+            console.warn(e);
+        }
+    });
+</script>

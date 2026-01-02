@@ -1,55 +1,50 @@
 ---
-import type { NotNull } from "kysely";
-
+import MPStats from "~src/components/MPStats.astro";
 import { db } from "~src/database";
-import { PARLIAMENT_BASE_URL, VOTE_MAP } from "~src/utils";
 import Layout from "~src/pages/edustajat/[memberOfParliament]/_layout.astro";
-import { getMpStaticPaths } from "~src/pages/edustajat/[memberOfParliament]/_utils";
+import {
+    getAttendance,
+    getContraVoteScore,
+    getMinisterialCareer,
+    getMonthlyAttendanceTrend,
+    getMpStaticPaths,
+    getProposalsAuthoredAndPassRate,
+    getVoteBreakdown,
+} from "~src/pages/edustajat/[memberOfParliament]/_utils";
 
 export const getStaticPaths = getMpStaticPaths;
 
 const { mp } = Astro.props;
 
-const ballotVotes = mp
-    ? await db
-          .selectFrom("votes")
-          .where("votes.person_id", "=", mp.id)
-          .where("votes.vote", "is not", null)
-          .leftJoin("ballots", "votes.ballot_id", "ballots.id")
-          .select([
-              "ballots.id",
-              "ballots.title",
-              "ballots.session_item_title",
-              "votes.vote",
-              "ballots.minutes_url",
-              "ballots.results_url",
-          ])
-          .orderBy("ballots.start_time", "desc")
-          .$narrowType<{ vote: NotNull }>()
-          .execute()
-    : [];
+const seasons = await db.selectFrom("election_seasons").selectAll().execute();
+
+/**
+ * - filtteri per vaalikausi
+ *
+ * - läsnäolo
+ *  - onko hyvä syy
+ * - aloitteet
+ *  - määrä
+ *  - ministereille överi? filtteröi pois gov prop
+ *  - läpimeno%
+ * - puheenvuorot
+ * - lobbaukset
+ *
+ */
+
+const stats = {
+    attendance: await getAttendance(mp.id),
+    contra: await getContraVoteScore(mp.id),
+    breakdown: await getVoteBreakdown(mp.id),
+    monthlyTrend: await getMonthlyAttendanceTrend(mp.id),
+    ministers: await getMinisterialCareer(mp.id),
+    proposals: await getProposalsAuthoredAndPassRate(mp.id),
+};
 ---
 
 <Layout mp={mp}>
     <section>
-        <h2>Äänestykset</h2>
-        {
-            ballotVotes.map((bv) => (
-                <p>
-                    <strong>{bv.title}</strong> |
-                    <a href={`${PARLIAMENT_BASE_URL}${bv.minutes_url}`}>
-                        Pöytäkirja
-                    </a>{" "}
-                    |
-                    <a href={`${PARLIAMENT_BASE_URL}${bv.results_url}`}>
-                        Äänestystulos
-                    </a>
-                    <br />
-                    {bv.session_item_title}
-                    <br />
-                    Ääni: <strong>{VOTE_MAP[bv.vote]}</strong>
-                </p>
-            ))
-        }
+        <h2>Yleistä</h2>
+        <MPStats stats={stats} />
     </section>
 </Layout>
