@@ -18,19 +18,22 @@ const subpages = [
     { name: "Jäsenyydet", path: `/${currentPathBase}/jasenyydet` },
     { name: "Aloitteet", path: `/${currentPathBase}/aloitteet` },
     { name: "Vaalilupaukset", path: `/${currentPathBase}/vaalilupaukset` },
+    { name: "Sidonnaisuudet", path: `/${currentPathBase}/sidonnaisuudet` },
 ];
 ---
 
 <BaseLayout>
     <section>
         <ProfilePhoto mp={mp} />
-        <p>
+        <div>
             <h1>{mp?.first_name} {mp?.last_name}</h1>
-            {mp?.email}<br />
-            {mp?.party_id}<br />
-            {mp?.occupation}<br />
-            {mp?.place_of_residence}<br />
-        </p>
+            <p>
+                {mp?.email}<br />
+                {mp?.party_id}<br />
+                {mp?.occupation}<br />
+                {mp?.place_of_residence}<br />
+            </p>
+        </div>
     </section>
 
     <nav>
@@ -57,6 +60,12 @@ const subpages = [
 
 <style>
     .active {
-        color: red;
+        font-weight: bold;
+    }
+    section {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 1rem;
     }
 </style>
