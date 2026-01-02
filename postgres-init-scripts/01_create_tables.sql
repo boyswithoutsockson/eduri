@@ -174,7 +174,7 @@ END $$;
 
 -- data type for different statuses of proposals
 DO $$ BEGIN  
-    CREATE TYPE handling_status AS ENUM ('open', 'handled', 'expired', 'cancelled', 'rejected', 'resting', 'passed', 'passed_changed', 'passed_urgent');
+    CREATE TYPE handling_status AS ENUM ('open', 'handled', 'expired', 'cancelled', 'rejected', 'resting', 'passed', 'passed_changed', 'passed_urgent', 'replied', 'dealt');
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;
@@ -245,6 +245,25 @@ CREATE TABLE IF NOT EXISTS objection_signatures (
     objection_id SERIAL REFERENCES objections(id),
     person_id INT REFERENCES persons(id),
     PRIMARY KEY(objection_id, person_id)
+);
+
+-- Interpellations (välikysymykset)
+-- Inquiry meant to question the confidence in government
+CREATE TABLE IF NOT EXISTS interpellations (
+    id VARCHAR(20) PRIMARY KEY NOT NULL,
+    date DATE NOT NULL,
+    title VARCHAR(1000) NOT NULL,
+    reasoning TEXT,
+    motion TEXT,
+    status handling_status
+);
+
+-- Interpellation signatures (välikysymysten allekirjoitukset)
+CREATE TABLE IF NOT EXISTS interpellation_signatures (
+    interpellation_id VARCHAR(20) NOT NULL REFERENCES interpellations(id),
+    person_id INT REFERENCES persons(id),
+    first BOOLEAN,
+    PRIMARY KEY(interpellation_id, person_id)
 );
 
 -- Election seasons

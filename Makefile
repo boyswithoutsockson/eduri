@@ -33,6 +33,7 @@ PIPES := \
 	absences  \
 	election_budgets \
 	election_fundings \
+	interpellations \
 	promises
 
 
@@ -207,6 +208,7 @@ $(DB)/interests: $(DB)/mps
 $(DB)/ministers: $(DB)/mps
 $(DB)/mp_committee_memberships: $(DB)/mps $(DB)/assemblies
 $(DB)/mp_law_proposals: $(DB)/mps
+$(DB)/interpellations: $(DB)/mps
 $(DB)/mp_parliamentary_group_memberships: $(DB)/mps $(DB)/assemblies $(DB)/parliamentary_groups
 $(DB)/speeches: $(DB)/mps $(DB)/assemblies
 $(DB)/votes: $(DB)/ballots $(DB)/mps

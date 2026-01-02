@@ -57,7 +57,7 @@ RETURNS TABLE (
   date DATE,
   title TEXT,
   content_snippet TEXT,
-  status proposal_status,
+  status handling_status,
   rank DOUBLE PRECISION,
   total_hits BIGINT
 ) LANGUAGE plpgsql STABLE AS $$

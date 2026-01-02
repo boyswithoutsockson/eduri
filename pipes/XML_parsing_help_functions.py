@@ -30,6 +30,7 @@ NS = {
     'tau': 'http://www.vn.fi/skeemat/taulukkokooste/2010/04/27',
     'mix': 'http://www.loc.gov/mix/v20',
     'narc': 'http://www.narc.fi/sahke2/2010-09_vnk',
+    'kys': "http://www.eduskunta.fi/skeemat/kysymys/2012/08/10",
     'xsi': 'http://www.w3.org/2001/XMLSchema-instance',
     'def': 'http://www.eduskunta.fi/skeemat/siirtokooste/2011/05/17'
 }
@@ -218,7 +219,7 @@ def status_parse(handling_root, handling_xml_str, NS):
     match status:
         case None:
             status = "open"
-        case "Expired" | "Cancelled" | "Rejected" | "Resting" | "Passed":
+        case "Expired" | "Cancelled" | "Rejected" | "Resting" | "Passed" | "Replied" | "Dealt":
             status = status.lower()
         case "PassedChanged":
             status = "passed_changed"
