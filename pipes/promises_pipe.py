@@ -6,17 +6,19 @@ from db import get_connection
 json_path = os.path.join("data", "raw", "promises_2023.json")
 csv_path = os.path.join("data", "preprocessed", "promises.csv")
 
-def preprocess_data():
 
+def preprocess_data():
     # ELECTION 2023 ONLY
     promises_df = pl.read_json(json_path, infer_schema_length=10000)
 
     promises_df = promises_df.rename(
-                        {"firstName": "first_name",
-                        "lastName": "last_name"})
-    
+        {"firstName": "first_name", "lastName": "last_name"}
+    )
+
     # Remove the nickname of Ritva "Kike" Elomaa
-    promises_df = promises_df.with_columns(pl.col("first_name").replace("Ritva \"Kike\"", "Ritva"))
+    promises_df = promises_df.with_columns(
+        pl.col("first_name").replace('Ritva "Kike"', "Ritva")
+    )
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -30,48 +32,57 @@ def preprocess_data():
                     INNER JOIN public.persons ON persons.id = person_id)
                     WHERE end_date is null 
                     ;""")
-    
-    mp_df = pl.DataFrame(cursor.fetchall(), schema=["person_id", "first_name", "last_name"], orient="row")
+
+    mp_df = pl.DataFrame(
+        cursor.fetchall(), schema=["person_id", "first_name", "last_name"], orient="row"
+    )
 
     cursor.close()
     conn.close()
 
     # Cast types to enable join
     mp_df = mp_df.with_columns(
-                    pl.col("first_name").cast(pl.Utf8),
-                    pl.col("last_name").cast(pl.Utf8))
+        pl.col("first_name").cast(pl.Utf8), pl.col("last_name").cast(pl.Utf8)
+    )
 
-    promises_df = promises_df.join(mp_df,
-                                    on=["first_name", "last_name"],
-                                    how="inner")
+    promises_df = promises_df.join(mp_df, on=["first_name", "last_name"], how="inner")
 
     # Add election year
     promises_df = promises_df.with_columns(pl.lit(2023).alias("election_year"))
 
     # Select correct rows in correct order
     promises_df = promises_df.select(
-                        pl.col("person_id"),
-                        pl.col("promise"),
-                        pl.col("election_year"))
-    
+        pl.col("person_id"), pl.col("promise"), pl.col("election_year")
+    )
+
     promises_df.write_csv(csv_path)
+
 
 def import_data():
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     with open(csv_path) as f:
-        cursor.copy_expert("COPY promises(person_id, promise, election_year) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
-    
+        cursor.copy_expert(
+            "COPY promises(person_id, promise, election_year) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
+            f,
+        )
+
     conn.commit()
     cursor.close()
     conn.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--preprocess-data", help="preprocess the data", action="store_true")
-    parser.add_argument("--import-data", help="import preprocessed data", action="store_true")
+    parser.add_argument(
+        "--preprocess-data", help="preprocess the data", action="store_true"
+    )
+    parser.add_argument(
+        "--import-data", help="import preprocessed data", action="store_true"
+    )
     args = parser.parse_args()
     if args.preprocess_data:
         preprocess_data()
