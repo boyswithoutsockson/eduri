@@ -29,9 +29,18 @@ const subpages = [
             <h1>{mp?.first_name} {mp?.last_name}</h1>
             <p>
                 {mp?.email}<br />
-                {mp?.party_id}<br />
+                {mp?.parliamentary_groups.at(-1).pg_id}<br />
                 {mp?.occupation}<br />
                 {mp?.place_of_residence}<br />
+                {
+                    `${new Date(
+                        mp?.parliamentary_groups.at(0).start_date
+                    ).getFullYear()} - ${
+                        mp?.parliamentary_groups.at(-1).end_date === null
+                            ? "..."
+                            : new Date(mp?.parliamentary_groups.at(-1).end_date)
+                    }`
+                }<br />
             </p>
         </div>
     </section>

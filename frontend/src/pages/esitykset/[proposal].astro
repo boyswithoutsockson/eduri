@@ -1,7 +1,6 @@
 ---
 // We inject markdown in multiple places in this file, it is safe trust me bro
 /* eslint-disable astro/no-set-html-directive */
-import type { NotNull } from "kysely";
 import { db } from "~src/database";
 import { marked } from "marked";
 import MpRoundPhotoList from "~src/components/MpRoundPhotoList.astro";
@@ -31,8 +30,6 @@ const ballots = await db
     ])
     .orderBy("ballots.start_time", "desc")
     .execute();
-
-type Ballot = typeof ballots;
 ---
 
 <Layout>
@@ -110,7 +107,7 @@ type Ballot = typeof ballots;
             <article>
                 <h2 id="ballots">Äänestykset</h2>
                 <ul>
-                    {ballots.map((b: Ballot) => (
+                    {ballots.map((b) => (
                         <li>
                             {b.title}
                             <a href={`${PARLIAMENT_BASE_URL}${b.minutes_url}`}>
