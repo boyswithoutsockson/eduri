@@ -4,14 +4,14 @@ import pandas as pd
 from lxml import etree
 from io import StringIO
 from XML_parsing_help_functions import (
+    AsiaSisaltoKuvaus_parse_to_markdown,
+    PaatosOsa_parse_to_markdown,
+    PerusteluOsa_parse_to_markdown,
+    Ponsi_parse_to_markdown,
     _txt,
     id_parse,
     date_parse,
-    AsiaSisaltoKuvaus_parse,
-    Perustelu_parse,
-    Ponsi_parse,
     Saados_parse,
-    Paatos_parse,
     Osallistuja_parse,
     NS,
 )
@@ -76,15 +76,13 @@ def preprocess_data():
 
         # --- proposal_summary (restrict to content NOT under objections) ---
         # Using XPath to exclude any descendants that live inside vas:JasenMielipideOsa
-        proposal_summary = AsiaSisaltoKuvaus_parse(
-            mietinto, NS, not_child_of="vas:JasenMielipideOsa"
-        )
+        proposal_summary = AsiaSisaltoKuvaus_parse_to_markdown(mietinto, NS)
 
         # --- opinion (vsk:PaatosOsa), excluding any objection subtrees ---
-        opinion = Paatos_parse(root, NS, not_child_of="vas:JasenMielipideOsa")
+        opinion = PaatosOsa_parse_to_markdown(root, NS)
 
         # --- report-level reasoning (exclude objection reasoning) ---
-        reasoning = Perustelu_parse(mietinto, NS, not_child_of="vas:JasenMielipideOsa")
+        reasoning = PerusteluOsa_parse_to_markdown(mietinto, NS)
 
         # --- law changes (saa:SaadosOsa -> Markdown) ---
         law_changes = Saados_parse(root, NS)
@@ -98,10 +96,10 @@ def preprocess_data():
             obj_idx += 1  # 1-based index per report
 
             # Reasoning = asi:PerusteluOsa -> headers + paragraphs (both sis: and sis1:)
-            obj_reasoning = Perustelu_parse(objection, NS)
+            obj_reasoning = PerusteluOsa_parse_to_markdown(objection, NS)
 
             # Motion = asi:PonsiOsa -> johdanto + paragraphs (both sis: and sis1:)
-            obj_motion = Ponsi_parse(objection, NS)
+            obj_motion = Ponsi_parse_to_markdown(objection, NS)
 
             objection_records.append(
                 {
