@@ -88,9 +88,10 @@ const participants = speeches
                         <h3>
                             <MpRoundPhoto
                                 mp={{
+                                    id: speech.person_id,
                                     first_name: speech.first_name,
                                     last_name: speech.last_name,
-                                    party_id: speech.pg_id,
+                                    current_party_id: speech.pg_id,
                                     photo: speech.photo,
                                 }}
                             />
@@ -120,9 +121,11 @@ const participants = speeches
                                     <h4>
                                         <MpRoundPhoto
                                             mp={{
+                                                id: response.person_id,
                                                 first_name: response.first_name,
                                                 last_name: response.last_name,
-                                                party_id: response.pg_id,
+                                                current_party_id:
+                                                    response.pg_id,
                                                 photo: response.photo,
                                             }}
                                         />

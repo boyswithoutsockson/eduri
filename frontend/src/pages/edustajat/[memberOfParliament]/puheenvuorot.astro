@@ -4,7 +4,7 @@ import { marked } from "marked";
 import { db } from "~src/database";
 import Layout from "~src/pages/edustajat/[memberOfParliament]/_layout.astro";
 import { getMpStaticPaths } from "~src/pages/edustajat/[memberOfParliament]/_utils";
-import { SPEECH_TYPE_STYLES } from "~src/constants.ts";
+import { SPEECH_TYPE_STYLES } from "~src/constants";
 
 /** List all items of data that need a page generated for them */
 export const getStaticPaths = getMpStaticPaths;
@@ -27,6 +27,7 @@ const speeches = await db
     ])
     .distinctOn(["speeches.start_time"])
     .orderBy("speeches.start_time", "desc")
+    .$narrowType<{ speech_type: keyof typeof SPEECH_TYPE_STYLES }>()
     .execute();
 ---
 

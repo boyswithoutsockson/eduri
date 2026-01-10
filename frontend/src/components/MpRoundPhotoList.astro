@@ -12,7 +12,9 @@ const { mps } = Astro.props;
 <ul>
     {
         mps
-            .sort((a, b) => a.party_id.localeCompare(b.party_id))
+            .sort((a, b) =>
+                a.current_party_id.localeCompare(b.current_party_id)
+            )
             .map((mp) => (
                 <li>
                     <MpRoundPhoto mp={mp} />
