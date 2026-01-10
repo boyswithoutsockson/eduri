@@ -1,6 +1,7 @@
 ---
-// We inject markdown in multiple places in this file, it is safe trust me bro
 /* eslint-disable astro/no-set-html-directive */
+// We inject markdown in multiple places in this file, it is safe trust me bro
+
 import type { NotNull } from "kysely";
 import { db } from "~src/database";
 import { marked } from "marked";
@@ -8,6 +9,11 @@ import MpRoundPhotoList from "~src/components/MpRoundPhotoList.astro";
 import Layout from "~src/layouts/BaseLayout.astro";
 import { proposalData, urlencodeProposalId } from "~src/pages/esitykset/_utils";
 import { PARLIAMENT_BASE_URL } from "~src/utils";
+import { rehype } from "rehype";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import rehypeSlug from "rehype-slug";
+import rehypeToc from "@jsdevtools/rehype-toc";
+import { create_toc_element } from "~src/utils";
 
 export async function getStaticPaths() {
     const data = await proposalData().execute();
@@ -32,85 +38,42 @@ const ballots = await db
     .orderBy("ballots.start_time", "desc")
     .execute();
 
-type Ballot = typeof ballots;
+const md = `
+${proposal.summary ? `# Yhteenveto\n\n${proposal.summary}` : ""}
+${proposal.reasoning ? `# Perustelut\n\n${proposal.reasoning}` : ""}
+${proposal.law_changes ? `# Lakimuutokset\n\n${proposal.law_changes}` : ""}
+`;
+
+const content = await rehype()
+    .use(rehypeSlug)
+    .use(rehypeAutolinkHeadings)
+    .use(rehypeToc, {
+        customizeTOC: (a) => {
+            if (ballots.length > 0) {
+                const elem = create_toc_element("Äänestykset", "aanestykset");
+                a.children[0].children.push(elem);
+            }
+            return a;
+        },
+    })
+    .process(await marked(md));
 ---
 
 <Layout>
-    <h1 id="top">{proposal.title}</h1>
+    <h1>{proposal.title}</h1>
     <h2>{proposal.id}</h2>
-    <article>
-        <h2 id="contents">Sisältö</h2>
-        <ul>
-            {
-                proposal.summary && (
-                    <li>
-                        <a href="#summary">Yhteenveto</a>
-                    </li>
-                )
-            }
-            {
-                proposal.reasoning && (
-                    <li>
-                        <a href="#reasoning">Perustelut</a>
-                    </li>
-                )
-            }
-            {
-                proposal.law_changes && (
-                    <li>
-                        <a href="#lawchanges">Lakimuutokset</a>
-                    </li>
-                )
-            }
-            {
-                ballots && (
-                    <li>
-                        <a href="#ballots">Äänestykset</a>
-                    </li>
-                )
-            }
-        </ul>
-    </article>
+    <h2>Allekirjoittaneet</h2>
+    <MpRoundPhotoList mps={proposal.signatures} />
 
     <article>
-        {
-            proposal.summary && (
-                <>
-                    <h2 id="summary">Yhteenveto</h2>
-                    <Fragment set:html={marked(proposal.summary)} />
-                    <a href="#top">Ylös</a>
-                </>
-            )
-        }
-
-        {
-            proposal.reasoning && (
-                <>
-                    <h2 id="reasoning">Perustelut</h2>
-                    <Fragment set:html={marked(proposal.reasoning)} />
-                    <a href="#top">Ylös</a>
-                </>
-            )
-        }
-        {
-            proposal.law_changes && (
-                <>
-                    <h2 id="lawchanges">Lakimuutokset</h2>
-                    <Fragment set:html={marked(proposal.law_changes)} />
-                    <a href="#top">Ylös</a>
-                </>
-            )
-        }
-
-        <h2>Allekirjoittaneet</h2>
-        <MpRoundPhotoList mps={proposal.signatures} />
+        <Fragment set:html={content} />
     </article>
     {
-        ballots && (
+        ballots.length > 0 && (
             <article>
-                <h2 id="ballots">Äänestykset</h2>
+                <h2 id="aanestykset">Äänestykset</h2>
                 <ul>
-                    {ballots.map((b: Ballot) => (
+                    {ballots.map((b) => (
                         <li>
                             {b.title}
                             <a href={`${PARLIAMENT_BASE_URL}${b.minutes_url}`}>
@@ -123,14 +86,19 @@ type Ballot = typeof ballots;
                         </li>
                     ))}
                 </ul>
-                <a href="#top">Ylös</a>
             </article>
         )
     }
 </Layout>
 
 <style>
-    h2 {
-        font-size: 1.25rem;
+    :global(nav.toc ol) {
+        display: block;
+    }
+    :global(nav.toc li) {
+        display: list-item;
+        padding: unset;
+        padding-inline-start: 2em;
+        list-style: decimal;
     }
 </style>
