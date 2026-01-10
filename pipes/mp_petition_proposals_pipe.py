@@ -11,8 +11,10 @@ from XML_parsing_help_functions import (
     Saados_parse,
     Allekirjoittaja_parse,
     NS,
+    hashtag_parse,
 )
 from db import get_connection
+from hashtags_pipe import write_hashtags
 
 # Paths
 mp_petition_tsv_path = os.path.join("data", "raw", "vaski", "PetitionaryMotion_fi.tsv")
@@ -31,6 +33,7 @@ def preprocess_data():
 
     mpp_records = []
     sgn_records = []
+    hashtags = []
 
     conn = get_connection()
     cur = conn.cursor()
@@ -81,7 +84,9 @@ def preprocess_data():
         )
 
         sgn_records.extend(Allekirjoittaja_parse(proposal, NS, eid, cur))
+        hashtags += hashtag_parse(mpp_root, eid.lower())
 
+    write_hashtags(hashtags)
     conn.commit()
     cur.close()
     conn.close()

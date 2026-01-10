@@ -34,7 +34,8 @@ PIPES := \
 	election_budgets \
 	election_fundings \
 	interpellations \
-	promises
+	promises \
+	hashtags
 
 
 ###################
@@ -181,6 +182,7 @@ $(PREPROCESSED)/absences.csv: $(DB)/speeches
 $(PREPROCESSED)/election_fundings.csv: $(DB)/mp_parliamentary_group_memberships
 $(PREPROCESSED)/election_budgets.csv: $(DB)/mp_parliamentary_group_memberships
 $(PREPROCESSED)/promises.csv: $(DB)/mp_parliamentary_group_memberships
+$(PREPROCESSED)/hashtags.csv: $(DB)/mp_law_proposals $(DB)/government_proposals
 
 .PHONY: preprocess
 preprocess: $(addprefix $(PREPROCESSED)/,$(addsuffix .csv,$(PIPES)))
@@ -213,6 +215,7 @@ $(DB)/mp_parliamentary_group_memberships: $(DB)/mps $(DB)/assemblies $(DB)/parli
 $(DB)/speeches: $(DB)/mps $(DB)/assemblies
 $(DB)/votes: $(DB)/ballots $(DB)/mps
 $(DB)/lobby_actions: $(DB)/mps $(DB)/lobby_terms $(DB)/lobbies
+$(DB)/hashtags: $(DB)/government_proposals $(DB)/mp_law_proposals $(DB)/mp_petition_proposals
 
 .PHONY: insert-database
 insert-database: $(addprefix $(DB)/,$(PIPES)) ## runs all data pipelines into the database
@@ -238,6 +241,7 @@ nuke: ## resets all data in the database
 	PGPASSWORD=postgres psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < DELETE_ALL_TABLES.sql
 	PGPASSWORD=postgres psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < postgres-init-scripts/01_create_tables.sql
 	rm -rf $(DB)
+	rm data/preprocessed/proposal_hashtags.csv
 
 .PHONY: nuke-database
 nuke-database:

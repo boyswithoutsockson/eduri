@@ -56,6 +56,11 @@ NS = {
     "ns2": "http://www.vn.fi/skeemat/sisaltoelementit/2010/04/27",
 }
 
+metaNS = {
+    "ns1": "http://www.vn.fi/skeemat/metatietoelementit/2010/04/27",
+    "jme": "http://www.eduskunta.fi/skeemat/julkaisusiirtokooste/2011/12/20",
+}
+
 
 def _txt(node):
     """Collapse all text from an element; return '' if node is None."""
@@ -618,3 +623,9 @@ def id_parse(root, NS):
     eid = metadata.get(f"{{{NS['met1']}}}eduskuntaTunnus", "").strip()
 
     return eid
+
+
+def hashtag_parse(root, proposal_id):
+    metadata = root.find(".//jme:JulkaisuMetatieto", namespaces=metaNS)
+    hashtags = metadata.xpath(".//ns1:AiheTeksti/text()", namespaces=metaNS)
+    return [{"proposal_id": proposal_id, "hashtag": hashtag} for hashtag in hashtags]
