@@ -1,8 +1,6 @@
 import os.path
 import pandas as pd
-import numpy as np
 import xmltodict
-import psycopg2
 from harmonize import harmonize_parliamentary_group
 from db import get_connection
 

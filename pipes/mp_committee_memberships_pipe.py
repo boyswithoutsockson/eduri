@@ -1,7 +1,5 @@
 import os.path
 import pandas as pd
-import numpy as np
-import psycopg2
 import xmltodict
 import argparse
 

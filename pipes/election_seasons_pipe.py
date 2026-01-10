@@ -1,7 +1,5 @@
 import os.path
 import pandas as pd
-import psycopg2
-from lxml import etree
 
 from db import get_connection
 

@@ -1,7 +1,5 @@
 import os.path
-import xml.etree.ElementTree as ET
 import csv
-import psycopg2
 import xmltodict
 import pandas as pd
 

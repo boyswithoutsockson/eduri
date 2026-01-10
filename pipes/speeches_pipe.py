@@ -2,10 +2,9 @@ import os.path
 import pandas as pd
 from lxml import etree
 from io import StringIO
-from XML_parsing_help_functions import date_parse, rollcall_id_parse
+from XML_parsing_help_functions import date_parse, rollcall_id_parse, NS
 
 from db import get_connection
-
 
 class IncompleteDecisionTreeException(Exception):
     pass
@@ -18,50 +17,31 @@ def preprocess_data():
     # Load the TSV file
     df_tsv = pd.read_csv(os.path.join("data", "raw", "vaski", "Record_fi.tsv"), sep="\t")
 
-    # Define namespaces
-    ns = {
-        "asi": "http://www.vn.fi/skeemat/asiakirjakooste/2010/04/27",
-        "asi1": "http://www.vn.fi/skeemat/asiakirjaelementit/2010/04/27",
-        "met1": "http://www.vn.fi/skeemat/metatietoelementit/2010/04/27",
-        "vsk": "http://www.eduskunta.fi/skeemat/vaskikooste/2011/01/04",
-        "vsk1": "http://www.eduskunta.fi/skeemat/vaskielementit/2011/01/04",
-        "sis": "http://www.vn.fi/skeemat/sisaltokooste/2010/04/27",
-        "org": "http://www.vn.fi/skeemat/organisaatiokooste/2010/02/15",
-        "org1": "http://www.vn.fi/skeemat/organisaatioelementit/2010/02/15",
-        "met": "http://www.vn.fi/skeemat/metatietokooste/2010/04/27",
-        "sii1": "http://www.eduskunta.fi/skeemat/siirtoelementit/2011/05/17",
-        "sii": "http://www.eduskunta.fi/skeemat/siirtokooste/2011/05/17",
-        "jme": "http://www.eduskunta.fi/skeemat/julkaisusiirtokooste/2011/12/20",
-        "ptk": "http://www.eduskunta.fi/skeemat/poytakirja/2011/01/28",
-        "ns": "http://www.eduskunta.fi/skeemat/julkaisusiirtokooste/2011/12/20",
-    }
-
     records = []
     agenda_items = []
     speeches_list = []
 
     for xml_str in df_tsv['XmlData']:
         root = etree.parse(StringIO(xml_str)).getroot()
-
         # Get parliament_id
-        p_id = root.xpath(".//asi:EduskuntaTunniste", namespaces=ns)
-        p_type = p_id[0].findtext("met1:AsiakirjaTyyppiTeksti", namespaces=ns)
+        p_id = root.xpath(".//asi:EduskuntaTunniste", namespaces=NS)
+        p_type = p_id[0].findtext("met1:AsiakirjaTyyppiTeksti", namespaces=NS)
         if p_type is None:
-            p_type = p_id[0].findtext("met1:AsiakirjatyyppiKoodi", namespaces=ns)
+            p_type = p_id[0].findtext("met1:AsiakirjatyyppiKoodi", namespaces=NS)
         # The general assembly code is PTK, committees have committee abbreviation + P
         p_type = p_type[:-1] if p_type.endswith("P") else "EK"
-        p_number = p_id[0].findtext("asi1:AsiakirjaNroTeksti", namespaces=ns)
-        p_year = p_id[0].findtext("asi1:ValtiopaivavuosiTeksti", namespaces=ns)
+        p_number = p_id[0].findtext("asi1:AsiakirjaNroTeksti", namespaces=NS)
+        p_year = p_id[0].findtext("asi1:ValtiopaivavuosiTeksti", namespaces=NS)
 
 
-        laadinta_pvm = date_parse(root, ns)
-        ptk_element = root.find(".//ptk:KokousPoytakirja", namespaces=ns) 
+        laadinta_pvm = date_parse(root, NS)
+        ptk_element = root.find(".//ptk:KokousPoytakirja", namespaces=NS) 
         if ptk_element is None:
-            ptk_element = root.find(".//ptk:Poytakirja", namespaces=ns)
+            ptk_element = root.find(".//ptk:Poytakirja", namespaces=NS)
         if ptk_element is None:  # Should never be None after that
             raise IncompleteDecisionTreeException(msg="ptk_element is None when it should not be None")
         try:
-            kokous_pvm = ptk_element.attrib.get(f'{{{ns['vsk1']}}}kokousAloitusHetki')[:10]
+            kokous_pvm = ptk_element.attrib.get(f'{{{NS['vsk1']}}}kokousAloitusHetki')[:10]
         except TypeError:
             if p_number == '107' and p_year == '2018':
                 # The data has a row that falls to this due to improper document structure.
@@ -84,9 +64,9 @@ def preprocess_data():
             "rollcall_id": rollcall_id})
 
         # Find speeches
-        asiakohdat = root.xpath(".//vsk:Asiakohta", namespaces=ns)
+        asiakohdat = root.xpath(".//vsk:Asiakohta", namespaces=NS)
         for asiakohta in asiakohdat:
-            asiakohta_otsikko = asiakohta.find(".//vsk:KohtaNimeke/met1:NimekeTeksti", namespaces=ns).text
+            asiakohta_otsikko = asiakohta.find(".//vsk:KohtaNimeke/met1:NimekeTeksti", namespaces=NS).text
             agenda_item_parliament_id = asiakohta.get('{http://www.vn.fi/skeemat/metatietoelementit/2010/04/27}eduskuntaTunnus')
             if agenda_item_parliament_id is None:
                 agenda_item_parliament_id = asiakohta.get('{http://www.vn.fi/skeemat/metatietoelementit/2010/04/27}muuTunnus')
@@ -98,32 +78,32 @@ def preprocess_data():
                 "parliament_id": agenda_item_parliament_id,
                 "title": asiakohta_otsikko
             })
-            speeches = asiakohta.xpath(".//vsk:PuheenvuoroToimenpide", namespaces=ns)
+            speeches = asiakohta.xpath(".//vsk:PuheenvuoroToimenpide", namespaces=NS)
             for speech in speeches:
-                speaker = speech.find(".//org:Henkilo", namespaces=ns)
-                speaker_id = speaker.get(f"{{{ns['met1']}}}muuTunnus") if speaker is not None else None
-                speech_type = speech.get(f"{{{ns['vsk1']}}}puheenvuoroLuokitusKoodi")
-                speech_id_tag = speech.find(".//vsk:PuheenvuoroOsa", namespaces=ns)
-                speech_id = speech_id_tag.get(f"{{{ns['met1']}}}muuTunnus") if speech_id_tag is not None else None
+                speaker = speech.find(".//org:Henkilo", namespaces=NS)
+                speaker_id = speaker.get(f"{{{NS['met1']}}}muuTunnus") if speaker is not None else None
+                speech_type = speech.get(f"{{{NS['vsk1']}}}puheenvuoroLuokitusKoodi")
+                speech_id_tag = speech.find(".//vsk:PuheenvuoroOsa", namespaces=NS)
+                speech_id = speech_id_tag.get(f"{{{NS['met1']}}}muuTunnus") if speech_id_tag is not None else None
 
-                start_time = speech.get(f"{{{ns['vsk1']}}}puheenvuoroAloitusHetki")
+                start_time = speech.get(f"{{{NS['vsk1']}}}puheenvuoroAloitusHetki")
                 if start_time:
                     start_time = start_time.replace("T", " ") + " Europe/Helsinki"
 
                 # Build speech text
                 body_parts = []
                 # Extract regular speech paragraphs
-                paragraphs = speech.xpath(".//vsk:PuheenvuoroOsa//sis:KappaleKooste", namespaces=ns)
+                paragraphs = speech.xpath(".//vsk:PuheenvuoroOsa//sis:KappaleKooste", namespaces=NS)
                 for para in paragraphs:
                     text = para.text.strip() if para.text else ""
                     if text:
                         body_parts.append(text)
 
                 # Append puhemies interventions (separately)
-                interventions = speech.xpath(".//vsk:PuheenjohtajaRepliikki", namespaces=ns)
+                interventions = speech.xpath(".//vsk:PuheenjohtajaRepliikki", namespaces=NS)
                 for intervention in interventions:
-                    chair_text = intervention.findtext(".//vsk1:PuheenjohtajaTeksti", namespaces=ns)
-                    chair_paragraphs = intervention.findall(".//sis:KappaleKooste", namespaces=ns)
+                    chair_text = intervention.findtext(".//vsk1:PuheenjohtajaTeksti", namespaces=NS)
+                    chair_paragraphs = intervention.findall(".//sis:KappaleKooste", namespaces=NS)
                     for para in chair_paragraphs:
                         ptext = para.text.strip() if para.text else ""
                         if chair_text and ptext:
@@ -134,7 +114,7 @@ def preprocess_data():
                 
                 if speaker_id:
                     if speaker_id.strip():
-                        role = speech.find(".//org1:AsemaTeksti", namespaces=ns)
+                        role = speech.find(".//org1:AsemaTeksti", namespaces=NS)
                         if role != None:
                             if "ministeri" not in role.text:
                                 continue
@@ -142,8 +122,8 @@ def preprocess_data():
                         # There are duplicates in speech ids.
                         # Add year to the front of speech id to fix issue
                         speech_id = start_time[:4] + "/" + speech_id
-                        if speech.find(".//vsk1:TarkenneTeksti", namespaces=ns) is not None and \
-                            speech.find(".//vsk1:TarkenneTeksti", namespaces=ns).text == "(vastauspuheenvuoro)":
+                        if speech.find(".//vsk1:TarkenneTeksti", namespaces=NS) is not None and \
+                            speech.find(".//vsk1:TarkenneTeksti", namespaces=NS).text == "(vastauspuheenvuoro)":
                             response_to = root_id
                         else:
                             response_to = speech_id

@@ -1,6 +1,4 @@
-import os
 import pandas as pd
-import psycopg2
 from lxml import etree
 from io import StringIO
 
@@ -32,7 +30,9 @@ NS = {
     'narc': 'http://www.narc.fi/sahke2/2010-09_vnk',
     'kys': "http://www.eduskunta.fi/skeemat/kysymys/2012/08/10",
     'xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-    'def': 'http://www.eduskunta.fi/skeemat/siirtokooste/2011/05/17'
+    'def': 'http://www.eduskunta.fi/skeemat/siirtokooste/2011/05/17',
+    'ptk': 'http://www.eduskunta.fi/skeemat/poytakirja/2011/01/28',
+    'eka': 'http://www.eduskunta.fi/skeemat/eduskuntaaloite/2012/08/10',
 }
 
 def _txt(node):

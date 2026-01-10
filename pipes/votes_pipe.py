@@ -1,6 +1,4 @@
 import os.path
-import csv
-import psycopg2
 import pandas as pd
 
 from db import get_connection

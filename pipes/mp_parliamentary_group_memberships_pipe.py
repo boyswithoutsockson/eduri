@@ -1,7 +1,6 @@
 import os.path
 from lxml import etree
 import csv
-import psycopg2
 from harmonize import harmonize_parliamentary_group
 from db import get_connection
 

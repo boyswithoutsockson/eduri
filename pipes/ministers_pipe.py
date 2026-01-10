@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 import xml.etree.ElementTree as ET
-import psycopg2
 
 from db import get_connection
 

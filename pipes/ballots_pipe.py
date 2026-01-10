@@ -1,6 +1,5 @@
 import os.path
 import csv
-import psycopg2
 import argparse
 
 from db import get_connection
