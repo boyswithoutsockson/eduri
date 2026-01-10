@@ -1,8 +1,26 @@
 import os
+from xml.etree.ElementTree import Element
 import pandas as pd
 import psycopg2
 from lxml import etree
 from io import StringIO
+
+from xml.etree import ElementTree
+from xml.dom import minidom
+
+def prettify(elem):
+    """Return a pretty-printed XML string for the Element.
+    """
+    rough_string = ElementTree.tostring(elem, 'utf-8')
+    reparsed = minidom.parseString(rough_string)
+    return reparsed.toprettyxml(indent="  ")
+
+def pp(elem):
+    print(prettify(elem))
+
+
+class ParserError(Exception):
+    """Custom error for handling parser edge cases"""
 
 NS = {
     'asi': 'http://www.vn.fi/skeemat/asiakirjakooste/2010/04/27',
@@ -31,7 +49,9 @@ NS = {
     'mix': 'http://www.loc.gov/mix/v20',
     'narc': 'http://www.narc.fi/sahke2/2010-09_vnk',
     'xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-    'def': 'http://www.eduskunta.fi/skeemat/siirtokooste/2011/05/17'
+    'def': 'http://www.eduskunta.fi/skeemat/siirtokooste/2011/05/17',
+    'ns1': 'http://www.vn.fi/skeemat/sisaltoelementit/2010/04/27',
+    'ns2': 'http://www.vn.fi/skeemat/sisaltoelementit/2010/04/27'
 }
 
 def _txt(node):
@@ -132,6 +152,40 @@ def tau_to_md(root):
     return "\n\n".join(dfs)
 
 
+def PerusteluOsa_parse_to_markdown(root: Element, NS):
+    """Finds and recursively parses `PerusteluOsa` from a root xml node"""
+    reasoning_part = root.find(".//asi:PerusteluOsa", namespaces=NS)
+    return xml_to_markdown(reasoning_part)
+
+
+def AsiaSisaltoKuvaus_parse_to_markdown(root: Element, NS):
+    """Finds all `AsiaKuvaus` and `SisaltoKuvaus` nodes and parses them to markdown"""
+    # TODO: are all of these relevant?
+    summary_parts = root.xpath(
+        ".//vsk:AsiaKuvaus | "
+        ".//asi:SisaltoKuvaus | "
+        ".//asi:AsiaKuvaus",
+        namespaces=NS
+    )
+    return "\n\n".join(xml_to_markdown(part) for part in summary_parts)
+
+
+def PaatosOsa_parse_to_markdown(root: Element, NS):
+    opinion_parts = root.xpath(
+            ".//vsk:PaatosOsa | "
+            ".//asi:PaatosOsa",
+            namespaces=NS
+        )
+    return "\n\n".join(xml_to_markdown(part) for part in opinion_parts)
+
+
+def Ponsi_parse_to_markdown(root: Element, NS):
+    """Finds and recursively parses `Ponsi` from a root xml node"""
+    ponsi_part = root.find(".//asi:PonsiOsa", namespaces=NS)
+    return xml_to_markdown(ponsi_part)
+
+
+
 def Perustelu_parse(root, NS, not_child_of=""):
     if not_child_of:
         filter = f"[not(ancestor::{not_child_of})]"
@@ -149,6 +203,166 @@ def Perustelu_parse(root, NS, not_child_of=""):
     reasoning = "\n\n".join([_txt(n) for n in reasoning_nodes])
 
     return reasoning
+
+def get_tag_type(element: Element) -> str:
+    """
+    For an element, returns the tag type without namespace, for example
+
+    `'{http://www.vn.fi/skeemat/sisaltoelementit/2010/04/27}OtsikkoTeksti'`
+    =>
+    `'OtsikkoTeksti'`
+    """
+    return element.tag.split("}")[1]
+
+def OtsikkoTeksti_parse(element: Element, level: int):
+    if level < 1 or level > 6:
+        raise ParserError(f"Heading level can't be {level}!")
+    if element.text is None:
+        return ""  # broken otsikkoteksti node
+    return f"{"#"*level} {element.text.capitalize()}\n\n"
+
+def KursiiviTeksti_parse(element: Element):
+    return f"*{element.text}*"
+
+def LihavaTeksti_parse(element: Element):
+    return f"**{element.text}**"
+
+def LihavaKursiiviTeksti_parse(element: Element):
+    return f"***{element.text}***"
+
+
+def KappaleKooste_parse(element: Element):
+    def _iter_kappale_content(elem: Element):
+        if elem.text:
+            yield ("text", elem.text)
+        for child in elem:
+            yield ("element", child)
+            if child.tail:
+                yield ("text", child.tail)
+
+    out = ""
+    citations = []
+    for (type, value) in _iter_kappale_content(element):
+        match type:
+            case "text":
+                out += value
+            case "element":
+                match get_tag_type(value):
+                    case "KursiiviTeksti" | "HarvaKursiiviTeksti":
+                        out += KursiiviTeksti_parse(value)
+                    case "LihavaTeksti":
+                        out += LihavaTeksti_parse(value)
+                    case "LihavaKursiiviTeksti":
+                        out += LihavaKursiiviTeksti_parse(value)
+                    case "YlaindeksiTeksti" if value.text is None:
+                        pass  # Some documents have empty XML nodes like this
+                    case "YlaindeksiTeksti" if value.text.strip() == "2":
+                        out += "²"
+                    case "YlaindeksiTeksti" if value.text.strip() == "3":
+                        out += "³"
+                    case "YlaindeksiTeksti":
+                        out += f"<sup>{value.text}</sup>"
+                    case "AlaindeksiTeksti" if value.text.strip() == "1":
+                        out += "₁"
+                    case "AlaindeksiTeksti" if value.text.strip() == "2":
+                        out += "₂"
+                    case "AlaindeksiTeksti" if value.text.strip() == "3":
+                        out += "₃"
+                    case "AlaindeksiTeksti" if value.text.strip() == "10":
+                        out += "₁₀"  # for example "PM10"
+                    case "AlaindeksiTeksti":
+                        out += f"<sub>{value.text}</sub>"
+                    case "AlaviiteTeksti":
+                        out += f"[^{id(value.text)}]"
+                        citations.append(f"[^{id(value.text)}]: {value.text}")
+                    case "YleinenViite":
+                        out += f"[{value[0].text}]({value.get(f"{{{NS["ns1"]}}}viiteURL")})"
+                    case "AlaviiteKooste":
+                        out += f"<aside>{KappaleKooste_parse(value).strip()}</aside>"
+                    case "Rivivaihto":
+                        # TODO: this is not a good solution, the documents look like there
+                        # would be a better way to parse these than to force a line break
+                        out += "  \n"
+                    case "Aukko":
+                        # TODO: might be unnecessary?
+                        out += " "
+                    case "SaadoskokoelmaViiteTunnus" | "AsiakirjaViiteTunnus" | "SopimussarjaViiteTunnus":
+                        # No special meaning (yet)
+                        # TODO: we could use these to add hyperlinks
+                        out += value.text
+
+                    case unknown:
+                        raise ParserError(f"Unknown tag: {unknown}", value.text, value)
+    return out + "\n\n" + "\n\n".join(citations) + "\n\n"
+
+
+def Kuva_parse(element: Element):
+    if len(element) == 0:
+        return ""  # broken image node
+    url = element[0].get(f"{{{NS["ns1"]}}}kuvaTiedostoTeksti")
+    return f"![]({url})\n\n"
+
+
+def Lista_parse(element: Element):
+    match element.get(f"{{{NS['ns2']}}}ulkoasuKoodi"):
+        case 'Tasaviiva':
+            return "".join(f"- {KappaleKooste_parse(item[0])}\n" for item in element) + "\n\n"
+        case 'Numerosulku' | 'Numeropiste':
+            return "".join(f"{idx+1}. {KappaleKooste_parse(item[0])}\n" for idx, item in enumerate(element)) + "\n\n"
+        case 'Tyhja':  # most likely a table of contents that can be skipped
+            return ""
+        case unknown:
+            raise ParserError(f"Unknown list type: {unknown}", element)
+
+
+def SuppeaLista_parse(element: Element):
+    out = ""
+    match element.get(f"{{{NS['ns2']}}}ulkoasuKoodi"):
+        case 'JatkuvaNumeropiste' | 'JatkuvaNumerosulku' | 'Numerosulku':
+            out = "".join(f"{idx+1}. {KappaleKooste_parse(child)}\n" for idx, child in enumerate(element))
+        case 'Viiva' | 'Tasaviiva' | 'LyhytTasaviiva':
+            out = "".join(f"- {KappaleKooste_parse(child)}\n" for child in element)
+        case unknown:
+            raise ParserError(f"Unknown shallow list type: {unknown}", element)
+    next_element = element.getnext()
+    next_element_tag = get_tag_type(next_element) if next_element is not None else None
+    if next_element_tag != "SuppeaLista":
+        out += "\n"
+    return out
+
+
+def xml_to_markdown(element: Element, level: int = 1):
+    match get_tag_type(element):
+        # parse actual contents
+        case "OtsikkoTeksti" | "ValiotsikkoTeksti" | "LihavaKursiiviOtsikkoTeksti" | "RiviotsikkoTeksti":
+            return OtsikkoTeksti_parse(element, level)
+        case "KappaleKooste" | "JohdantoTeksti":
+            return KappaleKooste_parse(element)
+        case "SisennettyKappaleKooste":
+            return f"> {KappaleKooste_parse(element)}"
+        case "table":
+            return tau_to_md(element)
+        case "Kuva":
+            return Kuva_parse(element)
+        case "Lista":
+            return Lista_parse(element)
+        case "SuppeaLista":
+            return SuppeaLista_parse(element)
+
+        # skip these tags and recurse deeper
+        case "LukuOtsikko" | "PerusteluOsa" | "SisaltoKuvaus" | "AsiaKuvaus" | "PaatosOsa" | "PaatosToimenpide":
+            return "".join(xml_to_markdown(el, level) for el in element)
+        # this denotes a subchapter so we increment level and recurse
+        case "PerusteluLuku" | "VireilletuloAsia":
+            return "".join(xml_to_markdown(el, level+1) for el in element)
+        
+        # these tags have no contents or we dont care about them, end this tail of recursion
+        case "OtsikkoNroTeksti" | "Tyhja" | "NeljannesTyhja" | "AsiantuntijatToimenpide":
+            return ""
+
+        case unknown_tag:
+            raise ParserError(f"Unknown tag: {unknown_tag}", element)
+        
 
 def date_parse(root, NS):
 
