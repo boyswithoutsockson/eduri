@@ -11,12 +11,14 @@
     "deploy": "netlify deploy --no-build --alias=${SUBDOMAIN} --dir=dist"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.6",
     "astro": "^5.14.0",
     "kysely": "^0.28.2",
     "marked": "^16.2.1",
     "minisearch": "^7.1.2",
     "netlify-cli": "^23.7.3",
-    "pg": "^8.16.0"
+    "pg": "^8.16.0",
+    "typescript": "^5.8.3"
   },
   "devDependencies": {
     "@types/pg": "^8.15.4",
