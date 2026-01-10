@@ -1,3 +1,4 @@
 {
-    "autoOpenWorkspace.enableAutoOpenIfSingleWorkspace": true
+    "autoOpenWorkspace.enableAutoOpenIfSingleWorkspace": true,
+    "editor.formatOnSave": true
 }

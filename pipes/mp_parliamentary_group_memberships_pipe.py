@@ -1,11 +1,10 @@
 import os.path
 from lxml import etree
 import csv
-import psycopg2
 from harmonize import harmonize_parliamentary_group
 from db import get_connection
 
-csv_path = 'data/preprocessed/mp_parliamentary_group_memberships.csv'
+csv_path = "data/preprocessed/mp_parliamentary_group_memberships.csv"
 
 
 def preprocess_data():
@@ -22,38 +21,51 @@ def preprocess_data():
 
         # Current group
         cur_group = root.find("./Eduskuntaryhmat/NykyinenEduskuntaryhma", namespaces)
-        if cur_group is not None and cur_group[0] is not None and cur_group[0].text is not None:
+        if (
+            cur_group is not None
+            and cur_group[0] is not None
+            and cur_group[0].text is not None
+        ):
             parliamentary_group = harmonize_parliamentary_group(cur_group[0].text)
             AlkuPvm = cur_group.find("./AlkuPvm", namespaces)
             start_date = "-".join(list(reversed((AlkuPvm.text).split("."))))
             end_date = None
 
-            rows.append({
-                "person_id": person_id,
-                "pg_id": parliamentary_group,
-                "start_date": start_date,
-                "end_date": end_date})
+            rows.append(
+                {
+                    "person_id": person_id,
+                    "pg_id": parliamentary_group,
+                    "start_date": start_date,
+                    "end_date": end_date,
+                }
+            )
 
-        for group in root.find("./Eduskuntaryhmat/EdellisetEduskuntaryhmat", namespaces):
+        for group in root.find(
+            "./Eduskuntaryhmat/EdellisetEduskuntaryhmat", namespaces
+        ):
             if group[0].text:
                 parliamentary_group = harmonize_parliamentary_group(group[0].text)
-                
+
                 for membership in group.findall("./Jasenyys", namespaces):
                     AlkuPvm = membership.find("./AlkuPvm", namespaces)
                     start_date = "-".join(list(reversed((AlkuPvm.text).split("."))))
-                    
+
                     LoppuPvm = membership.find("./LoppuPvm", namespaces)
                     end_date = "-".join(list(reversed((LoppuPvm.text).split("."))))
 
-                    rows.append({
-                        "person_id": person_id,
-                        "pg_id": parliamentary_group,
-                        "start_date": start_date,
-                        "end_date": end_date
-                    })
+                    rows.append(
+                        {
+                            "person_id": person_id,
+                            "pg_id": parliamentary_group,
+                            "start_date": start_date,
+                            "end_date": end_date,
+                        }
+                    )
 
-    with open(csv_path, 'w') as f:
-        writer = csv.DictWriter(f, fieldnames=["person_id", "pg_id", "start_date", "end_date"])
+    with open(csv_path, "w") as f:
+        writer = csv.DictWriter(
+            f, fieldnames=["person_id", "pg_id", "start_date", "end_date"]
+        )
         writer.writeheader()
         writer.writerows(rows)
 
@@ -63,18 +75,26 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert("COPY mp_parliamentary_group_memberships(person_id, pg_id, start_date, end_date) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';", f)
+        cursor.copy_expert(
+            "COPY mp_parliamentary_group_memberships(person_id, pg_id, start_date, end_date) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
+            f,
+        )
 
     conn.commit()
     cursor.close()
     conn.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--preprocess-data", help="preprocess the data", action="store_true")
-    parser.add_argument("--import-data", help="import preprocessed data", action="store_true")
+    parser.add_argument(
+        "--preprocess-data", help="preprocess the data", action="store_true"
+    )
+    parser.add_argument(
+        "--import-data", help="import preprocessed data", action="store_true"
+    )
     args = parser.parse_args()
     if args.preprocess_data:
         preprocess_data()

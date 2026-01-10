@@ -1,4 +1,3 @@
-from sqlalchemy import create_engine
 import psycopg2
 import os
 
@@ -12,4 +11,3 @@ def get_connection():
         user=os.environ.get("DATABASE_USER", "postgres"),
         password=os.environ.get("DATABASE_PASSWORD", "postgres"),
     )
- 
