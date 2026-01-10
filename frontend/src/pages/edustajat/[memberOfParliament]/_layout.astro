@@ -20,6 +20,12 @@ const subpages = [
     { name: "Vaalilupaukset", path: `/${currentPathBase}/vaalilupaukset` },
     { name: "Sidonnaisuudet", path: `/${currentPathBase}/sidonnaisuudet` },
 ];
+
+const cur_pg = mp.parliamentary_groups.at(-1)?.pg_id;
+const prev_pgs = mp.parliamentary_groups
+    .filter((pg) => pg.pg_id !== cur_pg && pg.pg_id !== "-")
+    .map((pg) => pg.pg_id);
+const unique_prev_pgs = [...new Set(prev_pgs)];
 ---
 
 <BaseLayout>
@@ -29,16 +35,21 @@ const subpages = [
             <h1>{mp?.first_name} {mp?.last_name}</h1>
             <p>
                 {mp?.email}<br />
-                {mp?.parliamentary_groups.at(-1).pg_id}<br />
+                {
+                    cur_pg +
+                        `${unique_prev_pgs.length > 0 ? ` (ent. ${unique_prev_pgs})` : ""}`
+                }<br />
                 {mp?.occupation}<br />
                 {mp?.place_of_residence}<br />
                 {
                     `${new Date(
-                        mp?.parliamentary_groups.at(0).start_date
+                        mp?.parliamentary_groups.at(0).start_date,
                     ).getFullYear()} - ${
-                        mp?.parliamentary_groups.at(-1).end_date === null
+                        mp?.parliamentary_groups.at(-1)?.end_date === null
                             ? "..."
-                            : new Date(mp?.parliamentary_groups.at(-1).end_date)
+                            : new Date(
+                                  mp?.parliamentary_groups.at(-1)?.end_date,
+                              )
                     }`
                 }<br />
             </p>
