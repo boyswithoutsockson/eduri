@@ -20,6 +20,18 @@ const subpages = [
     { name: "Vaalilupaukset", path: `/${currentPathBase}/vaalilupaukset` },
     { name: "Sidonnaisuudet", path: `/${currentPathBase}/sidonnaisuudet` },
 ];
+
+const cur_pg = mp.parliamentary_groups.at(-1)?.pg_id;
+const prev_pgs = mp.parliamentary_groups
+    .reduce<Set<string>>((prev, current) => {
+        if (current.pg_id !== cur_pg && current.pg_id !== "-") {
+            prev.add(current.pg_id);
+        }
+        return prev;
+    }, new Set())
+    .values()
+    .toArray();
+console.log(prev_pgs);
 ---
 
 <BaseLayout>
@@ -29,14 +41,17 @@ const subpages = [
             <h1>{mp?.first_name} {mp?.last_name}</h1>
             <p>
                 {mp?.email}<br />
-                {mp?.parliamentary_groups.at(-1).pg_id}<br />
+                {
+                    cur_pg +
+                        `${prev_pgs.length > 0 ? ` (ent. ${prev_pgs})` : ""}`
+                }<br />
                 {mp?.occupation}<br />
                 {mp?.place_of_residence}<br />
                 {
                     `${new Date(
                         mp?.parliamentary_groups.at(0).start_date
                     ).getFullYear()} - ${
-                        mp?.parliamentary_groups.at(-1).end_date === null
+                        mp?.parliamentary_groups.at(-1)?.end_date === null
                             ? "..."
                             : new Date(mp?.parliamentary_groups.at(-1).end_date)
                     }`

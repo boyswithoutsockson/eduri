@@ -68,9 +68,9 @@ const total =
                                 last_name: mp.last_name,
                                 photo: mp.photo,
                                 party_id:
-                                    mp?.parliamentary_groups.at(-1)?.pg_id,
+                                    mp?.parliamentary_groups?.at(-1)?.pg_id,
                                 minister_position:
-                                    mp?.minister_positions.at(-1)?.end_date ===
+                                    mp?.minister_positions?.at(-1)?.end_date ===
                                     null
                                         ? mp?.minister_positions.at(-1)?.name
                                         : null,
