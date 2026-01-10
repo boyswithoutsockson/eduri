@@ -1,6 +1,8 @@
 import pandas as pd
 from lxml import etree
 from io import StringIO
+from xml.etree import ElementTree
+from xml.dom import minidom
 
 NS = {
     "asi": "http://www.vn.fi/skeemat/asiakirjakooste/2010/04/27",
@@ -376,3 +378,10 @@ def id_parse(root, NS):
     eid = metadata.get(f"{{{NS['met1']}}}eduskuntaTunnus", "").strip()
 
     return eid
+
+
+def prettify(elem):
+    """Return a pretty-printed XML string for the Element."""
+    rough_string = ElementTree.tostring(elem, "utf-8")
+    reparsed = minidom.parseString(rough_string)
+    return reparsed.toprettyxml(indent="  ")
