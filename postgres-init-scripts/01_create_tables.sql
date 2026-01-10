@@ -359,3 +359,11 @@ CREATE TABLE IF NOT EXISTS promises (
     election_year INT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS hashtags (
+    hashtag VARCHAR(100) PRIMARY KEY
+);
+
+CREATE TABLE IF NOT EXISTS proposal_hashtags (
+    hashtag REFERENCES hashtags(hashtag),
+    proposal_id REFERENCES proposals(id)
+);
