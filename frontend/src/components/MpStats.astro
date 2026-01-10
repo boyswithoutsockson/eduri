@@ -1,0 +1,117 @@
+---
+import {
+    getAbsenceStats,
+    getProposalStats,
+    getSpeechStats,
+    getLobbyStats,
+} from "src/pages/edustajat/[memberOfParliament]/_utils";
+
+interface Props {
+    mpId: number;
+    seasonStart: Date;
+}
+
+const { seasonStart, mpId } = Astro.props;
+
+const [absences, proposals, speeches, lobbies] = await Promise.all([
+    getAbsenceStats(seasonStart, mpId),
+    getProposalStats(seasonStart, mpId),
+    getSpeechStats(seasonStart, mpId),
+    getLobbyStats(seasonStart, mpId),
+]);
+---
+
+<section aria-labelledby="parliament-stats">
+    <!-- Absences -->
+    <section aria-labelledby="absences-heading">
+        <h2 id="absences-heading">Absences</h2>
+        <dl>
+            <dt>Total absences</dt>
+            <dd>{absences.total}</dd>
+
+            <dt>Work-related absences</dt>
+            <dd>{absences.workRelated}</dd>
+
+            <dt>Non work-related absences</dt>
+            <dd>{absences.nonWorkRelated}</dd>
+
+            <dt>Members absent (unique)</dt>
+            <dd>{absences.distinctPersonsAbsent}</dd>
+        </dl>
+    </section>
+
+    <!-- Proposals -->
+    <section aria-labelledby="proposals-heading">
+        <h2 id="proposals-heading">Proposals (Non-government)</h2>
+        <dl>
+            <dt>Total proposals</dt>
+            <dd>{proposals.nonGovernmentTotal}</dd>
+
+            <dt>Authored by this MP</dt>
+            <dd>{proposals.authoredCount}</dd>
+
+            <dt>Passed proposals</dt>
+            <dd>{proposals.passedCount}</dd>
+        </dl>
+    </section>
+
+    <!-- Speeches -->
+    <section aria-labelledby="speeches-heading">
+        <h2 id="speeches-heading">Speeches</h2>
+        <dl>
+            <dt>Total speeches</dt>
+            <dd>{speeches.totalSpeeches}</dd>
+
+            <dt>Distinct speakers</dt>
+            <dd>{speeches.distinctSpeakers}</dd>
+
+            <dt>Average speeches per speaker</dt>
+            <dd>{speeches.avgSpeechesPerSpeaker.toFixed(2)}</dd>
+        </dl>
+
+        {
+            speeches.byType && speeches.byType.length > 0 && (
+                <>
+                    <h4>By speech type</h4>
+                    <ul>
+                        {speeches.byType.map(({ speech_type, count }) => (
+                            <li>
+                                <strong>{speech_type}</strong>: {count}
+                            </li>
+                        ))}
+                    </ul>
+                </>
+            )
+        }
+    </section>
+
+    <!-- Lobbying -->
+    <section aria-labelledby="lobby-heading">
+        <h2 id="lobby-heading">Lobbying</h2>
+        <dl>
+            <dt>Total lobbying actions</dt>
+            <dd>{lobbies.totalActions}</dd>
+
+            <dt>Distinct lobbying organizations</dt>
+            <dd>{lobbies.distinctLobbies}</dd>
+
+            <dt>Members contacted</dt>
+            <dd>{lobbies.distinctPersonsContacted}</dd>
+        </dl>
+
+        {
+            lobbies.topLobbies && lobbies.topLobbies.length > 0 && (
+                <>
+                    <h3>Most active lobbies</h3>
+                    <ol>
+                        {lobbies.topLobbies.map(({ lobby_id, actions }) => (
+                            <li>
+                                <strong>{lobby_id}</strong> — {actions} actions
+                            </li>
+                        ))}
+                    </ol>
+                </>
+            )
+        }
+    </section>
+</section>

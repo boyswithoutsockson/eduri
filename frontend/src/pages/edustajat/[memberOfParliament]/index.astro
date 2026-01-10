@@ -1,55 +1,21 @@
 ---
-import type { NotNull } from "kysely";
-
-import { db } from "~src/database";
-import { PARLIAMENT_BASE_URL, VOTE_MAP } from "~src/utils";
 import Layout from "~src/pages/edustajat/[memberOfParliament]/_layout.astro";
 import { getMpStaticPaths } from "~src/pages/edustajat/[memberOfParliament]/_utils";
+import MpStats from "~src/components/MpStats.astro";
+import { db } from "~src/database";
 
 export const getStaticPaths = getMpStaticPaths;
 
 const { mp } = Astro.props;
 
-const ballotVotes = mp
-    ? await db
-          .selectFrom("votes")
-          .where("votes.person_id", "=", mp.id)
-          .where("votes.vote", "is not", null)
-          .leftJoin("ballots", "votes.ballot_id", "ballots.id")
-          .select([
-              "ballots.id",
-              "ballots.title",
-              "ballots.session_item_title",
-              "votes.vote",
-              "ballots.minutes_url",
-              "ballots.results_url",
-          ])
-          .orderBy("ballots.start_time", "desc")
-          .$narrowType<{ vote: NotNull }>()
-          .execute()
-    : [];
+const { start_date } = await db
+    .selectFrom("election_seasons")
+    .select("start_date")
+    .orderBy("start_date", "desc")
+    .executeTakeFirstOrThrow();
 ---
 
 <Layout mp={mp}>
-    <section>
-        <h2>Äänestykset</h2>
-        {
-            ballotVotes.map((bv) => (
-                <p>
-                    <strong>{bv.title}</strong> |
-                    <a href={`${PARLIAMENT_BASE_URL}${bv.minutes_url}`}>
-                        Pöytäkirja
-                    </a>{" "}
-                    |
-                    <a href={`${PARLIAMENT_BASE_URL}${bv.results_url}`}>
-                        Äänestystulos
-                    </a>
-                    <br />
-                    {bv.session_item_title}
-                    <br />
-                    Ääni: <strong>{VOTE_MAP[bv.vote]}</strong>
-                </p>
-            ))
-        }
-    </section>
+    <h1>Yleistä</h1>
+    <MpStats mpId={mp.id} seasonStart={start_date} />
 </Layout>
