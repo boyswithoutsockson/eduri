@@ -7,15 +7,11 @@ import type { ImageMetadata } from "astro";
 import ProfileIcon from "~src/icons/profile.svg";
 import type { LocalImageProps } from "astro:assets";
 import { PARTY_ABBRS, PARTY_COLORS } from "~src/constants";
+import { type MPshort } from "~src/pages/edustajat/_utils";
 
 interface Props {
     imageProps?: Omit<Partial<LocalImageProps>, "src" | "alt">;
-    mp: {
-        first_name: string | null;
-        last_name: string | null;
-        photo: string | null;
-        party_id: string | null;
-    };
+    mp: MPshort;
 }
 
 const { mp, imageProps } = Astro.props;
@@ -25,9 +21,10 @@ const images = import.meta.glob<{ default: ImageMetadata }>(
 );
 
 const partyColor =
-    PARTY_COLORS[(mp.party_id ?? "") as keyof typeof PARTY_COLORS] ?? "#bbbbbb";
+    PARTY_COLORS[(mp.current_party_id ?? "") as keyof typeof PARTY_COLORS] ??
+    "#bbbbbb";
 
-const label = `${mp.first_name} ${mp.last_name} (${PARTY_ABBRS[mp.party_id as keyof typeof PARTY_ABBRS]})`;
+const label = `${mp.first_name} ${mp.last_name} (${PARTY_ABBRS[mp.current_party_id as keyof typeof PARTY_ABBRS]})`;
 ---
 
 <a href={`/edustajat/${mp.first_name}+${mp.last_name}`}>

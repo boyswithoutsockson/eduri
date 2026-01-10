@@ -1,11 +1,14 @@
 ---
 import Layout from "~src/layouts/BaseLayout.astro";
-
 import { db } from "~src/database";
 import { sql } from "kysely";
 import Pagination from "~src/components/Pagination.astro";
 import MemberListItem from "~src/components/MemberListItem.astro";
-import { mpData, type MP } from "~src/pages/edustajat/_utils";
+import {
+    mpData,
+    parliamentary_groups_sql,
+    type MP,
+} from "~src/pages/edustajat/_utils";
 import { PAGE_QUERYPARAM, SEARCH_QUERYPARAM } from "~src/constants";
 import SearchInput from "~src/components/SearchInput.astro";
 
@@ -18,7 +21,9 @@ const search = Astro.url.searchParams.get(SEARCH_QUERYPARAM);
 const page = Number(Astro.url.searchParams.get(PAGE_QUERYPARAM) ?? 1) - 1;
 
 const query = mpData()
-    .where("parliamentary_group.end_date", "is", null)
+    .where(
+        sql<boolean>`(${parliamentary_groups_sql} -> -1 ->> 'end_date') IS NULL`
+    )
     .orderBy("persons.last_name");
 
 type MPSearch = MP & { total_hits?: number };
@@ -57,7 +62,20 @@ const total =
             {
                 data.map((mp) => (
                     <li>
-                        <MemberListItem mp={mp} />
+                        <MemberListItem
+                            mp={{
+                                first_name: mp.first_name,
+                                last_name: mp.last_name,
+                                photo: mp.photo,
+                                party_id:
+                                    mp?.parliamentary_groups.at(-1)?.pg_id,
+                                minister_position:
+                                    mp?.minister_positions.at(-1)?.end_date ===
+                                    null
+                                        ? mp?.minister_positions.at(-1)?.name
+                                        : null,
+                            }}
+                        />
                         <hr />
                     </li>
                 ))

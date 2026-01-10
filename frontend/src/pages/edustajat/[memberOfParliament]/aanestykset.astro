@@ -31,10 +31,10 @@ const ballotVotes = mp
           .execute()
     : [];
 
-type BallotVote = typeof ballotVotes;
+type BallotVotes = typeof ballotVotes;
 
 type BallotBundle = {
-    ballots: BallotVote[];
+    ballots: BallotVotes;
     parliament_id: string;
     start_time: Date;
     minutes_url: string;
@@ -62,7 +62,10 @@ const ballotBundles = ballotVotes
             return prev;
         }
     }, [])
-    .sort((a: BallotBundle, b: BallotBundle) => b.start_time - a.start_time);
+    .sort(
+        (a: BallotBundle, b: BallotBundle) =>
+            b.start_time.getTime() - a.start_time.getTime()
+    );
 ---
 
 <Layout mp={mp}>
@@ -77,7 +80,7 @@ const ballotBundles = ballotVotes
                             Pöytäkirja
                         </a>{" "}
                         <ul>
-                            {bb.ballots.map((bv: BallotVote) => (
+                            {bb.ballots.map((bv) => (
                                 <li id={`${bv.id}`}>
                                     <strong>{bv.title}</strong> |
                                     <a
