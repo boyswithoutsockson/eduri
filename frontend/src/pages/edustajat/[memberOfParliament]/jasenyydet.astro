@@ -50,7 +50,11 @@ const roles: Record<string, string> = {
             Object.entries(groupedCommittees).map(
                 ([committeeName, committeeData]) => (
                     <section>
-                        <strong>{committeeName}</strong>
+                        <a
+                            href={`/valiokunnat/${encodeURIComponent(committeeName)}`}
+                        >
+                            <strong>{committeeName}</strong>
+                        </a>
                         <ul>
                             {committeeData.map((committee) => (
                                 <li>
@@ -71,7 +75,7 @@ const roles: Record<string, string> = {
                             ))}
                         </ul>
                     </section>
-                )
+                ),
             )
         }
     </section>
