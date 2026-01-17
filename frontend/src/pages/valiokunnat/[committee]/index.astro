@@ -1,6 +1,7 @@
 ---
 import { committeeData } from "./_utils";
 import { db } from "~src/database";
+import { sql } from "kysely";
 import BaseLayout from "~src/layouts/BaseLayout.astro";
 import MpRoundPhoto from "~src/components/MpRoundPhoto.astro";
 
@@ -10,33 +11,51 @@ const { committee } = Astro.props;
 
 const committee_members = committee
     ? await db
-          .selectFrom("mp_committee_memberships")
-          .where("mp_committee_memberships.committee_name", "=", committee.name)
-          .leftJoin(
-              "persons",
-              "mp_committee_memberships.person_id",
-              "persons.id"
+          // start from persons, pick at most one committee membership per person (latest start_date)
+          .selectFrom("persons")
+          .leftJoinLateral(
+              (eb) =>
+                  eb
+                      .selectFrom("mp_committee_memberships as mcm")
+                      .select(["mcm.start_date", "mcm.end_date", "mcm.role"])
+                      .where("mcm.committee_name", "=", committee.name)
+                      .where("mcm.end_date", "is", null)
+                      .whereRef("mcm.person_id", "=", "persons.id")
+                      .orderBy("mcm.start_date", (ob) => ob.desc().nullsLast())
+                      .limit(1)
+                      .as("membership"),
+              (join) => join.onTrue(),
           )
           .leftJoinLateral(
               (eb) =>
                   eb
                       .selectFrom("mp_parliamentary_group_memberships as mppm")
-                      .select(["mppm.pg_id", "mppm.end_date"])
+                      .select([
+                          "mppm.pg_id",
+                          "mppm.start_date",
+                          "mppm.end_date",
+                      ])
                       .whereRef("mppm.person_id", "=", "persons.id")
-                      .orderBy("mppm.end_date", (ob) => ob.desc().nullsLast())
+                      .orderBy("mppm.start_date", (ob) => ob.desc().nullsLast())
+                      .limit(1)
                       .as("parliamentary_group"),
-              (join) => join.onTrue()
+              (join) => join.onTrue(),
           )
+          // only keep persons that actually have a current membership in this committee
+          .where("membership.start_date", "is not", null)
+          // group members by role and aggregate member objects into a JSON array
           .select([
-              "persons.first_name",
-              "persons.last_name",
-              "persons.photo",
-              "parliamentary_group.pg_id",
-              "mp_committee_memberships.start_date",
-              "mp_committee_memberships.end_date",
-              "mp_committee_memberships.role",
+              "membership.role as role",
+              sql`json_agg(json_build_object(
+                  'first_name', persons.first_name,
+                  'last_name', persons.last_name,
+                  'photo', persons.photo,
+                  'pg_id', parliamentary_group.pg_id,
+                  'start_date', membership.start_date,
+                  'end_date', membership.end_date
+              ) ORDER BY membership.start_date DESC)`.as("members"),
           ])
-          .limit(5)
+          .groupBy("membership.role")
           .execute()
     : [];
 ---
@@ -46,20 +65,24 @@ const committee_members = committee
         <h1>{committee.name}</h1>
 
         <section>
-            <h2>Jäsenet</h2>
+            <h4>Jäsenet</h4>
             <div class="boardContainer">
                 {
-                    committee_members.map((member) => (
+                    committee_members.map((group) => (
                         <div>
-                            <h4>{member.role}</h4>
-                            <MpRoundPhoto
-                                mp={{
-                                    first_name: member.first_name,
-                                    last_name: member.last_name,
-                                    photo: member.photo,
-                                    party_id: member.pg_id,
-                                }}
-                            />
+                            <h4>{group.role}</h4>
+                            {(group.members || []).map((member) => (
+                                <div class="member">
+                                    <MpRoundPhoto
+                                        mp={{
+                                            first_name: member.first_name,
+                                            last_name: member.last_name,
+                                            photo: member.photo,
+                                            party_id: member.pg_id,
+                                        }}
+                                    />
+                                </div>
+                            ))}
                         </div>
                     ))
                 }
@@ -71,7 +94,12 @@ const committee_members = committee
 <style>
     .boardContainer {
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         flex-wrap: wrap;
+        height: 500px;
+    }
+    .boardContainer > div {
+        margin: 1rem;
+        text-align: center;
     }
 </style>
