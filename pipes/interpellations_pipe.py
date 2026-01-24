@@ -3,11 +3,11 @@ import pandas as pd
 from lxml import etree
 from io import StringIO
 from XML_parsing_help_functions import (
+    PerusteluOsa_parse_to_markdown,
+    Ponsi_parse_to_markdown,
     id_parse,
     date_parse,
     Nimeke_parse,
-    Perustelu_parse,
-    Ponsi_parse,
     status_parse,
     Allekirjoittaja_parse,
     NS,
@@ -66,8 +66,8 @@ def preprocess_data():
                 "id": eid.lower(),
                 "date": date_parse(interpellation_root, NS),
                 "title": Nimeke_parse(interpellation, NS),
-                "reasoning": Perustelu_parse(interpellation, NS),
-                "motion": Ponsi_parse(interpellation, NS),
+                "reasoning": PerusteluOsa_parse_to_markdown(interpellation, NS),
+                "motion": Ponsi_parse_to_markdown(interpellation, NS),
                 "status": status_parse(handling_root, handling_xml_str, NS),
             }
         )
