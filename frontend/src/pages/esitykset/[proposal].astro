@@ -2,7 +2,6 @@
 /* eslint-disable astro/no-set-html-directive */
 // We inject markdown in multiple places in this file, it is safe trust me bro
 
-import type { NotNull } from "kysely";
 import { db } from "~src/database";
 import { marked } from "marked";
 import MpRoundPhotoList from "~src/components/MpRoundPhotoList.astro";
@@ -11,6 +10,7 @@ import { proposalData, urlencodeProposalId } from "~src/pages/esitykset/_utils";
 import { PARLIAMENT_BASE_URL } from "~src/utils";
 import { rehype } from "rehype";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import rehypeShiftHeading from "rehype-shift-heading";
 import rehypeSlug from "rehype-slug";
 import rehypeToc from "@jsdevtools/rehype-toc";
 import { create_toc_element } from "~src/utils";
@@ -39,14 +39,15 @@ const ballots = await db
     .execute();
 
 const md = `
-${proposal.summary ? `# Yhteenveto\n\n${proposal.summary}` : ""}
-${proposal.reasoning ? `# Perustelut\n\n${proposal.reasoning}` : ""}
-${proposal.law_changes ? `# Lakimuutokset\n\n${proposal.law_changes}` : ""}
+${proposal.summary ? proposal.summary : ""}
+${proposal.reasoning ? proposal.reasoning : ""}
+${proposal.law_changes ? proposal.law_changes : ""}
 `;
 
 const content = await rehype()
     .use(rehypeSlug)
     .use(rehypeAutolinkHeadings)
+    .use(rehypeShiftHeading, { shift: 1 })
     .use(rehypeToc, {
         customizeTOC: (a) => {
             if (ballots.length > 0) {
