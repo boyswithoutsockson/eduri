@@ -1,10 +1,10 @@
 FROM node:lts
 WORKDIR /app
 
-COPY package.json /app/
+COPY . .
 RUN npm install 
 RUN npm run build
 
-CMD node 
+CMD node ./dist/server/entry.mjs
 
 
