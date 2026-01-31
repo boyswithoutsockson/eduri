@@ -11,6 +11,7 @@
     "deploy": "netlify deploy --no-build --alias=${SUBDOMAIN} --dir=dist"
   },
   "dependencies": {
+    "@astrojs/node": "^9.5.2",
     "astro": "^5.14.0",
     "kysely": "^0.28.2",
     "marked": "^16.2.1",
