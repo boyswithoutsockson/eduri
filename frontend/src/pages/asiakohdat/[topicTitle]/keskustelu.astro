@@ -31,7 +31,7 @@ const speeches = await db
                 .whereRef("mppm.person_id", "=", "persons.id")
                 .orderBy("mppm.end_date", (ob) => ob.desc().nullsLast())
                 .as("parliamentary_group"),
-        (join) => join.onTrue()
+        (join) => join.onTrue(),
     )
     .select([
         "speeches.speech",
@@ -132,7 +132,7 @@ const participants = speeches
                                         {response.first_name}{" "}
                                         {response.last_name} -{" "}
                                         {response.start_time.toLocaleDateString(
-                                            "fi"
+                                            "fi",
                                         )}
                                     </h4>
                                     <Fragment

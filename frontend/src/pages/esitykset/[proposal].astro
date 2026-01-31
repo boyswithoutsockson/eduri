@@ -91,13 +91,29 @@ const content = await rehype()
 </Layout>
 
 <style>
+    :global(nav.toc) {
+        margin-bottom: 2em;
+    }
     :global(nav.toc ol) {
-        display: block;
+        margin: 0;
+        counter-reset: item;
+        grid-column: 2;
+        display: grid;
+        grid-template-columns: auto 1fr;
     }
     :global(nav.toc li) {
-        display: list-item;
         padding: unset;
-        padding-inline-start: 2em;
-        list-style: decimal;
+        display: grid;
+        grid-column: span 2;
+        grid-template-columns: subgrid;
+        column-gap: 1em;
+    }
+    :global(nav.toc li::before) {
+        content: counters(item, ".") ". ";
+        counter-increment: item;
+    }
+    :global(nav.toc li a) {
+        padding: 0;
+        margin: 0;
     }
 </style>
