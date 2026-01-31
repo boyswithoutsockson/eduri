@@ -1,6 +1,10 @@
 services:
   frontend:
     container_name: frontend
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
     build:
       context: .
       dockerfile: Dockerfile
