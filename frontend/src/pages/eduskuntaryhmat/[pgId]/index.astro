@@ -1,0 +1,57 @@
+---
+import { sql } from "kysely";
+import MpSearchList, {
+    type MPSearch,
+} from "~src/components/MpSearchList.astro";
+import { PAGE_LIMIT, PAGE_QUERYPARAM, SEARCH_QUERYPARAM } from "~src/constants";
+import { db } from "~src/database";
+import Layout from "~src/layouts/BaseLayout.astro";
+import { mpData } from "~src/pages/edustajat/_utils";
+
+export async function getStaticPaths() {
+    const data = await db
+        .selectFrom("parliamentary_groups")
+        .select(["id", "name"])
+        .execute();
+    return data.map((pg) => ({
+        params: { pgId: pg.id },
+    }));
+}
+
+// Tell Astro that this page cannot be prerendered.
+export const prerender = false;
+
+const { pgId } = Astro.params;
+
+const search = Astro.url.searchParams.get(SEARCH_QUERYPARAM);
+const page = Number(Astro.url.searchParams.get(PAGE_QUERYPARAM) ?? 1) - 1;
+
+const query = mpData()
+    .where("parliamentary_group.end_date", "is", null)
+    .where("pg_id", "=", pgId)
+    .orderBy("persons.last_name");
+
+const data: MPSearch[] = !search
+    ? await query
+          .limit(PAGE_LIMIT)
+          .offset(page * PAGE_LIMIT)
+          .execute()
+    : await sql<MPSearch>`SELECT * FROM search_persons(${search}, ${PAGE_LIMIT}, ${page * PAGE_LIMIT}, ${pgId})`
+          .execute(db)
+          .then(({ rows }) => rows);
+
+const pgNameQ = await db
+    .selectFrom("parliamentary_groups")
+    .select("name")
+    .where("parliamentary_groups.id", "=", pgId)
+    .execute();
+const pgName = pgNameQ[0].name;
+---
+
+<Layout>
+    <h1>{pgName}</h1>
+    <section>
+        Jäsenet
+        <MpSearchList data={data} page={page} pg_id={pgId} />
+    </section>
+</Layout>

@@ -3,16 +3,14 @@ import Layout from "~src/layouts/BaseLayout.astro";
 
 import { db } from "~src/database";
 import { sql } from "kysely";
-import Pagination from "~src/components/Pagination.astro";
-import MemberListItem from "~src/components/MemberListItem.astro";
-import { mpData, type MP } from "~src/pages/edustajat/_utils";
-import { PAGE_QUERYPARAM, SEARCH_QUERYPARAM } from "~src/constants";
-import SearchInput from "~src/components/SearchInput.astro";
+import { mpData } from "~src/pages/edustajat/_utils";
+import { PAGE_LIMIT, PAGE_QUERYPARAM, SEARCH_QUERYPARAM } from "~src/constants";
+import MpSearchList, {
+    type MPSearch,
+} from "~src/components/MpSearchList.astro";
 
 // Tell Astro that this page cannot be prerendered.
 export const prerender = false;
-
-const PAGE_LIMIT = 20;
 
 const search = Astro.url.searchParams.get(SEARCH_QUERYPARAM);
 const page = Number(Astro.url.searchParams.get(PAGE_QUERYPARAM) ?? 1) - 1;
@@ -20,8 +18,6 @@ const page = Number(Astro.url.searchParams.get(PAGE_QUERYPARAM) ?? 1) - 1;
 const query = mpData()
     .where("parliamentary_group.end_date", "is", null)
     .orderBy("persons.last_name");
-
-type MPSearch = MP & { total_hits?: number };
 
 const data: MPSearch[] = !search
     ? await query
@@ -31,46 +27,9 @@ const data: MPSearch[] = !search
     : await sql<MPSearch>`SELECT * FROM search_persons(${search}, ${PAGE_LIMIT}, ${page * PAGE_LIMIT})`
           .execute(db)
           .then(({ rows }) => rows);
-
-const total =
-    data[0]?.total_hits ??
-    (await db
-        .selectFrom("persons")
-        .leftJoin(
-            "mp_parliamentary_group_memberships",
-            "persons.id",
-            "mp_parliamentary_group_memberships.person_id"
-        )
-        .where("mp_parliamentary_group_memberships.end_date", "is", null)
-        .select(db.fn.countAll().as("count"))
-        .executeTakeFirstOrThrow()
-        .then((res) => Number(res.count))) ??
-    0;
 ---
 
 <Layout>
     <h1>Edustajat</h1>
-    <SearchInput label="Hae kansanedustajia..." />
-
-    <Pagination page={page} pageSize={PAGE_LIMIT} total={total}>
-        <ol>
-            {
-                data.map((mp) => (
-                    <li>
-                        <MemberListItem mp={mp} />
-                        <hr />
-                    </li>
-                ))
-            }
-        </ol>
-    </Pagination>
+    <MpSearchList data={data} page={page} pg_id={null} />
 </Layout>
-
-<style is:global>
-    ol {
-        padding-inline-start: unset;
-    }
-    li {
-        list-style: none;
-    }
-</style>
