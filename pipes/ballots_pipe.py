@@ -2,7 +2,7 @@ import os.path
 import csv
 import argparse
 
-from db import get_connection
+from db import get_connection, bulk_insert
 
 csv_path = "data/preprocessed/ballots.csv"
 
@@ -35,8 +35,18 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert(
-            "COPY ballots(id, title, session_item_title, start_time, parliament_id, minutes_url, results_url) FROM stdin DELIMITERS ',' CSV QUOTE '\"';",
+        bulk_insert(
+            cursor,
+            "ballots",
+            [
+                "id",
+                "title",
+                "session_item_title",
+                "start_time",
+                "parliament_id",
+                "minutes_url",
+                "results_url",
+            ],
             f,
         )
 

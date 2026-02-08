@@ -2,7 +2,7 @@ import os.path
 from lxml import etree
 import csv
 from harmonize import harmonize_parliamentary_group
-from db import get_connection
+from db import get_connection, bulk_insert
 
 csv_path = "data/preprocessed/mp_parliamentary_group_memberships.csv"
 
@@ -75,9 +75,12 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert(
-            "COPY mp_parliamentary_group_memberships(person_id, pg_id, start_date, end_date) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
+        bulk_insert(
+            cursor,
+            "mp_parliamentary_group_memberships",
+            ["person_id", "pg_id", "start_date", "end_date"],
             f,
+            has_header=True,
         )
 
     conn.commit()

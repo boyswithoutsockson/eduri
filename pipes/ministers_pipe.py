@@ -2,8 +2,7 @@ import os
 import pandas as pd
 import xml.etree.ElementTree as ET
 
-from db import get_connection
-
+from db import get_connection, bulk_insert
 
 csv_path = "data/preprocessed/ministers.csv"
 minister_position_csv_path = "data/preprocessed/minister_positions.csv"
@@ -61,14 +60,13 @@ def import_data():
     cursor = conn.cursor()
 
     with open(minister_position_csv_path) as f:
-        cursor.copy_expert(
-            "COPY minister_positions(title) FROM stdin DELIMITERS ',' CSV QUOTE '\"';",
-            f,
-        )
+        bulk_insert(cursor, "minister_positions", ["title"], f)
 
     with open(csv_path) as f:
-        cursor.copy_expert(
-            "COPY ministers(person_id, minister_position, cabinet_id, start_date, end_date) FROM stdin DELIMITERS ',' CSV QUOTE '\"';",
+        bulk_insert(
+            cursor,
+            "ministers",
+            ["person_id", "minister_position", "cabinet_id", "start_date", "end_date"],
             f,
         )
 

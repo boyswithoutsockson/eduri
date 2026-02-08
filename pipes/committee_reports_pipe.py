@@ -15,7 +15,7 @@ from XML_parsing_help_functions import (
     Osallistuja_parse,
     NS,
 )
-from db import get_connection
+from db import get_connection, bulk_insert
 
 # Paths
 tsv_path = os.path.join("data", "raw", "vaski", "CommitteeReport_fi.tsv")
@@ -134,8 +134,8 @@ def preprocess_data():
                     cur.execute(
                         """
                         SELECT id 
-                        FROM public.persons 
-                        WHERE LOWER(first_name) = %s AND LOWER(last_name) = %s""",
+                        FROM persons 
+                        WHERE LOWER(first_name) = ? AND LOWER(last_name) = ?""",
                         (first_name.strip().lower(), last_name.strip().lower()),
                     )
 
@@ -220,22 +220,31 @@ def import_data():
 
     # 1) committee_reports
     with open(committee_reports_csv, "r", encoding="utf-8") as f:
-        cur.copy_expert(
-            """
-            COPY committee_reports(id, proposal_id, date, committee_name, proposal_summary, opinion, reasoning, law_changes)
-            FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
-            """,
+        bulk_insert(
+            cur,
+            "committee_reports",
+            [
+                "id",
+                "proposal_id",
+                "date",
+                "committee_name",
+                "proposal_summary",
+                "opinion",
+                "reasoning",
+                "law_changes",
+            ],
             f,
+            has_header=True,
         )
 
     # 2) committee_report_signatures
     with open(committee_report_signatures_csv, "r", encoding="utf-8") as f:
-        cur.copy_expert(
-            """
-            COPY committee_report_signatures(committee_report_id, person_id)
-            FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
-            """,
+        bulk_insert(
+            cur,
+            "committee_report_signatures",
+            ["committee_report_id", "person_id"],
             f,
+            has_header=True,
         )
 
     # 3) objections — insert row-by-row to get SERIAL id and map via (committee_report_id, objection_index)
@@ -251,12 +260,12 @@ def import_data():
             cur.execute(
                 """
                 INSERT INTO objections (committee_report_id, reasoning, motion)
-                VALUES (%s, %s, %s)
-                RETURNING id;
+                VALUES (?, ?, ?)
                 """,
                 (cr_id, reasoning, motion),
             )
-            new_id = cur.fetchone()[0]
+            # Use lastrowid for sqlite
+            new_id = cur.lastrowid
             obj_id_map[(cr_id, ob_idx)] = new_id
 
     # 4) objection_signatures — map each to its correct objection via the local index
@@ -277,7 +286,7 @@ def import_data():
             cur.execute(
                 """
                 INSERT INTO objection_signatures (objection_id, person_id)
-                VALUES (%s, %s);
+                VALUES (?, ?);
                 """,
                 (ob_id, person_id),
             )

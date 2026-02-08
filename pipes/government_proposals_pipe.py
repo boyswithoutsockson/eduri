@@ -13,7 +13,7 @@ from XML_parsing_help_functions import (
     Allekirjoittaja_parse,
     NS,
 )
-from db import get_connection
+from db import get_connection, bulk_insert
 
 # Paths
 gp_tsv_path = os.path.join("data", "raw", "vaski", "GovernmentProposal_fi.tsv")
@@ -112,21 +112,30 @@ def import_data():
     cur = conn.cursor()
 
     with open(government_proposals_csv, "r", encoding="utf-8") as f:
-        cur.copy_expert(
-            """
-            COPY proposals(id, ptype, date, title, summary, reasoning, law_changes, status)
-            FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
-            """,
+        bulk_insert(
+            cur,
+            "proposals",
+            [
+                "id",
+                "ptype",
+                "date",
+                "title",
+                "summary",
+                "reasoning",
+                "law_changes",
+                "status",
+            ],
             f,
+            has_header=True,
         )
 
     with open(government_proposal_signatures_csv, "r", encoding="utf-8") as f:
-        cur.copy_expert(
-            """
-            COPY proposal_signatures(proposal_id, person_id, first)
-            FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
-            """,
+        bulk_insert(
+            cur,
+            "proposal_signatures",
+            ["proposal_id", "person_id", "first"],
             f,
+            has_header=True,
         )
 
     conn.commit()

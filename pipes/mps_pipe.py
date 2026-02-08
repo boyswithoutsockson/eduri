@@ -3,10 +3,11 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 import csv
 
-from db import get_connection
+from db import get_connection, bulk_insert
 
 
 csv_path = "data/preprocessed/mps.csv"
+
 
 
 def preprocess_data():
@@ -55,8 +56,22 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert(
-            "COPY persons(id, first_name, last_name, full_name, phone_number, email, occupation, year_of_birth, place_of_birth, place_of_residence, photo) FROM stdin DELIMITERS ',' CSV QUOTE '\"';",
+        bulk_insert(
+            cursor,
+            "persons",
+            [
+                "id",
+                "first_name",
+                "last_name",
+                "full_name",
+                "phone_number",
+                "email",
+                "occupation",
+                "year_of_birth",
+                "place_of_birth",
+                "place_of_residence",
+                "photo",
+            ],
             f,
         )
 

@@ -2,7 +2,7 @@ import os
 import polars as pl
 from matching_help_functions import match_target_mp
 
-from db import get_connection
+from db import get_connection, bulk_insert
 
 json_path = os.path.join("data", "raw", "lobby_actions.json")
 topics_csv_path = "data/preprocessed/lobby_topics.csv"
@@ -82,15 +82,17 @@ def import_data():
     cursor = conn.cursor()
 
     with open(topics_csv_path) as f:
-        cursor.copy_expert(
-            "COPY lobby_topics(id, topic, project) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
-            f,
+        bulk_insert(
+            cursor, "lobby_topics", ["id", "topic", "project"], f, has_header=True
         )
 
     with open(actions_csv_path) as f:
-        cursor.copy_expert(
-            "COPY lobby_actions(lobby_id, term_id, person_id, topic_id, contact_method) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
+        bulk_insert(
+            cursor,
+            "lobby_actions",
+            ["lobby_id", "term_id", "person_id", "topic_id", "contact_method"],
             f,
+            has_header=True,
         )
 
     conn.commit()

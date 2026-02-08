@@ -1,7 +1,7 @@
 import os
 import polars as pl
 
-from db import get_connection
+from db import get_connection, bulk_insert
 
 json_path = os.path.join("data", "raw", "promises_2023.json")
 csv_path = os.path.join("data", "preprocessed", "promises.csv")
@@ -28,8 +28,8 @@ def preprocess_data():
                         person_id,
                         first_name,
                         last_name
-                    FROM (public.mp_parliamentary_group_memberships
-                    INNER JOIN public.persons ON persons.id = person_id)
+                    FROM (mp_parliamentary_group_memberships
+                    INNER JOIN persons ON persons.id = person_id)
                     WHERE end_date is null 
                     ;""")
 
@@ -63,9 +63,12 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert(
-            "COPY promises(person_id, promise, election_year) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
+        bulk_insert(
+            cursor,
+            "promises",
+            ["person_id", "promise", "election_year"],
             f,
+            has_header=True,
         )
 
     conn.commit()
