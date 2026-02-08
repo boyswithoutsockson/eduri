@@ -24,17 +24,25 @@ ORDER BY pg_id, ballot_id, count DESC;
 
 -- Most popular vote by pg and ballot
 CREATE VIEW pg_mode_vote_view AS
-SELECT DISTINCT ON (pg_id, ballot_id) -- Takes first unique pair of each combination
+SELECT
     pg_id,
     ballot_id,
-    vote AS mode_vote,
+    mode_vote,
     count
-FROM pg_vote_count_view
-ORDER BY pg_id, ballot_id, count DESC;
+FROM (
+    SELECT
+        pg_id,
+        ballot_id,
+        vote AS mode_vote,
+        count,
+        ROW_NUMBER() OVER (PARTITION BY pg_id, ballot_id ORDER BY count DESC) as rn
+    FROM pg_vote_count_view
+)
+WHERE rn = 1;
 
 
 --Contra vote score by mp
-CREATE MATERIALIZED VIEW contra_vote_scores_view AS
+CREATE VIEW contra_vote_scores_view AS
 WITH pg_mode_and_person_vote AS (
     SELECT 
         pg_modes.mode_vote,
@@ -51,6 +59,6 @@ WITH pg_mode_and_person_vote AS (
 )
 SELECT 
     person_id, 
-    CAST(SUM(CASE WHEN vote = mode_vote OR vote = 'absent' THEN 0 ELSE 1 END) AS FLOAT) / NULLIF(COUNT(vote), 0) AS contra_vote_score
+    CAST(SUM(CASE WHEN vote = mode_vote OR vote = 'absent' THEN 0 ELSE 1 END) AS REAL) / NULLIF(COUNT(vote), 0) AS contra_vote_score
 FROM pg_mode_and_person_vote
 GROUP BY person_id;

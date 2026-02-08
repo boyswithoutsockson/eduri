@@ -2,7 +2,7 @@ import os.path
 import pandas as pd
 import xmltodict
 from harmonize import harmonize_parliamentary_group
-from db import get_connection
+from db import get_connection, bulk_insert
 
 csv_path = "data/preprocessed/parliamentary_groups.csv"
 
@@ -50,10 +50,7 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert(
-            "COPY parliamentary_groups(id, name) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
-            f,
-        )
+        bulk_insert(cursor, "parliamentary_groups", ["id", "name"], f, has_header=True)
 
     conn.commit()
     cursor.close()

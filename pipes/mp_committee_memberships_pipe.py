@@ -3,7 +3,7 @@ import pandas as pd
 import xmltodict
 import argparse
 
-from db import get_connection
+from db import get_connection, bulk_insert
 
 csv_path = "data/preprocessed/mp_committee_memberships.csv"
 
@@ -99,9 +99,12 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert(
-            "COPY mp_committee_memberships(person_id, committee_name, start_date, end_date, role) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
+        bulk_insert(
+            cursor,
+            "mp_committee_memberships",
+            ["person_id", "committee_name", "start_date", "end_date", "role"],
             f,
+            has_header=True,
         )
 
     conn.commit()

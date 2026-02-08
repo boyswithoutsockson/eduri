@@ -4,7 +4,7 @@ SHELL := /bin/bash
 .ONESHELL:
 
 # Parallelize execution based on available CPU cores
-NPROCS = $(shell grep -c 'processor' /proc/cpuinfo)
+NPROCS = 1
 MAKEFLAGS += -j$(NPROCS)
 
 # Data pipeline configs
@@ -52,7 +52,7 @@ all: help
 install: install-pipes install-frontend  ## install project dependencies
 
 dbshell: ## connect to the current database
-	PGPASSWORD=postgres psql -q -U postgres -h $${DATABASE_HOST:-db} postgres
+	python3 -m sqlite3 db.sqlite3
 
 
 ####################################
@@ -220,13 +220,13 @@ insert-database: $(addprefix $(DB)/,$(PIPES)) ## runs all data pipelines into th
 .PHONY: search-index
 search-index: insert-database
 	@echo "Building search index..."
-	PGPASSWORD=postgres PGOPTIONS='--client-min-messages=warning' psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < sql/proposal_search.sql
-	PGPASSWORD=postgres PGOPTIONS='--client-min-messages=warning' psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < sql/person_search.sql
+	# uv run python scripts/run_sql.py sql/proposal_search.sql
+	# uv run python scripts/run_sql.py sql/person_search.sql
 
 .PHONY: views
 views: insert-database
 	@echo "Creating views..."
-	PGPASSWORD=postgres PGOPTIONS='--client-min-messages=warning' psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < sql/views.sql
+	uv run python scripts/run_sql.py sql/views.sql
 
 .PHONY: database
 database: ## inserts all data into database and builds search indices and views 
@@ -235,8 +235,8 @@ database: ## inserts all data into database and builds search indices and views
 
 .PHONY: nuke
 nuke: ## resets all data in the database
-	PGPASSWORD=postgres psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < DELETE_ALL_TABLES.sql
-	PGPASSWORD=postgres psql -q -U postgres -h $${DATABASE_HOST:-db} postgres < postgres-init-scripts/01_create_tables.sql
+	rm -f db.sqlite3
+	uv run python scripts/run_sql.py postgres-init-scripts/01_create_tables.sql
 	rm -rf $(DB)
 
 .PHONY: nuke-database

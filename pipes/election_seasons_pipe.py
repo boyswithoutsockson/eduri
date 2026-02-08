@@ -1,8 +1,7 @@
 import os.path
 import pandas as pd
 
-from db import get_connection
-
+from db import get_connection, bulk_insert
 
 csv_path = "data/preprocessed/election_seasons.csv"
 
@@ -23,9 +22,8 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert(
-            "COPY election_seasons(start_date, end_date) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
-            f,
+        bulk_insert(
+            cursor, "election_seasons", ["start_date", "end_date"], f, has_header=True
         )
 
     conn.commit()

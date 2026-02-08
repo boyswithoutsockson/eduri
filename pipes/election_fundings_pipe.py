@@ -1,7 +1,7 @@
 import os
 import polars as pl
 
-from db import get_connection
+from db import get_connection, bulk_insert
 
 raw_path = os.path.join("data", "raw", "election23_fundings.csv")
 csv_path = os.path.join("data", "preprocessed", "election_fundings.csv")
@@ -58,8 +58,8 @@ def preprocess_data():
                         person_id,
                         first_name,
                         last_name
-                    FROM (public.mp_parliamentary_group_memberships
-                    INNER JOIN public.persons ON persons.id = person_id)
+                    FROM (mp_parliamentary_group_memberships
+                    INNER JOIN persons ON persons.id = person_id)
                     WHERE end_date is null 
                     ;""")
 
@@ -94,10 +94,23 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert(
-            "COPY election_fundings(person_id, election_year, ftype, funder_organization, funder_company_id, funder_first_name, "
-            "funder_last_name, loan_title, loan_schedule, amount) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
+        bulk_insert(
+            cursor,
+            "election_fundings",
+            [
+                "person_id",
+                "election_year",
+                "ftype",
+                "funder_organization",
+                "funder_company_id",
+                "funder_first_name",
+                "funder_last_name",
+                "loan_title",
+                "loan_schedule",
+                "amount",
+            ],
             f,
+            has_header=True,
         )
 
     conn.commit()
