@@ -59,6 +59,7 @@ NS = {
 metaNS = {
     "ns1": "http://www.vn.fi/skeemat/metatietoelementit/2010/04/27",
     "jme": "http://www.eduskunta.fi/skeemat/julkaisusiirtokooste/2011/12/20",
+    "met1": "http://www.vn.fi/skeemat/metatietoelementit/2010/04/27",
 }
 
 
@@ -628,4 +629,5 @@ def id_parse(root, NS):
 def hashtag_parse(root, proposal_id):
     metadata = root.find(".//jme:JulkaisuMetatieto", namespaces=metaNS)
     hashtags = metadata.xpath(".//ns1:AiheTeksti/text()", namespaces=metaNS)
+    hashtags += metadata.xpath(".//met1:AiheTeksti/text()", namespaces=metaNS)
     return [{"proposal_id": proposal_id, "hashtag": hashtag} for hashtag in hashtags]

@@ -11,9 +11,9 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
   : ColumnType<T, T | undefined, T>;
 
-export type Int8 = ColumnType<string, bigint | number | string, bigint | number | string>;
+export type HandlingStatus = "cancelled" | "dealt" | "expired" | "handled" | "open" | "passed" | "passed_changed" | "passed_urgent" | "rejected" | "replied" | "resting";
 
-export type ProposalStatus = "cancelled" | "expired" | "handled" | "open" | "passed" | "passed_changed" | "passed_urgent" | "rejected" | "resting";
+export type Int8 = ColumnType<string, bigint | number | string, bigint | number | string>;
 
 export type ProposalType = "citizen" | "government" | "mp_debate" | "mp_law" | "mp_petition";
 
@@ -110,11 +110,30 @@ export interface ElectionSeasons {
   start_date: Timestamp;
 }
 
+export interface Hashtags {
+  hashtag: string;
+}
+
 export interface Interests {
   category: string | null;
   id: Generated<number>;
   interest: string | null;
   person_id: number | null;
+}
+
+export interface Interpellations {
+  date: Timestamp;
+  id: string;
+  motion: string | null;
+  reasoning: string | null;
+  status: HandlingStatus | null;
+  title: string;
+}
+
+export interface InterpellationSignatures {
+  first: boolean | null;
+  interpellation_id: string;
+  person_id: number;
 }
 
 export interface Lobbies {
@@ -224,6 +243,11 @@ export interface Promises {
   promise: string;
 }
 
+export interface ProposalHashtags {
+  hashtag: string | null;
+  proposal_id: string | null;
+}
+
 export interface Proposals {
   date: Timestamp;
   id: string;
@@ -231,7 +255,7 @@ export interface Proposals {
   ptype: ProposalType | null;
   reasoning: string | null;
   search_vector: string | null;
-  status: ProposalStatus;
+  status: HandlingStatus;
   summary: string | null;
   title: string | null;
 }
@@ -286,7 +310,10 @@ export interface DB {
   election_budgets: ElectionBudgets;
   election_fundings: ElectionFundings;
   election_seasons: ElectionSeasons;
+  hashtags: Hashtags;
   interests: Interests;
+  interpellation_signatures: InterpellationSignatures;
+  interpellations: Interpellations;
   lobbies: Lobbies;
   lobby_actions: LobbyActions;
   lobby_terms: LobbyTerms;
@@ -302,6 +329,7 @@ export interface DB {
   pg_mode_vote_view: PgModeVoteView;
   pg_vote_count_view: PgVoteCountView;
   promises: Promises;
+  proposal_hashtags: ProposalHashtags;
   proposal_signatures: ProposalSignatures;
   proposals: Proposals;
   records: Records;
