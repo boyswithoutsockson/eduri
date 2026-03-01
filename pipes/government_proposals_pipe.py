@@ -11,8 +11,10 @@ from XML_parsing_help_functions import (
     Saados_parse,
     status_parse,
     Allekirjoittaja_parse,
+    hashtag_parse,
     NS,
 )
+from hashtags_pipe import write_hashtags
 from db import get_connection
 
 # Paths
@@ -35,6 +37,7 @@ def preprocess_data():
 
     gp_records = []  # government_proposals rows
     sgn_records = []
+    hashtags = []
 
     conn = get_connection()
     cur = conn.cursor()
@@ -92,6 +95,10 @@ def preprocess_data():
             }
         )
 
+        # HASHTAGS
+        proposal_hashtags = hashtag_parse(gp_root, eid.lower())
+        hashtags += proposal_hashtags
+
         # SIGNATURES
         sgn_records.extend(Allekirjoittaja_parse(proposal, NS, eid, cur))
 
@@ -105,6 +112,8 @@ def preprocess_data():
     pd.DataFrame(sgn_records).to_csv(
         government_proposal_signatures_csv, index=False, encoding="utf-8"
     )
+
+    write_hashtags(hashtags)
 
 
 def import_data():
