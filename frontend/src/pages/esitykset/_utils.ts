@@ -29,7 +29,7 @@ export function proposalData() {
                     'full_name', prs.full_name,
                     'photo', prs.photo,
                     'first', ps.first,
-                    'party_id', mppm.pg_id
+                    'current_party_id', mppm.pg_id
                 ) ORDER BY (ps.first IS NOT TRUE), prs.last_name, prs.first_name
             ),
             '[]'::jsonb
