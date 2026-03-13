@@ -8,7 +8,6 @@ assemblies_csv_path = os.path.join("data", "preprocessed", "assemblies.csv")
 
 
 def preprocess_data():
-    earliest_retirement_date = "2000-01-01"
 
     with open(os.path.join("data", "raw", "MemberOfParliament.tsv"), "r") as f:
         MoP = pd.read_csv(f, sep="\t")
@@ -17,19 +16,6 @@ def preprocess_data():
     committees = []
 
     for henkilo in xml_dicts:
-        if henkilo["Henkilo"]["KansanedustajuusPaattynytPvm"]:
-            retirement_date = "-".join(
-                list(
-                    reversed(
-                        (henkilo["Henkilo"]["KansanedustajuusPaattynytPvm"]).split(".")
-                    )
-                )
-            )
-        else:
-            continue
-
-        if retirement_date < earliest_retirement_date:
-            continue
 
         cur_committees = henkilo["Henkilo"]["NykyisetToimielinjasenyydet"]["Toimielin"]
 

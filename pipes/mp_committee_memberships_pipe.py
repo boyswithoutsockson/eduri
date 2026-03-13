@@ -1,15 +1,20 @@
 import os.path
 import pandas as pd
-import xmltodict
+import numpy as np
 import argparse
+import os
+from lxml import etree
+from io import StringIO
+from XML_parsing_help_functions import id_parse, date_parse, Nimeke_parse, AsiaSisaltoKuvaus_parse, Perustelu_parse, Saados_parse, status_parse, Allekirjoittaja_parse
+from db import get_connection
 
 from db import get_connection
 
-csv_path = "data/preprocessed/mp_committee_memberships.csv"
-
+csv_path = os.path.join("data", "preprocessed", "mp_committee_memberships.csv")
 
 def preprocess_data():
-    earliest_retirement_date = "2010-01-01"
+
+    mcm_records = []
 
     roles = {
         "jäsen": "member",
@@ -22,76 +27,76 @@ def preprocess_data():
     }
 
     with open(os.path.join("data", "raw", "MemberOfParliament.tsv"), "r") as f:
-        MoP = pd.read_csv(f, sep="\t")
+        MoP_df = pd.read_csv(f, sep="\t")
 
-    xml_dicts = MoP.XmlDataFi.apply(xmltodict.parse)
-    membership_df = pd.DataFrame(
-        columns=["person_id", "committee_name", "start_date", "end_date", "role"]
-    )
-    for henkilo in xml_dicts:
-        person_id = int(henkilo["Henkilo"]["HenkiloNro"])
-        if henkilo["Henkilo"]["KansanedustajuusPaattynytPvm"]:
-            retirement_date = "-".join(
-                list(
-                    reversed(
-                        (henkilo["Henkilo"]["KansanedustajuusPaattynytPvm"]).split(".")
-                    )
-                )
-            )
-            if retirement_date < earliest_retirement_date:
-                continue
+    for MoP_xml_str in MoP_df.get("XmlDataFi", []):
 
-        cur_committees = henkilo["Henkilo"]["NykyisetToimielinjasenyydet"]["Toimielin"]
+        MoP_root = etree.parse(StringIO(MoP_xml_str)).getroot()
 
-        if isinstance(cur_committees, dict):
-            cur_committees = [cur_committees]
+        person_id = MoP_root.find(".//HenkiloNro").text
 
-        try:
-            prev_committees = henkilo["Henkilo"]["AiemmatToimielinjasenyydet"][
-                "Toimielin"
-            ]
-        except TypeError:
-            prev_committees = []
+        assemblies = MoP_root.findall(".//NykyisetToimielinjasenyydet/Toimielin") + MoP_root.findall(".//AiemmatToimielinjasenyydet/Toimielin")
+        
+        for assembly in assemblies:
+            if assembly.attrib.get("OnkoValiokunta") == "true":
+                name = assembly.find(".//Nimi").text
 
-        if isinstance(prev_committees, dict):
-            prev_committees = [prev_committees]
+                # Some instances have no name because the committee does not exist anymore, skip
+                if not name:
+                    continue
 
-        for committee in cur_committees + prev_committees:
-            if committee["Nimi"]:
-                if committee["@OnkoValiokunta"] == "true":
-                    committee_name = committee["Nimi"]
-                    try:
-                        memberships = (
-                            committee["Jasenyys"]
-                            if isinstance(committee["Jasenyys"], list)
-                            else [committee["Jasenyys"]]
-                        )
-                    except KeyError:
+                memberships = assembly.findall(".//Jasenyys")
+                for membership in memberships:
+
+                    # Some instances are broken and have no role
+                    if membership.find(".//Rooli").text == None:
                         continue
 
-                    for membership in memberships:
-                        if membership["AlkuPvm"]:
-                            start_date = "-".join(
-                                list(reversed((membership["AlkuPvm"]).split(".")))
-                            )
-                            if len(start_date) < 10:
-                                start_date = f"{start_date[:4]}-01-01"
-                            if membership["LoppuPvm"]:
-                                end_date = "-".join(
-                                    list(reversed((membership["LoppuPvm"]).split(".")))
-                                )
-                                if len(end_date) < 10:
-                                    end_date = f"{end_date[:4]}-12-31"
-                            role = roles[membership["Rooli"].lower()]
-                            membership_df.loc[len(membership_df)] = [
-                                person_id,
-                                committee_name,
-                                start_date,
-                                end_date,
-                                role,
-                            ]
+                    role = roles[membership.find(".//Rooli").text.lower()]
 
-    membership_df.to_csv(csv_path, index=False)
+                    # Some instances are broken and have no start date
+                    if membership.find(".//AlkuPvm") is None or membership.find(".//AlkuPvm").text is None:      
+                        continue
+                    
+                    start_date = membership.find(".//AlkuPvm").text
+
+                    match start_date:
+                        # Some old instances have no exact date, just a year or year + roman numerals
+                        # In these cases we create dates arbitrarily
+                        case s if s.endswith("II"):
+                            start_date = f"{s[:4]}-07-01"
+                        case s if s.endswith("I"):
+                            start_date = f"{s[:4]}-01-01"
+                        case s if len(s) < 7:
+                            start_date = f"{s[:4]}-01-01"
+                        case _:
+                            start_date = "-".join(reversed(s.split(".")))
+
+                    if membership.find(".//LoppuPvm") is None:
+                        continue
+
+                    end_date = membership.find(".//LoppuPvm").text
+                    match end_date:
+                        case None:
+                            end_date = None
+                        # Some old instances have no exact date, just a year or year + roman numerals
+                        # In these cases we create dates arbitrarily
+                        case e if e.endswith("II"):
+                            end_date = f"{e[:4]}-12-31"
+                        case e if e.endswith("I"):
+                            end_date = f"{e[:4]}-06-30"
+                        case e if len(e) < 7:
+                            end_date = f"{e[:4]}-12-31"
+                        case _:
+                            end_date = "-".join(list(reversed((end_date).split("."))))
+                
+                    mcm_records.append({"person_id": person_id,
+                                "committee_name": name, 
+                                "start_date": start_date, 
+                                "end_date": end_date,
+                                "role": role})
+                    
+    pd.DataFrame(mcm_records).to_csv(csv_path, index=False, encoding="utf-8")
 
 
 def import_data():
