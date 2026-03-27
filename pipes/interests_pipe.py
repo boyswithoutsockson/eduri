@@ -3,7 +3,7 @@ import csv
 import xmltodict
 import pandas as pd
 
-from db import get_connection
+from db import get_connection, bulk_insert
 
 csv_path = "data/preprocessed/interests.csv"
 
@@ -53,9 +53,8 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert(
-            "COPY interests(person_id, category, interest) FROM stdin DELIMITERS ',' CSV QUOTE '\"';",
-            f,
+        bulk_insert(
+            cursor, "interests", ["person_id", "category", "interest"], f
         )
 
     conn.commit()

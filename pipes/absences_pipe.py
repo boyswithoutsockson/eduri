@@ -5,7 +5,7 @@ from io import StringIO
 from XML_parsing_help_functions import absentee_parse
 import re
 
-from db import get_connection
+from db import get_connection, bulk_insert
 
 absences_csv_path = os.path.join("data", "preprocessed", "absences.csv")
 
@@ -107,9 +107,18 @@ def import_data():
     cursor = conn.cursor()
 
     with open(absences_csv_path) as f:
-        cursor.copy_expert(
-            "COPY absences(person_id, record_assembly_code, record_number, record_year, work_related) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
+        bulk_insert(
+            cursor,
+            "absences",
+            [
+                "person_id",
+                "record_assembly_code",
+                "record_number",
+                "record_year",
+                "work_related",
+            ],
             f,
+            has_header=True,
         )
 
     conn.commit()

@@ -12,7 +12,7 @@ from XML_parsing_help_functions import (
     Allekirjoittaja_parse,
     NS,
 )
-from db import get_connection
+from db import get_connection, bulk_insert
 
 # Paths
 interpellations_tsv_path = os.path.join("data", "raw", "vaski", "Interpellation_fi.tsv")
@@ -91,21 +91,21 @@ def import_data():
     cur = conn.cursor()
 
     with open(interpellations_csv, "r", encoding="utf-8") as f:
-        cur.copy_expert(
-            """
-            COPY interpellations(id, date, title, reasoning, motion, status)
-            FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
-            """,
+        bulk_insert(
+            cur,
+            "interpellations",
+            ["id", "date", "title", "reasoning", "motion", "status"],
             f,
+            has_header=True,
         )
 
     with open(interpellation_signatures_csv, "r", encoding="utf-8") as f:
-        cur.copy_expert(
-            """
-            COPY interpellation_signatures(interpellation_id, person_id, first)
-            FROM STDIN WITH (FORMAT CSV, HEADER TRUE, QUOTE '\"');
-            """,
+        bulk_insert(
+            cur,
+            "interpellation_signatures",
+            ["interpellation_id", "person_id", "first"],
             f,
+            has_header=True,
         )
 
     conn.commit()

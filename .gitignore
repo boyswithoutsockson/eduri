@@ -1,3 +1,4 @@
 data/*
 *.pyc
 frontend/src/assets/*
+*.sqlite3

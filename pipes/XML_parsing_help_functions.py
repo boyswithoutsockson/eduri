@@ -572,7 +572,7 @@ def Allekirjoittaja_parse(root, NS, eid, cursor=None):
                 """
                 SELECT id 
                 FROM persons
-                WHERE LOWER(first_name) = %s AND LOWER(last_name) = %s""",
+                WHERE LOWER(first_name) = ? AND LOWER(last_name) = ?""",
                 (first_name.strip().lower(), last_name.strip().lower()),
             )
 

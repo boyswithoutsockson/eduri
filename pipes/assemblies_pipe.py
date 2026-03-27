@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import xmltodict
 
-from db import get_connection
+from db import get_connection, bulk_insert
 
 assemblies_csv_path = os.path.join("data", "preprocessed", "assemblies.csv")
 
@@ -92,10 +92,7 @@ def import_data():
     cursor = conn.cursor()
 
     with open(assemblies_csv_path) as f:
-        cursor.copy_expert(
-            "COPY assemblies(code, name) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
-            f,
-        )
+        bulk_insert(cursor, "assemblies", ["code", "name"], f, has_header=True)
 
     conn.commit()
     cursor.close()

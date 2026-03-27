@@ -4,7 +4,7 @@ from lxml import etree
 from io import StringIO
 from XML_parsing_help_functions import date_parse, rollcall_id_parse, NS
 
-from db import get_connection
+from db import get_connection, bulk_insert
 
 
 class IncompleteDecisionTreeException(Exception):
@@ -212,21 +212,54 @@ def import_data():
     cursor = conn.cursor()
 
     with open(records_csv_path) as f:
-        cursor.copy_expert(
-            "COPY records(assembly_code, number, year, meeting_date, creation_date, rollcall_id) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
+        bulk_insert(
+            cursor,
+            "records",
+            [
+                "assembly_code",
+                "number",
+                "year",
+                "meeting_date",
+                "creation_date",
+                "rollcall_id",
+            ],
             f,
+            has_header=True,
         )
 
     with open(agenda_items_csv_path) as f:
-        cursor.copy_expert(
-            "COPY agenda_items(record_assembly_code, record_year, record_number, parliament_id, title) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
+        bulk_insert(
+            cursor,
+            "agenda_items",
+            [
+                "record_assembly_code",
+                "record_year",
+                "record_number",
+                "parliament_id",
+                "title",
+            ],
             f,
+            has_header=True,
         )
 
     with open(speeches_csv_path) as f:
-        cursor.copy_expert(
-            "COPY speeches(id, person_id, record_assembly_code, record_number, record_year, agenda_item_parliament_id, start_time, speech, speech_type, response_to) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
+        bulk_insert(
+            cursor,
+            "speeches",
+            [
+                "id",
+                "person_id",
+                "record_assembly_code",
+                "record_number",
+                "record_year",
+                "agenda_item_parliament_id",
+                "start_time",
+                "speech",
+                "speech_type",
+                "response_to",
+            ],
             f,
+            has_header=True,
         )
 
     conn.commit()

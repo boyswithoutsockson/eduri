@@ -1,7 +1,7 @@
 import os.path
 import pandas as pd
 
-from db import get_connection
+from db import get_connection, bulk_insert
 
 csv_path = "data/preprocessed/votes.csv"
 
@@ -29,12 +29,13 @@ def import_data():
     conn = get_connection()
     cursor = conn.cursor()
     with open(csv_path) as f:
-        cursor.execute("ALTER TABLE votes DISABLE TRIGGER ALL;")
-        cursor.copy_expert(
-            "COPY votes(person_id, ballot_id, vote) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
+        bulk_insert(
+            cursor,
+            "votes",
+            ["person_id", "ballot_id", "vote"],
             f,
+            has_header=True,
         )
-        cursor.execute("ALTER TABLE votes ENABLE TRIGGER ALL;")
     conn.commit()
     cursor.close()
     conn.close()

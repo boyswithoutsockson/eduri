@@ -1,7 +1,7 @@
 import os
 import polars as pl
 
-from db import get_connection
+from db import get_connection, bulk_insert
 
 json_path = os.path.join("data", "raw", "finto_topics.json")
 csv_path = "data/preprocessed/topics.csv"
@@ -18,9 +18,8 @@ def import_data():
     cursor = conn.cursor()
 
     with open(csv_path) as f:
-        cursor.copy_expert(
-            "COPY topics(topic_id, term) FROM stdin DELIMITERS ',' CSV HEADER QUOTE '\"';",
-            f,
+        bulk_insert(
+            cursor, "topics", ["topic_id", "term"], f, has_header=True
         )
 
     conn.commit()
